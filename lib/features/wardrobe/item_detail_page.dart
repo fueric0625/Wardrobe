@@ -1,0 +1,317 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:wardrobe/app/providers.dart';
+import 'package:wardrobe/core/catalogs.dart';
+import 'package:wardrobe/core/category_tree.dart';
+import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/data/cover_repository.dart';
+import 'package:wardrobe/features/wardrobe/category_item_dialogs.dart';
+import 'package:wardrobe/widgets/common.dart';
+
+class ItemDetailPage extends ConsumerWidget {
+  const ItemDetailPage({super.key, required this.itemId});
+
+  final String itemId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncItems = ref.watch(clothingItemsProvider);
+    final covers = ref.watch(categoryCoverRowsProvider);
+
+    return asyncItems.when(
+      loading: () => const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(child: Text('加载失败：$e')),
+      ),
+      data: (items) {
+        final item = items.where((i) => i.id == itemId).firstOrNull;
+        if (item == null) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('找不到这件衣物', style: TextStyle(color: AppColors.textMuted)),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => _back(context),
+                    child: const Text('返回'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final categories = ref.watch(clothingCategoryRowsProvider);
+        final category = categoryById(categories, item.categoryId);
+        final title = item.type.trim().isEmpty ? '单品详情' : item.type.trim();
+        final measures = decodeMeasurements(item.measurements);
+        final sizeFields =
+            category == null ? <String>[] : inheritedSizeFields(categories, category);
+        final path = categoryPath(categories, item.categoryId);
+        final coverTargets = coverCategoriesForItem(categories, item.categoryId);
+
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 18, 28, 8),
+                child: Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => _back(context),
+                      icon: const Icon(Icons.arrow_back_ios_new, size: 16),
+                      label: const Text('返回'),
+                    ),
+                    Expanded(
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    _ItemCoverActions(
+                      itemId: item.id,
+                      covers: covers,
+                      targets: coverTargets,
+                    ),
+                    TextButton(
+                      onPressed: () => _move(
+                        context,
+                        ref,
+                        item: item,
+                        categories: categories,
+                      ),
+                      child: const Text('移动'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () => context.push('/wardrobe/item/${item.id}/edit'),
+                      child: const Text('修改'),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(32, 8, 32, 32),
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 320,
+                          child: DetailHeroImage(path: item.imagePath),
+                        ),
+                        const SizedBox(width: 28),
+                        Expanded(
+                          child: DetailFormCard(
+                            children: [
+                              _split(
+                                ReadOnlyField(label: '分类', value: path),
+                                ReadOnlyField(label: '类别', value: item.type),
+                              ),
+                              _split(
+                                ReadOnlyField(label: '款式', value: item.style),
+                                ReadOnlyField(label: '颜色', value: item.color),
+                              ),
+                              _split(
+                                ReadOnlyField(label: '季节', value: _joinTokens(item.season)),
+                                ReadOnlyField(label: '面料', value: item.fabric),
+                              ),
+                              _split(
+                                ReadOnlyField(label: '品牌', value: item.brand),
+                                ReadOnlyField(label: '价格', value: _priceText(item.price)),
+                              ),
+                              if (sizeFields.isNotEmpty) ...[
+                                const Text('尺码测量', style: TextStyle(fontWeight: FontWeight.w700)),
+                                Wrap(
+                                  spacing: 24,
+                                  runSpacing: 12,
+                                  children: [
+                                    for (final field in sizeFields)
+                                      SizedBox(
+                                        width: 140,
+                                        child: ReadOnlyField(
+                                          label: field,
+                                          value: measures[field],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                              ReadOnlyField(
+                                label: '购入时间',
+                                value: item.purchasedAt == null
+                                    ? null
+                                    : DateFormat('yyyy-MM-dd').format(item.purchasedAt!),
+                              ),
+                              ReadOnlyField(label: '购买信息', value: item.purchaseInfo),
+                              ReadOnlyField(label: '存放位置', value: item.location),
+                              ReadOnlyField(label: '标签', value: item.tags),
+                              ReadOnlyField(label: '备注', value: item.note),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  static Future<void> _move(
+    BuildContext context,
+    WidgetRef ref, {
+    required ClothingItem item,
+    required List<Category> categories,
+  }) async {
+    final dest = await promptMoveToCategory(
+      context,
+      categories: categories,
+      currentId: item.categoryId,
+    );
+    if (dest == null || !context.mounted) return;
+    await ref.read(itemRepositoryProvider).moveToCategory([item.id], dest.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('已移动到「${categoryPath(categories, dest.id)}」')),
+    );
+  }
+
+  void _back(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/wardrobe');
+    }
+  }
+
+  static Widget _split(Widget left, Widget right) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: left),
+        const SizedBox(width: 12),
+        Expanded(child: right),
+      ],
+    );
+  }
+}
+
+class _ItemCoverActions extends ConsumerWidget {
+  const _ItemCoverActions({
+    required this.itemId,
+    required this.covers,
+    required this.targets,
+  });
+
+  final String itemId;
+  final List<CategoryCover> covers;
+  final List<Category> targets;
+
+  bool _isCoverOf(String categoryId) {
+    return coverItemIdOf(covers, CategoryKind.clothing, categoryId) == itemId;
+  }
+
+  Future<void> _toggle(BuildContext context, WidgetRef ref, Category category) async {
+    final clearing = _isCoverOf(category.id);
+    await ref.read(categoryCoverRepositoryProvider).setCover(
+          kind: CategoryKind.clothing,
+          categoryId: category.id,
+          itemId: clearing ? null : itemId,
+        );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          clearing
+              ? '已恢复「${category.label}」为最新添加的单品'
+              : '已设为「${category.label}」封面',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (targets.isEmpty) return const SizedBox.shrink();
+    if (targets.length == 1) {
+      final category = targets.first;
+      final isCover = _isCoverOf(category.id);
+      return TextButton(
+        onPressed: () => _toggle(context, ref, category),
+        child: Text(isCover ? '恢复默认' : '设为封面'),
+      );
+    }
+
+    final anyCover = targets.any((category) => _isCoverOf(category.id));
+    return PopupMenuButton<String>(
+      tooltip: '设为封面',
+      offset: const Offset(0, 8),
+      onSelected: (id) {
+        final category = targets.firstWhere((c) => c.id == id);
+        _toggle(context, ref, category);
+      },
+      itemBuilder: (context) => [
+        for (final category in targets)
+          CheckedPopupMenuItem<String>(
+            value: category.id,
+            checked: _isCoverOf(category.id),
+            child: Text('「${category.label}」封面'),
+          ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              anyCover ? '封面设置' : '设为封面',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String? _priceText(double? price) {
+  if (price == null) return null;
+  final text = price == price.roundToDouble()
+      ? price.toInt().toString()
+      : price.toString();
+  return '$text 元';
+}
+
+String? _joinTokens(String raw) {
+  final parts = raw.split(RegExp(r'[,，\s]+')).where((s) => s.isNotEmpty);
+  if (parts.isEmpty) return null;
+  return parts.join('、');
+}

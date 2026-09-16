@@ -1,0 +1,80 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:wardrobe/core/catalogs.dart';
+import 'package:wardrobe/core/category_tree.dart';
+import 'package:wardrobe/core/db/app_database.dart';
+
+Category cat({
+  required String id,
+  required String label,
+  String? parentId,
+  int sortOrder = 0,
+  List<String> sizeFields = const [],
+}) {
+  return Category(
+    id: id,
+    kind: CategoryKind.clothing.name,
+    parentId: parentId,
+    label: label,
+    sortOrder: sortOrder,
+    sizeFields: encodeSizeFields(sizeFields),
+    isSystem: id == 'uncategorized',
+  );
+}
+
+void main() {
+  final tops = cat(id: 'tops', label: '上装', sizeFields: ['衣长', '胸围']);
+  final hoodie = cat(id: 'hoodie', label: '卫衣', parentId: 'tops', sortOrder: 0);
+  final hooded = cat(id: 'hooded', label: '兜帽卫衣', parentId: 'hoodie', sortOrder: 0);
+  final shirt = cat(id: 'shirt', label: '衬衫', parentId: 'tops', sortOrder: 1);
+  final all = [tops, hoodie, hooded, shirt];
+
+  test('depth is 0/1/2 and third layer cannot add children', () {
+    expect(categoryDepth(all, tops), 0);
+    expect(categoryDepth(all, hoodie), 1);
+    expect(categoryDepth(all, hooded), 2);
+    expect(canAddChild(all, tops), isTrue);
+    expect(canAddChild(all, hoodie), isTrue);
+    expect(canAddChild(all, hooded), isFalse);
+  });
+
+  test('path and inherited size fields walk to the root', () {
+    expect(categoryPath(all, 'hooded'), '上装 / 卫衣 / 兜帽卫衣');
+    expect(inheritedSizeFields(all, hooded), ['衣长', '胸围']);
+  });
+
+  test('subtree includes descendants and children stay ordered', () {
+    expect(subtreeIds(all, 'tops'), {'tops', 'hoodie', 'hooded', 'shirt'});
+    expect(childrenOf(all, 'tops').map((c) => c.id).toList(), ['hoodie', 'shirt']);
+  });
+
+  test('deleting a child category returns items to its parent', () {
+    expect(itemsFallbackAfterDelete(all, hoodie), 'tops');
+    expect(itemsFallbackAfterDelete(all, hooded), 'hoodie');
+    expect(itemsFallbackAfterDelete(all, tops), uncategorizedClothingId);
+  });
+
+  test('an item can cover its own category and ancestors, not siblings', () {
+    expect(
+      coverCategoriesForItem(all, 'hooded').map((c) => c.id).toList(),
+      ['tops', 'hoodie', 'hooded'],
+    );
+    expect(
+      coverCategoriesForItem(all, 'hoodie').map((c) => c.id).toList(),
+      ['tops', 'hoodie'],
+    );
+    expect(coverCategoriesForItem(all, 'tops').map((c) => c.id).toList(), ['tops']);
+    expect(subtreeIds(all, 'hoodie').contains('hooded'), isTrue);
+    expect(subtreeIds(all, 'shirt').contains('hooded'), isFalse);
+  });
+
+  test('sibling labels must be unique, other branches may reuse', () {
+    expect(siblingLabelTaken(all, parentId: null, label: '上装'), isTrue);
+    expect(siblingLabelTaken(all, parentId: 'tops', label: '卫衣'), isTrue);
+    expect(siblingLabelTaken(all, parentId: 'tops', label: '针织衫'), isFalse);
+    expect(siblingLabelTaken(all, parentId: 'hoodie', label: '卫衣'), isFalse);
+    expect(
+      siblingLabelTaken(all, parentId: 'tops', label: '卫衣', exceptId: 'hoodie'),
+      isFalse,
+    );
+  });
+}
