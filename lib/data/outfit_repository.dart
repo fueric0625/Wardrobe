@@ -6,6 +6,7 @@ abstract class OutfitRepository {
   Stream<List<Outfit>> watchAll();
   Future<Outfit?> getById(String id);
   Future<void> upsert(OutfitsCompanion outfit);
+  Future<void> moveToCategory(Iterable<String> ids, String categoryId);
   Future<void> delete(String id);
 }
 
@@ -31,6 +32,14 @@ class LocalOutfitRepository implements OutfitRepository {
   @override
   Future<void> upsert(OutfitsCompanion outfit) {
     return _db.into(_db.outfits).insertOnConflictUpdate(outfit);
+  }
+
+  @override
+  Future<void> moveToCategory(Iterable<String> ids, String categoryId) async {
+    final idList = ids.toList();
+    if (idList.isEmpty) return;
+    await (_db.update(_db.outfits)..where((t) => t.id.isIn(idList)))
+        .write(OutfitsCompanion(categoryId: Value(categoryId)));
   }
 
   @override

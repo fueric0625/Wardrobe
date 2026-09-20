@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wardrobe/app/providers.dart';
 import 'package:wardrobe/core/catalogs.dart';
+import 'package:wardrobe/core/category_tree.dart';
+import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/theme.dart';
-import 'package:wardrobe/data/cover_repository.dart';
+import 'package:wardrobe/features/wardrobe/category_item_dialogs.dart';
 import 'package:wardrobe/widgets/common.dart';
 
 class OutfitDetailPage extends ConsumerWidget {
@@ -47,14 +49,14 @@ class OutfitDetailPage extends ConsumerWidget {
           );
         }
 
-        final category = outfitCategoryById(item.categoryId);
+        final categories = ref.watch(outfitCategoryRowsProvider);
         final title = item.name.trim().isEmpty ? '穿搭详情' : item.name.trim();
+        final path = categoryPath(categories, item.categoryId);
+        final coverTargets = coverCategoriesForItem(categories, item.categoryId);
         final season = item.season
             .split(RegExp(r'[,，\s]+'))
             .where((s) => s.isNotEmpty)
             .join('、');
-        final isCover =
-            coverItemIdOf(covers, CategoryKind.outfit, item.categoryId) == item.id;
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -78,25 +80,20 @@ class OutfitDetailPage extends ConsumerWidget {
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                       ),
                     ),
+                    CategoryCoverActions(
+                      itemId: item.id,
+                      kind: CategoryKind.outfit,
+                      covers: covers,
+                      targets: coverTargets,
+                    ),
                     TextButton(
-                      onPressed: () async {
-                        await ref.read(categoryCoverRepositoryProvider).setCover(
-                              kind: CategoryKind.outfit,
-                              categoryId: item.categoryId,
-                              itemId: isCover ? null : item.id,
-                            );
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              isCover
-                                  ? '已恢复为最新添加的单品'
-                                  : '已设为「${category.label}」封面',
-                            ),
-                          ),
-                        );
-                      },
-                      child: Text(isCover ? '恢复默认' : '设为封面'),
+                      onPressed: () => _move(
+                        context,
+                        ref,
+                        item: item,
+                        categories: categories,
+                      ),
+                      child: const Text('移动'),
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
@@ -121,7 +118,7 @@ class OutfitDetailPage extends ConsumerWidget {
                         Expanded(
                           child: DetailFormCard(
                             children: [
-                              ReadOnlyField(label: '场合', value: category.label),
+                              ReadOnlyField(label: '分类', value: path),
                               ReadOnlyField(label: '名称', value: item.name),
                               ReadOnlyField(label: '季节', value: season),
                               ReadOnlyField(label: '备注', value: item.note),
@@ -137,6 +134,25 @@ class OutfitDetailPage extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  static Future<void> _move(
+    BuildContext context,
+    WidgetRef ref, {
+    required Outfit item,
+    required List<Category> categories,
+  }) async {
+    final dest = await promptMoveToCategory(
+      context,
+      categories: categories,
+      currentId: item.categoryId,
+    );
+    if (dest == null || !context.mounted) return;
+    await ref.read(outfitRepositoryProvider).moveToCategory([item.id], dest.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('已移动到「${categoryPath(categories, dest.id)}」')),
     );
   }
 

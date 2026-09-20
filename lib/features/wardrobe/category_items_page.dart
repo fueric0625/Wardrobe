@@ -40,10 +40,21 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
   }
 
   Future<void> _addChild(List<ClothingItem> directItems) async {
-    final result = await promptAddSubcategory(context, items: directItems);
+    final result = await promptAddSubcategory(
+      context,
+      items: [
+        for (final item in directItems)
+          CategoryPickItem(
+            id: item.id,
+            imagePath: item.imagePath,
+            label: item.type.trim().isEmpty ? '未命名' : item.type.trim(),
+          ),
+      ],
+    );
     if (result == null || !mounted) return;
     try {
       final id = await ref.read(categoryRepositoryProvider).add(
+            kind: CategoryKind.clothing,
             parentId: widget.categoryId,
             label: result.label,
           );

@@ -1,6 +1,6 @@
 # 衣橱
 
-电子衣橱 Windows 桌面端（Flutter）。分期计划见 [plan/v1-电子衣橱桌面版.md](plan/v1-电子衣橱桌面版.md) 起，当前增量 [plan/v4-分类细化.md](plan/v4-分类细化.md)。
+电子衣橱 Windows 桌面端（Flutter）。产品版本 **v1**（已做到 v1.5）。功能、改动、设想和待办见 [plan/v1.md](plan/v1.md)。
 
 ## 运行
 

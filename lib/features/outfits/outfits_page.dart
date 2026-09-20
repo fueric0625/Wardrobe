@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wardrobe/app/providers.dart';
 import 'package:wardrobe/core/catalogs.dart';
+import 'package:wardrobe/core/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/theme.dart';
@@ -26,12 +27,12 @@ class _OutfitsPageState extends ConsumerState<OutfitsPage> {
     super.dispose();
   }
 
-  bool _matches(Outfit item, String q) {
+  bool _matches(Outfit item, List<Category> categories, String q) {
     final hay = [
       item.name,
       item.note,
       item.season,
-      outfitCategoryById(item.categoryId).label,
+      categoryPath(categories, item.categoryId),
     ].join(' ').toLowerCase();
     return hay.contains(q);
   }
@@ -39,6 +40,7 @@ class _OutfitsPageState extends ConsumerState<OutfitsPage> {
   @override
   Widget build(BuildContext context) {
     final asyncItems = ref.watch(outfitsProvider);
+    final categories = ref.watch(outfitCategoryRowsProvider);
     final covers = ref.watch(categoryCoverRowsProvider);
 
     return Scaffold(
@@ -50,11 +52,13 @@ class _OutfitsPageState extends ConsumerState<OutfitsPage> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('加载失败：$e')),
         data: (items) {
-          final sort = ref.watch(outfitSortProvider);
           final q = _query.trim().toLowerCase();
           final searching = q.isNotEmpty;
           final matched = searching
-              ? sortOutfits(items.where((i) => _matches(i, q)), sort)
+              ? sortOutfits(
+                  items.where((i) => _matches(i, categories, q)),
+                  ListSort.outfitDefault,
+                )
               : items;
 
           return Column(
@@ -65,17 +69,20 @@ class _OutfitsPageState extends ConsumerState<OutfitsPage> {
                   controller: _search,
                   onChanged: (v) => setState(() => _query = v),
                 ),
-                trailing: SortButton(
-                  value: sort,
-                  fields: ListSort.outfitFields,
-                  onChanged: (next) =>
-                      ref.read(outfitSortProvider.notifier).set(next),
+                trailing: TextButton.icon(
+                  onPressed: () => context.push('/outfits/categories'),
+                  icon: const Icon(Icons.account_tree_outlined, size: 18),
+                  label: const Text('分类管理'),
                 ),
               ),
               Expanded(
                 child: searching
-                    ? _OutfitSearchGrid(items: matched)
-                    : _CategoryGrid(items: items, covers: covers),
+                    ? _OutfitSearchGrid(items: matched, categories: categories)
+                    : _CategoryGrid(
+                        items: items,
+                        categories: categories,
+                        covers: covers,
+                      ),
               ),
             ],
           );
@@ -85,14 +92,29 @@ class _OutfitsPageState extends ConsumerState<OutfitsPage> {
   }
 }
 
+void openOutfitCategory(BuildContext context, String categoryId) {
+  context.push('/outfits/c/$categoryId');
+}
+
 class _CategoryGrid extends StatelessWidget {
-  const _CategoryGrid({required this.items, required this.covers});
+  const _CategoryGrid({
+    required this.items,
+    required this.categories,
+    required this.covers,
+  });
 
   final List<Outfit> items;
+  final List<Category> categories;
   final List<CategoryCover> covers;
 
   @override
   Widget build(BuildContext context) {
+    final roots = clothingRoots(categories);
+    if (roots.isEmpty) {
+      return const Center(
+        child: Text('还没有分类', style: TextStyle(color: AppColors.textMuted)),
+      );
+    }
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(32, 8, 32, 88),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -101,27 +123,21 @@ class _CategoryGrid extends StatelessWidget {
         crossAxisSpacing: 22,
         childAspectRatio: 0.86,
       ),
-      itemCount: outfitCategories.length,
+      itemCount: roots.length,
       itemBuilder: (context, index) {
-        final category = outfitCategories[index];
-        final inCategory = items.where((i) => i.categoryId == category.id);
+        final category = roots[index];
+        final inTree = outfitsInSubtree(items, categories, category.id);
         final cover = pickCoverItem(
-          items: inCategory,
+          items: inTree,
           idOf: (i) => i.id,
           createdAt: (i) => i.createdAt,
           coverItemId: coverItemIdOf(covers, CategoryKind.outfit, category.id),
         );
         return CategoryCard(
           label: category.label,
-          count: inCategory.length,
+          count: inTree.length,
           coverPath: cover?.imagePath,
-          onTap: () {
-            if (inCategory.isEmpty) {
-              context.push('/outfits/item/new?category=${category.id}');
-            } else {
-              context.push('/outfits/c/${category.id}');
-            }
-          },
+          onTap: () => openOutfitCategory(context, category.id),
         );
       },
     );
@@ -129,9 +145,10 @@ class _CategoryGrid extends StatelessWidget {
 }
 
 class _OutfitSearchGrid extends StatelessWidget {
-  const _OutfitSearchGrid({required this.items});
+  const _OutfitSearchGrid({required this.items, required this.categories});
 
   final List<Outfit> items;
+  final List<Category> categories;
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +170,9 @@ class _OutfitSearchGrid extends StatelessWidget {
         final item = items[index];
         return ItemTile(
           coverPath: item.imagePath,
-          title: item.name.isEmpty ? outfitCategoryById(item.categoryId).label : item.name,
+          title: item.name.isEmpty
+              ? categoryPath(categories, item.categoryId)
+              : item.name,
           subtitle: item.season,
           onTap: () => context.push('/outfits/item/${item.id}'),
         );

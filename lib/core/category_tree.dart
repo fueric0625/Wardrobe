@@ -135,6 +135,19 @@ List<ClothingItem> itemsDirectlyIn(List<ClothingItem> items, String id) {
   return items.where((item) => item.categoryId == id).toList();
 }
 
+List<Outfit> outfitsInSubtree(
+  List<Outfit> items,
+  List<Category> categories,
+  String id,
+) {
+  final ids = subtreeIds(categories, id);
+  return items.where((item) => ids.contains(item.categoryId)).toList();
+}
+
+List<Outfit> outfitsDirectlyIn(List<Outfit> items, String id) {
+  return items.where((item) => item.categoryId == id).toList();
+}
+
 /// Categories this item may cover: itself and every ancestor.
 /// A 卫衣 item can be 上装's cover, but never 衬衫's.
 List<Category> coverCategoriesForItem(List<Category> all, String itemCategoryId) {

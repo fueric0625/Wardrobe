@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wardrobe/core/catalogs.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/storage/image_store.dart';
@@ -49,11 +50,22 @@ final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
 });
 
 final clothingCategoriesProvider = StreamProvider<List<Category>>((ref) {
-  return ref.watch(categoryRepositoryProvider).watchClothing();
+  return ref.watch(categoryRepositoryProvider).watch(CategoryKind.clothing);
 });
 
 final clothingCategoryRowsProvider = Provider<List<Category>>((ref) {
   return ref.watch(clothingCategoriesProvider).maybeWhen(
+    data: (rows) => rows,
+    orElse: () => const [],
+  );
+});
+
+final outfitCategoriesProvider = StreamProvider<List<Category>>((ref) {
+  return ref.watch(categoryRepositoryProvider).watch(CategoryKind.outfit);
+});
+
+final outfitCategoryRowsProvider = Provider<List<Category>>((ref) {
+  return ref.watch(outfitCategoriesProvider).maybeWhen(
     data: (rows) => rows,
     orElse: () => const [],
   );

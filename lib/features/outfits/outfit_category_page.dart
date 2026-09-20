@@ -3,9 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wardrobe/app/providers.dart';
 import 'package:wardrobe/core/catalogs.dart';
+import 'package:wardrobe/core/category_tree.dart';
+import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/theme.dart';
 import 'package:wardrobe/data/cover_repository.dart';
+import 'package:wardrobe/features/outfits/outfits_page.dart';
+import 'package:wardrobe/features/wardrobe/category_item_dialogs.dart';
 import 'package:wardrobe/widgets/common.dart';
 
 class OutfitCategoryPage extends ConsumerStatefulWidget {
@@ -35,9 +39,55 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
         );
   }
 
+  Future<void> _addChild(List<Outfit> directItems) async {
+    final result = await promptAddSubcategory(
+      context,
+      pickHint: '把当前分类里的穿搭移入（可选）',
+      items: [
+        for (final item in directItems)
+          CategoryPickItem(
+            id: item.id,
+            imagePath: item.imagePath,
+            label: item.name.trim().isEmpty ? '未命名' : item.name.trim(),
+          ),
+      ],
+    );
+    if (result == null || !mounted) return;
+    try {
+      final id = await ref.read(categoryRepositoryProvider).add(
+            kind: CategoryKind.outfit,
+            parentId: widget.categoryId,
+            label: result.label,
+          );
+      if (result.itemIds.isNotEmpty) {
+        await ref.read(outfitRepositoryProvider).moveToCategory(result.itemIds, id);
+      }
+      if (!mounted) return;
+      final moved = result.itemIds.length;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            moved == 0
+                ? '已添加「${result.label}」'
+                : '已添加「${result.label}」，移入 $moved 件',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is StateError
+          ? e.message
+          : e is ArgumentError
+              ? (e.message?.toString() ?? '$e')
+              : '$e';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final category = outfitCategoryById(widget.categoryId);
+    final categories = ref.watch(outfitCategoryRowsProvider);
+    final category = categoryById(categories, widget.categoryId);
     final asyncItems = ref.watch(outfitsProvider);
     final covers = ref.watch(categoryCoverRowsProvider);
     final customCoverId = coverItemIdOf(
@@ -46,10 +96,23 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
       widget.categoryId,
     );
 
+    if (category == null) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: TextButton(
+            onPressed: () => context.go('/outfits'),
+            child: const Text('找不到这个分类，返回穿搭'),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: AddFab(
-        onPressed: () => context.push('/outfits/item/new?category=${widget.categoryId}'),
+        onPressed: () =>
+            context.push('/outfits/item/new?category=${widget.categoryId}'),
       ),
       body: asyncItems.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -57,9 +120,12 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
         data: (all) {
           final sort = ref.watch(outfitSortProvider);
           final q = _query.trim().toLowerCase();
+          final children = childrenOf(categories, widget.categoryId)
+              .where((child) => q.isEmpty || child.label.toLowerCase().contains(q))
+              .toList();
+          final directItems = outfitsDirectlyIn(all, widget.categoryId);
           final items = sortOutfits(
-            all.where((item) {
-              if (item.categoryId != widget.categoryId) return false;
+            directItems.where((item) {
               if (q.isEmpty) return true;
               final hay = [item.name, item.note, item.season].join(' ').toLowerCase();
               return hay.contains(q);
@@ -74,7 +140,14 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
                 leading: Row(
                   children: [
                     IconButton(
-                      onPressed: () => context.go('/outfits'),
+                      onPressed: () {
+                        final parentId = category.parentId;
+                        if (parentId == null) {
+                          context.go('/outfits');
+                        } else {
+                          context.go('/outfits/c/$parentId');
+                        }
+                      },
                       icon: const Icon(Icons.arrow_back_ios_new, size: 18),
                     ),
                     AppSearchField(
@@ -86,6 +159,12 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (canAddChild(categories, category))
+                      TextButton.icon(
+                        onPressed: () => _addChild(directItems),
+                        icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                        label: const Text('添加子分类'),
+                      ),
                     if (customCoverId != null)
                       TextButton(
                         onPressed: () async {
@@ -107,30 +186,69 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
                 ),
               ),
               Expanded(
-                child: items.isEmpty
-                    ? const Center(
-                        child: Text(
-                          '这个分类还没有穿搭',
-                          style: TextStyle(color: AppColors.textMuted),
+                child: children.isEmpty && items.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              '这个分类还没有穿搭',
+                              style: TextStyle(color: AppColors.textMuted),
+                            ),
+                            if (canAddChild(categories, category)) ...[
+                              const SizedBox(height: 12),
+                              TextButton.icon(
+                                onPressed: () => _addChild(directItems),
+                                icon: const Icon(
+                                  Icons.create_new_folder_outlined,
+                                  size: 18,
+                                ),
+                                label: const Text('添加子分类'),
+                              ),
+                            ],
+                          ],
                         ),
                       )
                     : GridView.builder(
                         padding: const EdgeInsets.fromLTRB(32, 8, 32, 88),
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: 220,
                           mainAxisSpacing: 22,
                           crossAxisSpacing: 22,
                           childAspectRatio: 0.82,
                         ),
-                        itemCount: items.length,
+                        itemCount: children.length + items.length,
                         itemBuilder: (context, index) {
-                          final item = items[index];
+                          if (index < children.length) {
+                            final child = children[index];
+                            final inTree =
+                                outfitsInSubtree(all, categories, child.id);
+                            final cover = pickCoverItem(
+                              items: inTree,
+                              idOf: (i) => i.id,
+                              createdAt: (i) => i.createdAt,
+                              coverItemId: coverItemIdOf(
+                                covers,
+                                CategoryKind.outfit,
+                                child.id,
+                              ),
+                            );
+                            return CategoryCard(
+                              label: child.label,
+                              count: inTree.length,
+                              coverPath: cover?.imagePath,
+                              onTap: () => openOutfitCategory(context, child.id),
+                            );
+                          }
+                          final item = items[index - children.length];
                           return ItemTile(
                             coverPath: item.imagePath,
                             title: item.name.isEmpty ? '未命名' : item.name,
                             subtitle: item.season,
                             isCover: customCoverId == item.id,
-                            onTap: () => context.push('/outfits/item/${item.id}'),
+                            onTap: () =>
+                                context.push('/outfits/item/${item.id}'),
                           );
                         },
                       ),

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wardrobe/app/providers.dart';
+import 'package:wardrobe/core/catalogs.dart';
 import 'package:wardrobe/core/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/data/cover_repository.dart';
 import 'package:wardrobe/widgets/common.dart';
 
 class AddSubcategoryResult {
@@ -11,9 +15,22 @@ class AddSubcategoryResult {
   final List<String> itemIds;
 }
 
+class CategoryPickItem {
+  const CategoryPickItem({
+    required this.id,
+    required this.label,
+    this.imagePath,
+  });
+
+  final String id;
+  final String label;
+  final String? imagePath;
+}
+
 Future<AddSubcategoryResult?> promptAddSubcategory(
   BuildContext context, {
-  List<ClothingItem> items = const [],
+  List<CategoryPickItem> items = const [],
+  String pickHint = '把当前分类里的衣物移入（可选）',
 }) async {
   final controller = TextEditingController();
   final selected = <String>{};
@@ -72,7 +89,7 @@ Future<AddSubcategoryResult?> promptAddSubcategory(
                       const SizedBox(height: 18),
                       Text(
                         selected.isEmpty
-                            ? '把当前分类里的衣物移入（可选）'
+                            ? pickHint
                             : '已选 ${selected.length} 件',
                         style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                       ),
@@ -250,13 +267,12 @@ class _SelectableItemThumb extends StatelessWidget {
     required this.onTap,
   });
 
-  final ClothingItem item;
+  final CategoryPickItem item;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final label = item.type.trim().isEmpty ? '未命名' : item.type.trim();
     return Column(
       children: [
         Expanded(
@@ -283,12 +299,101 @@ class _SelectableItemThumb extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          label,
+          item.label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 11, color: AppColors.text),
         ),
       ],
+    );
+  }
+}
+
+class CategoryCoverActions extends ConsumerWidget {
+  const CategoryCoverActions({
+    super.key,
+    required this.itemId,
+    required this.kind,
+    required this.covers,
+    required this.targets,
+  });
+
+  final String itemId;
+  final CategoryKind kind;
+  final List<CategoryCover> covers;
+  final List<Category> targets;
+
+  bool _isCoverOf(String categoryId) {
+    return coverItemIdOf(covers, kind, categoryId) == itemId;
+  }
+
+  Future<void> _toggle(BuildContext context, WidgetRef ref, Category category) async {
+    final clearing = _isCoverOf(category.id);
+    await ref.read(categoryCoverRepositoryProvider).setCover(
+          kind: kind,
+          categoryId: category.id,
+          itemId: clearing ? null : itemId,
+        );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          clearing
+              ? '已恢复「${category.label}」为最新添加的单品'
+              : '已设为「${category.label}」封面',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (targets.isEmpty) return const SizedBox.shrink();
+    if (targets.length == 1) {
+      final category = targets.first;
+      final isCover = _isCoverOf(category.id);
+      return TextButton(
+        onPressed: () => _toggle(context, ref, category),
+        child: Text(isCover ? '恢复默认' : '设为封面'),
+      );
+    }
+
+    final anyCover = targets.any((category) => _isCoverOf(category.id));
+    return PopupMenuButton<String>(
+      tooltip: '设为封面',
+      offset: const Offset(0, 8),
+      onSelected: (id) {
+        final category = targets.firstWhere((c) => c.id == id);
+        _toggle(context, ref, category);
+      },
+      itemBuilder: (context) => [
+        for (final category in targets)
+          CheckedPopupMenuItem<String>(
+            value: category.id,
+            checked: _isCoverOf(category.id),
+            child: Text('「${category.label}」封面'),
+          ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              anyCover ? '封面设置' : '设为封面',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

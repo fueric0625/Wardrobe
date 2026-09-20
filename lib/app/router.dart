@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:wardrobe/app/shell.dart';
+import 'package:wardrobe/core/catalogs.dart';
 import 'package:wardrobe/features/calendar/calendar_page.dart';
 import 'package:wardrobe/features/outfits/outfit_category_page.dart';
 import 'package:wardrobe/features/outfits/outfit_detail_page.dart';
@@ -25,7 +26,9 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/wardrobe/categories',
-          builder: (context, state) => const CategoryManagePage(),
+          builder: (context, state) => const CategoryManagePage(
+            kind: CategoryKind.clothing,
+          ),
         ),
         GoRoute(
           path: '/wardrobe/c/:categoryId',
@@ -55,6 +58,12 @@ final appRouter = GoRouter(
           path: '/outfits',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: OutfitsPage(),
+          ),
+        ),
+        GoRoute(
+          path: '/outfits/categories',
+          builder: (context, state) => const CategoryManagePage(
+            kind: CategoryKind.outfit,
           ),
         ),
         GoRoute(

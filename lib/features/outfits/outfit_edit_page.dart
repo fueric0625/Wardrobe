@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wardrobe/app/providers.dart';
 import 'package:wardrobe/core/catalogs.dart';
+import 'package:wardrobe/core/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/theme.dart';
 
@@ -91,10 +92,13 @@ class _OutfitEditPageState extends ConsumerState<OutfitEditPage> {
       }
       final now = DateTime.now();
       final id = widget.outfitId ?? const Uuid().v4();
+      final categories = ref.read(outfitCategoryRowsProvider);
+      final selectedId = categoryById(categories, _categoryId)?.id ??
+          uncategorizedClothingId;
       await ref.read(outfitRepositoryProvider).upsert(
             OutfitsCompanion(
               id: Value(id),
-              categoryId: Value(_categoryId),
+              categoryId: Value(selectedId),
               imagePath: Value(storedPath),
               name: Value(_name.text.trim()),
               season: Value(_seasons.join(',')),
@@ -131,6 +135,10 @@ class _OutfitEditPageState extends ConsumerState<OutfitEditPage> {
     if (!_loaded) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+
+    final categories = ref.watch(outfitCategoryRowsProvider);
+    final selectedId = categoryById(categories, _categoryId)?.id ??
+        (categories.isEmpty ? _categoryId : uncategorizedClothingId);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -227,19 +235,25 @@ class _OutfitEditPageState extends ConsumerState<OutfitEditPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text('场合', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                            const Text('分类', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
                             const SizedBox(height: 6),
-                            DropdownButtonFormField<String>(
-                              key: ValueKey(_categoryId),
-                              initialValue: _categoryId,
-                              items: [
-                                for (final c in outfitCategories)
-                                  DropdownMenuItem(value: c.id, child: Text(c.label)),
-                              ],
-                              onChanged: (v) {
-                                if (v != null) setState(() => _categoryId = v);
-                              },
-                            ),
+                            if (categories.isEmpty)
+                              const Text('暂无分类', style: TextStyle(color: AppColors.textMuted))
+                            else
+                              DropdownButtonFormField<String>(
+                                key: ValueKey(selectedId),
+                                initialValue: selectedId,
+                                items: [
+                                  for (final c in flattenPreorder(categories))
+                                    DropdownMenuItem(
+                                      value: c.id,
+                                      child: Text(categoryPath(categories, c.id)),
+                                    ),
+                                ],
+                                onChanged: (v) {
+                                  if (v != null) setState(() => _categoryId = v);
+                                },
+                              ),
                             const SizedBox(height: 12),
                             const Text('名称', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
                             const SizedBox(height: 6),

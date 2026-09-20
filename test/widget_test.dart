@@ -22,8 +22,8 @@ void main() {
     );
   });
 
-  test('preset outfit categories match the v1 plan', () {
-    expect(outfitCategories.map((c) => c.label).toList(), [
+  test('preset outfit category seeds match the v1 labels', () {
+    expect(outfitCategorySeeds.map((c) => c.label).toList(), [
       '无分类',
       '工作',
       '休闲',
@@ -31,5 +31,9 @@ void main() {
       '运动',
       '度假',
     ]);
+    expect(
+      outfitCategorySeeds.firstWhere((c) => c.id == 'uncategorized').isSystem,
+      isTrue,
+    );
   });
 }

@@ -2,20 +2,6 @@ import 'dart:convert';
 
 enum CategoryKind { clothing, outfit }
 
-class AppCategory {
-  const AppCategory({
-    required this.id,
-    required this.label,
-    required this.kind,
-    this.sizeFields = const [],
-  });
-
-  final String id;
-  final String label;
-  final CategoryKind kind;
-  final List<String> sizeFields;
-}
-
 class SizeTemplate {
   const SizeTemplate({
     required this.id,
@@ -65,6 +51,20 @@ const clothingSizeTemplates = <SizeTemplate>[
   SizeTemplate(id: 'object', label: '物件', fields: ['尺寸']),
 ];
 
+const outfitCategorySeeds = <ClothingCategorySeed>[
+  ClothingCategorySeed(
+    id: uncategorizedClothingId,
+    label: '无分类',
+    sortOrder: 0,
+    isSystem: true,
+  ),
+  ClothingCategorySeed(id: 'work', label: '工作', sortOrder: 1),
+  ClothingCategorySeed(id: 'casual', label: '休闲', sortOrder: 2),
+  ClothingCategorySeed(id: 'party', label: '派对', sortOrder: 3),
+  ClothingCategorySeed(id: 'sport', label: '运动', sortOrder: 4),
+  ClothingCategorySeed(id: 'vacation', label: '度假', sortOrder: 5),
+];
+
 const clothingCategorySeeds = <ClothingCategorySeed>[
   ClothingCategorySeed(
     id: uncategorizedClothingId,
@@ -110,23 +110,7 @@ const clothingCategorySeeds = <ClothingCategorySeed>[
   ),
 ];
 
-const outfitCategories = <AppCategory>[
-  AppCategory(id: 'uncategorized', label: '无分类', kind: CategoryKind.outfit),
-  AppCategory(id: 'work', label: '工作', kind: CategoryKind.outfit),
-  AppCategory(id: 'casual', label: '休闲', kind: CategoryKind.outfit),
-  AppCategory(id: 'party', label: '派对', kind: CategoryKind.outfit),
-  AppCategory(id: 'sport', label: '运动', kind: CategoryKind.outfit),
-  AppCategory(id: 'vacation', label: '度假', kind: CategoryKind.outfit),
-];
-
 const seasons = ['春', '夏', '秋', '冬'];
-
-AppCategory outfitCategoryById(String id) {
-  return outfitCategories.firstWhere(
-    (c) => c.id == id,
-    orElse: () => outfitCategories.first,
-  );
-}
 
 String encodeSizeFields(List<String> fields) => jsonEncode(fields);
 

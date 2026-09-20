@@ -8,11 +8,15 @@ import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/theme.dart';
 
 class CategoryManagePage extends ConsumerWidget {
-  const CategoryManagePage({super.key});
+  const CategoryManagePage({super.key, required this.kind});
+
+  final CategoryKind kind;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncCats = ref.watch(clothingCategoriesProvider);
+    final asyncCats = kind == CategoryKind.clothing
+        ? ref.watch(clothingCategoriesProvider)
+        : ref.watch(outfitCategoriesProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -40,7 +44,7 @@ class CategoryManagePage extends ConsumerWidget {
                       ),
                     ),
                     FilledButton.icon(
-                      onPressed: () => _addRoot(context, ref),
+                      onPressed: () => _addRoot(context, ref, kind),
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('新增大分类'),
                     ),
@@ -65,12 +69,13 @@ class CategoryManagePage extends ConsumerWidget {
                       canMoveDown: siblingIndex >= 0 &&
                           siblingIndex < siblings.length - 1,
                       canAddChild: canAddChild(categories, category),
-                      onRename: () => _rename(context, ref, category),
-                      onAddChild: () => _addChild(context, ref, category),
-                      onDelete: () => _delete(context, ref, categories, category),
+                      onRename: () => _rename(context, ref, kind, category),
+                      onAddChild: () => _addChild(context, ref, kind, category),
+                      onDelete: () =>
+                          _delete(context, ref, kind, categories, category),
                       onMove: (delta) => ref
                           .read(categoryRepositoryProvider)
-                          .moveSibling(category.id, delta),
+                          .moveSibling(kind, category.id, delta),
                     );
                   },
                 ),
@@ -155,12 +160,20 @@ class _CategoryRow extends StatelessWidget {
   }
 }
 
-Future<void> _addRoot(BuildContext context, WidgetRef ref) async {
-  final result = await _promptNewRoot(context);
+String _itemNoun(CategoryKind kind) =>
+    kind == CategoryKind.outfit ? '穿搭' : '衣物';
+
+Future<void> _addRoot(
+  BuildContext context,
+  WidgetRef ref,
+  CategoryKind kind,
+) async {
+  final result = await _promptNewRoot(context, kind);
   if (result == null) return;
   if (!context.mounted) return;
   await _run(context, () {
     return ref.read(categoryRepositoryProvider).add(
+          kind: kind,
           label: result.label,
           sizeFields: result.fields,
         );
@@ -170,6 +183,7 @@ Future<void> _addRoot(BuildContext context, WidgetRef ref) async {
 Future<void> _addChild(
   BuildContext context,
   WidgetRef ref,
+  CategoryKind kind,
   Category parent,
 ) async {
   final label = await _promptName(context, title: '添加子分类');
@@ -177,6 +191,7 @@ Future<void> _addChild(
   if (!context.mounted) return;
   await _run(context, () {
     return ref.read(categoryRepositoryProvider).add(
+          kind: kind,
           parentId: parent.id,
           label: label,
         );
@@ -186,6 +201,7 @@ Future<void> _addChild(
 Future<void> _rename(
   BuildContext context,
   WidgetRef ref,
+  CategoryKind kind,
   Category category,
 ) async {
   final label = await _promptName(
@@ -196,7 +212,7 @@ Future<void> _rename(
   if (label == null) return;
   if (!context.mounted) return;
   await _run(context, () {
-    return ref.read(categoryRepositoryProvider).rename(category.id, label);
+    return ref.read(categoryRepositoryProvider).rename(kind, category.id, label);
   });
 }
 
@@ -220,6 +236,7 @@ String _errorText(Object error) {
 Future<void> _delete(
   BuildContext context,
   WidgetRef ref,
+  CategoryKind kind,
   List<Category> categories,
   Category category,
 ) async {
@@ -231,7 +248,7 @@ Future<void> _delete(
     builder: (context) => _AppDialog(
       title: '删除「${category.label}」？',
       body: Text(
-        '子分类会一起删除，里面的衣物会回到「$fallbackLabel」。',
+        '子分类会一起删除，里面的${_itemNoun(kind)}会回到「$fallbackLabel」。',
         style: const TextStyle(fontSize: 14, height: 1.5, color: AppColors.text),
       ),
       actions: [
@@ -242,7 +259,7 @@ Future<void> _delete(
   );
   if (ok != true) return;
   try {
-    await ref.read(categoryRepositoryProvider).deleteSubtree(category.id);
+    await ref.read(categoryRepositoryProvider).deleteSubtree(kind, category.id);
   } catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -287,9 +304,13 @@ class _NewRootResult {
   final List<String> fields;
 }
 
-Future<_NewRootResult?> _promptNewRoot(BuildContext context) async {
+Future<_NewRootResult?> _promptNewRoot(
+  BuildContext context,
+  CategoryKind kind,
+) async {
   final controller = TextEditingController();
   var templateId = clothingSizeTemplates.first.id;
+  final showTemplate = kind == CategoryKind.clothing;
   final result = await showDialog<_NewRootResult>(
     context: context,
     builder: (context) {
@@ -306,35 +327,37 @@ Future<_NewRootResult?> _promptNewRoot(BuildContext context) async {
                   hint: '分类名称',
                   autofocus: true,
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  '测量模板',
-                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  initialValue: templateId,
-                  style: const TextStyle(fontSize: 14, color: AppColors.text),
-                  dropdownColor: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                if (showTemplate) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    '测量模板',
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
-                  items: [
-                    for (final template in clothingSizeTemplates)
-                      DropdownMenuItem(
-                        value: template.id,
-                        child: Text(
-                          template.label,
-                          style: const TextStyle(fontSize: 14, color: AppColors.text),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    initialValue: templateId,
+                    style: const TextStyle(fontSize: 14, color: AppColors.text),
+                    dropdownColor: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                    items: [
+                      for (final template in clothingSizeTemplates)
+                        DropdownMenuItem(
+                          value: template.id,
+                          child: Text(
+                            template.label,
+                            style: const TextStyle(fontSize: 14, color: AppColors.text),
+                          ),
                         ),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) setState(() => templateId = value);
-                  },
-                ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setState(() => templateId = value);
+                    },
+                  ),
+                ],
               ],
             ),
             actions: [
@@ -343,9 +366,11 @@ Future<_NewRootResult?> _promptNewRoot(BuildContext context) async {
                 onPressed: () {
                   final label = controller.text.trim();
                   if (label.isEmpty) return;
-                  final fields = clothingSizeTemplates
-                      .firstWhere((t) => t.id == templateId)
-                      .fields;
+                  final fields = showTemplate
+                      ? clothingSizeTemplates
+                          .firstWhere((t) => t.id == templateId)
+                          .fields
+                      : const <String>[];
                   Navigator.pop(context, _NewRootResult(label: label, fields: fields));
                 },
                 child: const Text('确定'),

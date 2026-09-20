@@ -76,13 +76,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
           await seedClothingCategories();
+          await seedOutfitCategories();
         },
         onUpgrade: (m, from, to) async {
           if (from < 2) {
@@ -92,17 +93,33 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(categories);
             await seedClothingCategories();
           }
+          if (from < 4) {
+            await seedOutfitCategories();
+          }
         },
       );
 
-  Future<void> seedClothingCategories() async {
-    final existing = await select(categories).get();
+  Future<void> seedClothingCategories() {
+    return _seedKind(CategoryKind.clothing, clothingCategorySeeds);
+  }
+
+  Future<void> seedOutfitCategories() {
+    return _seedKind(CategoryKind.outfit, outfitCategorySeeds);
+  }
+
+  Future<void> _seedKind(
+    CategoryKind kind,
+    List<ClothingCategorySeed> seeds,
+  ) async {
+    final existing = await (select(categories)
+          ..where((t) => t.kind.equals(kind.name)))
+        .get();
     if (existing.isNotEmpty) return;
-    for (final seed in clothingCategorySeeds) {
+    for (final seed in seeds) {
       await into(categories).insert(
         CategoriesCompanion.insert(
           id: seed.id,
-          kind: CategoryKind.clothing.name,
+          kind: kind.name,
           label: seed.label,
           sortOrder: seed.sortOrder,
           sizeFields: Value(encodeSizeFields(seed.sizeFields)),
