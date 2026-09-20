@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
+import 'package:uuid/uuid.dart';
 import 'package:wardrobe/core/catalogs.dart';
 import 'package:wardrobe/core/storage/app_paths.dart';
 
@@ -69,14 +70,31 @@ class Categories extends Table {
   Set<Column<Object>> get primaryKey => {kind, id};
 }
 
-@DriftDatabase(tables: [ClothingItems, Outfits, CategoryCovers, Categories])
+class ClothingItemImages extends Table {
+  TextColumn get id => text()();
+  TextColumn get itemId => text()();
+  IntColumn get sortOrder => integer()();
+  TextColumn get role => text().withDefault(const Constant('garment'))();
+  TextColumn get originalPath => text()();
+  TextColumn get processedPath => text().nullable()();
+  TextColumn get maskPath => text().nullable()();
+  TextColumn get colorJson => text().withDefault(const Constant(''))();
+  BoolColumn get isPrimary => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DriftDatabase(
+  tables: [ClothingItems, Outfits, CategoryCovers, Categories, ClothingItemImages],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -96,6 +114,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) {
             await seedOutfitCategories();
           }
+          if (from < 5) {
+            await m.createTable(clothingItemImages);
+            await _backfillItemImages();
+          }
         },
       );
 
@@ -105,6 +127,23 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> seedOutfitCategories() {
     return _seedKind(CategoryKind.outfit, outfitCategorySeeds);
+  }
+
+  Future<void> _backfillItemImages() async {
+    final rows = await select(clothingItems).get();
+    for (final row in rows) {
+      final path = row.imagePath;
+      if (path == null || path.isEmpty) continue;
+      await into(clothingItemImages).insert(
+        ClothingItemImagesCompanion.insert(
+          id: const Uuid().v4(),
+          itemId: row.id,
+          sortOrder: 0,
+          originalPath: path,
+          isPrimary: const Value(true),
+        ),
+      );
+    }
   }
 
   Future<void> _seedKind(

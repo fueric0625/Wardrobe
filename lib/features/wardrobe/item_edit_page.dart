@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' hide Column;
 import 'package:wardrobe/core/storage/image_picker.dart';
+import 'package:wardrobe/core/storage/image_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,14 @@ import 'package:wardrobe/core/catalogs.dart';
 import 'package:wardrobe/core/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/vision/color_extract.dart';
+import 'package:wardrobe/core/vision/erase_brush.dart';
+import 'package:wardrobe/core/vision/fill_patch.dart';
+import 'package:wardrobe/core/vision/garment_pipeline.dart';
+import 'package:wardrobe/core/vision/image_ops.dart';
+import 'package:wardrobe/core/vision/sam_click.dart';
+import 'package:wardrobe/features/wardrobe/item_photos.dart';
+import 'package:image/image.dart' as img;
 
 class ItemEditPage extends ConsumerStatefulWidget {
   const ItemEditPage({super.key, this.itemId, this.categoryId});
@@ -39,13 +48,28 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   final _measureControllers = <String, TextEditingController>{};
 
   String _categoryId = 'uncategorized';
-  String? _imagePath;
-  String? _originalImagePath;
   DateTime? _purchasedAt;
   DateTime? _createdAt;
   final Set<String> _seasons = {};
   bool _loaded = false;
   bool _saving = false;
+  bool _saved = false;
+  var _stage = _EditStage.photos;
+  bool _refining = false;
+  var _refineTool = RefineTool.click;
+  var _eraseProtect = true;
+  var _eraseRadius = 16;
+  var _fillWithBox = true;
+  final _refinePoints = <PromptPoint>[];
+  final _eraseStrokes = <EraseStroke>[];
+  final _fillPatches = <FillPatch>[];
+  final _refineOps = <_RefineOpKind>[];
+  List<RgbSwatch> _refinePalette = const [];
+  _RefineSnapshot? _refineBase;
+  final _photos = <EditableItemPhoto>[];
+  int _selectedPhoto = 0;
+  final _sessionFiles = <String>{};
+  late final ImageStore _imageStore;
 
   bool get _isEditing => widget.itemId != null;
 
@@ -54,6 +78,8 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     super.initState();
     _categoryId = widget.categoryId ?? 'uncategorized';
     _ensureMeasureControllers();
+    _imageStore = ref.read(imageStoreProvider);
+    _stage = _isEditing ? _EditStage.form : _EditStage.photos;
     if (_isEditing) {
       _load();
     } else {
@@ -75,6 +101,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     _note.dispose();
     for (final c in _measureControllers.values) {
       c.dispose();
+    }
+    if (!_saved) {
+      for (final path in _sessionFiles) {
+        _imageStore.deleteIfOwned(path);
+      }
     }
     super.dispose();
   }
@@ -108,8 +139,6 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     _tags.text = item.tags;
     _note.text = item.note;
     _categoryId = item.categoryId;
-    _imagePath = item.imagePath;
-    _originalImagePath = item.imagePath;
     _purchasedAt = item.purchasedAt;
     _createdAt = item.createdAt;
     _seasons
@@ -122,6 +151,20 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       _measureControllers.putIfAbsent(entry.key, TextEditingController.new).text =
           entry.value;
     }
+    final images = await ref.read(itemRepositoryProvider).getImages(item.id);
+    _photos
+      ..clear()
+      ..addAll([
+        if (images.isNotEmpty)
+          for (final row in images) EditableItemPhoto.fromRow(row)
+        else if (item.imagePath != null && item.imagePath!.isNotEmpty)
+          EditableItemPhoto(
+            id: const Uuid().v4(),
+            originalPath: item.imagePath!,
+            isPrimary: true,
+          ),
+      ]);
+    _selectedPhoto = 0;
     setState(() => _loaded = true);
   }
 
@@ -130,25 +173,379 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     return value.toString();
   }
 
-  Future<void> _pickImage() async {
-    final path = await pickImagePath();
-    if (path == null) return;
-    setState(() => _imagePath = path);
+  Future<void> _addPhotos() async {
+    final paths = await pickImagePaths();
+    if (paths.isEmpty) return;
+    for (var i = 0; i < paths.length; i++) {
+      await _ingest(paths[i], keepBusy: i == paths.length - 1);
+    }
+    if (mounted) await _startRefine();
+  }
+
+  Future<void> _ingest(String path, {required bool keepBusy}) async {
+    final photo = EditableItemPhoto(
+      id: const Uuid().v4(),
+      originalPath: path,
+      isPrimary: _photos.isEmpty,
+      busy: true,
+      busyHint: '正在打开图片…',
+    );
+    setState(() {
+      _photos.add(photo);
+      _selectedPhoto = _photos.length - 1;
+    });
+    try {
+      final bytes = await File(path).readAsBytes();
+      final result = await ref.read(garmentPipelineProvider).ingestBytes(bytes);
+      await _applyResult(photo, result, replaceOriginal: true, keepBusy: keepBusy);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        photo.busy = false;
+        photo.busyHint = null;
+        photo.error = '打开失败，可稍后重试或直接保存原图';
+      });
+    }
+  }
+
+  Future<void> _process(
+    EditableItemPhoto photo, {
+    String? readFrom,
+    bool replaceOriginal = true,
+  }) async {
+    setState(() {
+      photo.busy = true;
+      photo.busyHint = null;
+      photo.error = null;
+    });
+    try {
+      final source = readFrom ?? photo.originalPath;
+      final bytes = await File(source).readAsBytes();
+      final result = await ref.read(garmentPipelineProvider).processBytes(bytes);
+      _refinePoints.clear();
+      _eraseStrokes.clear();
+      _fillPatches.clear();
+      _refineOps.clear();
+      _refineBase = null;
+      _refinePalette = const [];
+      await _applyResult(photo, result, replaceOriginal: replaceOriginal);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        photo.busy = false;
+        photo.busyHint = null;
+        photo.error = '处理失败，可稍后重试或直接保存原图';
+      });
+    }
+  }
+
+  Future<void> _applyResult(
+    EditableItemPhoto photo,
+    GarmentProcessResult result, {
+    required bool replaceOriginal,
+    bool keepBusy = false,
+  }) async {
+    if (replaceOriginal) {
+      final original = await _imageStore.writeBytes(
+        result.originalBytes,
+        result.originalExtension,
+      );
+      _sessionFiles.add(original);
+      photo.originalPath = original;
+    }
+    photo.originalWidth = result.originalWidth;
+    photo.originalHeight = result.originalHeight;
+    String? processed;
+    String? mask;
+    if (result.cutoutPng != null) {
+      processed = await _imageStore.writeBytes(result.cutoutPng!, '.png');
+      _sessionFiles.add(processed);
+    }
+    if (result.maskPng != null) {
+      mask = await _imageStore.writeBytes(result.maskPng!, '.png');
+      _sessionFiles.add(mask);
+    }
+    if (result.fullCutoutPng != null) {
+      final preview = await _imageStore.writeBytes(result.fullCutoutPng!, '.png');
+      _sessionFiles.add(preview);
+      photo.refinePreviewPath = preview;
+    }
+    if (!mounted) return;
+    setState(() {
+      photo.processedPath = processed ?? photo.processedPath;
+      photo.maskPath = mask ?? photo.maskPath;
+      photo.colors = result.colors;
+      photo.showProcessed = photo.processedPath != null;
+      if (!keepBusy) {
+        photo.busy = false;
+        photo.busyHint = null;
+      }
+      photo.error = result.error;
+    });
+    _maybeFillColor(photo);
+  }
+
+  void _maybeFillColor(EditableItemPhoto photo) {
+    if (!photo.isPrimary) return;
+    if (_color.text.trim().isNotEmpty) return;
+    if (photo.colors.isEmpty) return;
+    _color.text = photo.colors.label;
+  }
+
+  void _applyDetectedColor() {
+    if (_photos.isEmpty) return;
+    final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+    final colors = photo.colors.isEmpty
+        ? _photos.where((p) => p.isPrimary).map((p) => p.colors).firstWhere(
+              (c) => !c.isEmpty,
+              orElse: () => photo.colors,
+            )
+        : photo.colors;
+    if (colors.isEmpty) return;
+    setState(() => _color.text = colors.label);
+  }
+
+  void _removeSelectedPhoto() {
+    if (_photos.isEmpty) return;
+    final index = _selectedPhoto.clamp(0, _photos.length - 1);
+    final photo = _photos.removeAt(index);
+    if (photo.isPrimary && _photos.isNotEmpty) {
+      _photos.first.isPrimary = true;
+    }
+    _selectedPhoto = _photos.isEmpty ? 0 : index.clamp(0, _photos.length - 1);
+    _clearRefineSession();
+    setState(() {});
+  }
+
+  void _setPrimary() {
+    if (_photos.isEmpty) return;
+    final index = _selectedPhoto.clamp(0, _photos.length - 1);
+    for (var i = 0; i < _photos.length; i++) {
+      _photos[i].isPrimary = i == index;
+    }
+    _maybeFillColor(_photos[index]);
+    setState(() {});
+  }
+
+  void _clearRefineSession() {
+    _refining = false;
+    _refineTool = RefineTool.click;
+    _eraseProtect = true;
+    _refinePoints.clear();
+    _eraseStrokes.clear();
+    _fillPatches.clear();
+    _refineOps.clear();
+    _refinePalette = const [];
+    _refineBase = null;
+  }
+
+  Future<void> _startRefine() async {
+    if (_photos.isEmpty || _refining) return;
+    final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+    if (photo.error != null && photo.originalWidth == null) return;
+    await _ensureOriginalSize(photo);
+    if (!mounted) return;
+    if (photo.originalWidth == null || photo.originalHeight == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('无法读取原图尺寸')),
+      );
+      return;
+    }
+    setState(() {
+      photo.busy = true;
+      photo.busyHint = '正在准备点选…';
+      photo.error = null;
+    });
+    try {
+      final originalBytes = await File(photo.originalPath).readAsBytes();
+      Uint8List? maskBytes;
+      if (photo.maskPath != null) {
+        maskBytes = await File(photo.maskPath!).readAsBytes();
+      }
+      final preview = ref.read(garmentPipelineProvider).refinePreviewPng(
+            originalBytes,
+            maskBytes,
+            palette: photo.colors.palette,
+          );
+      final path = await _imageStore.writeBytes(preview, '.png');
+      _sessionFiles.add(path);
+      photo.refinePreviewPath = path;
+      final decoded = img.decodeImage(preview);
+      if (decoded != null) {
+        photo.originalWidth = decoded.width;
+        photo.originalHeight = decoded.height;
+      }
+      await ref.read(garmentPipelineProvider).prepareRefine(originalBytes);
+      if (!mounted) return;
+      setState(() {
+        photo.busy = false;
+        photo.busyHint = null;
+        photo.showProcessed = true;
+        photo.error = null;
+        _refinePoints.clear();
+        _eraseStrokes.clear();
+        _fillPatches.clear();
+        _refineOps.clear();
+        _refineTool = RefineTool.click;
+        _eraseProtect = true;
+        _fillWithBox = true;
+        _refinePalette = List<RgbSwatch>.of(photo.colors.palette);
+        _refineBase = _RefineSnapshot(
+          maskPath: photo.maskPath,
+          processedPath: photo.processedPath,
+          refinePreviewPath: photo.refinePreviewPath,
+          colors: photo.colors,
+        );
+        _refining = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        photo.busy = false;
+        photo.busyHint = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('无法分析这张图，可稍后重试')),
+      );
+    }
+  }
+
+  Future<void> _ensureOriginalSize(EditableItemPhoto photo) async {
+    if (photo.originalWidth != null && photo.originalHeight != null) return;
+    final decoded = img.decodeImage(await File(photo.originalPath).readAsBytes());
+    if (decoded == null) return;
+    photo.originalWidth = decoded.width;
+    photo.originalHeight = decoded.height;
+  }
+
+  void _addRefinePoint(PromptPoint point) {
+    if (!_refining || _photos.isEmpty) return;
+    final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+    if (photo.busy) return;
+    _refinePoints.add(point);
+    _refineOps.add(_RefineOpKind.click);
+    _rebuildRefine();
+  }
+
+  void _addEraseStroke(List<EraseStamp> stamps) {
+    if (!_refining || _photos.isEmpty || stamps.isEmpty) return;
+    final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+    if (photo.busy) return;
+    _eraseStrokes.add(EraseStroke(stamps: stamps, protectColor: _eraseProtect));
+    _refineOps.add(_RefineOpKind.erase);
+    _rebuildRefine();
+  }
+
+  void _addFillBox(PixelRect box) {
+    _addFillPatch(FillPatch.box(box));
+  }
+
+  void _addFillBrush(List<EraseStamp> stamps) {
+    if (stamps.isEmpty) return;
+    _addFillPatch(FillPatch.brush(stamps));
+  }
+
+  void _addFillPatch(FillPatch patch) {
+    if (!_refining || _photos.isEmpty) return;
+    final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+    if (photo.busy) return;
+    _fillPatches.add(patch);
+    _refineOps.add(_RefineOpKind.fill);
+    _rebuildRefine();
+  }
+
+  Future<void> _rebuildRefine() async {
+    if (_photos.isEmpty) return;
+    final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+    if (_refinePoints.isEmpty && _eraseStrokes.isEmpty && _fillPatches.isEmpty) {
+      _restoreRefineBase(photo);
+      return;
+    }
+    setState(() {
+      photo.busy = true;
+      photo.busyHint = '正在更新抠图…';
+      photo.error = null;
+    });
+    try {
+      final originalBytes = await File(photo.originalPath).readAsBytes();
+      Uint8List? maskBytes;
+      final baseMask = _refineBase?.maskPath ?? photo.maskPath;
+      if (baseMask != null) {
+        maskBytes = await File(baseMask).readAsBytes();
+      }
+      final result = await ref.read(garmentPipelineProvider).refineEdits(
+            originalBytes: originalBytes,
+            maskBytes: maskBytes,
+            points: List<PromptPoint>.of(_refinePoints),
+            strokes: List<EraseStroke>.of(_eraseStrokes),
+            fills: List<FillPatch>.of(_fillPatches),
+            palette: _refinePalette,
+          );
+      await _applyResult(photo, result, replaceOriginal: false);
+      if (!mounted) return;
+      if (_fillPatches.isNotEmpty && result.filledCount == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('没有补上。把衣服颜色和要补的位置一起框进去')),
+        );
+      }
+      setState(() => _refining = true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        photo.busy = false;
+        photo.busyHint = null;
+        photo.error = '精修失败，可再试一次';
+      });
+    }
+  }
+
+  void _restoreRefineBase(EditableItemPhoto photo) {
+    final snap = _refineBase;
+    if (snap == null) {
+      setState(() {});
+      return;
+    }
+    setState(() {
+      photo.maskPath = snap.maskPath;
+      photo.processedPath = snap.processedPath;
+      photo.refinePreviewPath = snap.refinePreviewPath;
+      photo.colors = snap.colors;
+      photo.showProcessed = true;
+      photo.error = null;
+      photo.busy = false;
+      photo.busyHint = null;
+    });
+  }
+
+  void _undoRefine() {
+    if (!_refining || _photos.isEmpty || _refineOps.isEmpty) return;
+    final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+    if (photo.busy) return;
+    switch (_refineOps.removeLast()) {
+      case _RefineOpKind.click:
+        if (_refinePoints.isNotEmpty) _refinePoints.removeLast();
+      case _RefineOpKind.erase:
+        if (_eraseStrokes.isNotEmpty) _eraseStrokes.removeLast();
+      case _RefineOpKind.fill:
+        if (_fillPatches.isNotEmpty) _fillPatches.removeLast();
+    }
+    _rebuildRefine();
+  }
+
+  void _cancelRefine() {
+    setState(_clearRefineSession);
   }
 
   Future<void> _save() async {
     if (_saving) return;
+    if (_photos.any((p) => p.busy)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('图片还在处理，请稍候再保存')),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
-      final images = ref.read(imageStoreProvider);
-      var storedPath = _imagePath;
-      if (storedPath != null && storedPath != _originalImagePath) {
-        storedPath = await images.importFile(storedPath);
-        if (_originalImagePath != null) {
-          await images.deleteIfOwned(_originalImagePath);
-        }
-      }
-
       final categories = ref.read(clothingCategoryRowsProvider);
       final selectedId = categoryById(categories, _categoryId)?.id ??
           uncategorizedClothingId;
@@ -167,7 +564,6 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
             ClothingItemsCompanion(
               id: Value(id),
               categoryId: Value(selectedId),
-              imagePath: Value(storedPath),
               type: Value(_type.text.trim()),
               style: Value(_style.text.trim()),
               color: Value(_color.text.trim()),
@@ -184,7 +580,9 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
               createdAt: Value(_createdAt ?? now),
               updatedAt: Value(now),
             ),
+            images: [for (final photo in _photos) photo.toDraft()],
           );
+      _saved = true;
       if (mounted) context.go('/wardrobe/item/$id');
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -223,6 +621,117 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     if (!_loaded) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+    if (_stage == _EditStage.photos) {
+      return _buildPhotoStudio();
+    }
+    return _buildForm();
+  }
+
+  Widget _buildPhotoStudio() {
+    final busy = _photos.any((p) => p.busy);
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 28, 8),
+            child: Row(
+              children: [
+                TextButton.icon(
+                  onPressed: busy
+                      ? null
+                      : () {
+                          if (_isEditing) {
+                            setState(() {
+                              _clearRefineSession();
+                              _stage = _EditStage.form;
+                            });
+                          } else {
+                            context.pop();
+                          }
+                        },
+                  icon: const Icon(Icons.arrow_back_ios_new, size: 16),
+                  label: Text(_isEditing ? '返回信息' : '返回'),
+                ),
+                const Expanded(
+                  child: Text(
+                    '处理图片',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                FilledButton(
+                  onPressed: busy
+                      ? null
+                      : () => setState(() {
+                            _clearRefineSession();
+                            _stage = _EditStage.form;
+                          }),
+                  child: Text(_isEditing ? '完成' : '下一步'),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(28, 8, 28, 24),
+              child: ItemPhotoStudio(
+                photos: _photos,
+                selectedIndex: _selectedPhoto,
+                refining: _refining,
+                refinePoints: _refinePoints,
+                onSelect: (i) {
+                  setState(() {
+                    _selectedPhoto = i;
+                    _clearRefineSession();
+                  });
+                  final photo = _photos[i];
+                  if (photo.processedPath == null && photo.maskPath == null) {
+                    _startRefine();
+                  }
+                },
+                onAdd: _addPhotos,
+                onRemove: _removeSelectedPhoto,
+                onSetPrimary: _setPrimary,
+                onToggleProcessed: () {
+                  if (_photos.isEmpty) return;
+                  final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+                  setState(() => photo.showProcessed = !photo.showProcessed);
+                },
+                onReprocess: () {
+                  if (_photos.isEmpty) return;
+                  final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+                  _process(
+                    photo,
+                    readFrom: photo.originalPath,
+                    replaceOriginal: false,
+                  );
+                },
+                onStartRefine: _startRefine,
+                onCancelRefine: _cancelRefine,
+                onUndoRefine: _undoRefine,
+                canUndo: _refineOps.isNotEmpty,
+                onAddPoint: _addRefinePoint,
+                onEraseStroke: _addEraseStroke,
+                refineTool: _refineTool,
+                eraseProtect: _eraseProtect,
+                eraseRadius: _eraseRadius,
+                fillWithBox: _fillWithBox,
+                onRefineTool: (tool) => setState(() => _refineTool = tool),
+                onEraseProtect: (v) => setState(() => _eraseProtect = v),
+                onEraseRadius: (v) => setState(() => _eraseRadius = v),
+                onFillWithBox: (v) => setState(() => _fillWithBox = v),
+                onFillBox: _addFillBox,
+                onFillBrush: _addFillBrush,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildForm() {
     final categories = ref.watch(clothingCategoryRowsProvider);
     _ensureMeasureControllers(categories);
     final selectedId = categoryById(categories, _categoryId)?.id ??
@@ -239,9 +748,15 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
             child: Row(
               children: [
                 TextButton.icon(
-                  onPressed: () => context.pop(),
+                  onPressed: () {
+                    if (_isEditing) {
+                      context.pop();
+                    } else {
+                      setState(() => _stage = _EditStage.photos);
+                    }
+                  },
                   icon: const Icon(Icons.arrow_back_ios_new, size: 16),
-                  label: const Text('返回'),
+                  label: Text(_isEditing ? '返回' : '返回改图'),
                 ),
                 const Expanded(
                   child: Text(
@@ -267,109 +782,127 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(32, 8, 32, 32),
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                ItemPhotoStrip(
+                  photos: _photos,
+                  onOpenStudio: () => setState(() {
+                    _refining = false;
+                    _stage = _EditStage.photos;
+                  }),
+                ),
+                const SizedBox(height: 16),
+                _FormCard(
                   children: [
-                    SizedBox(
-                      width: 320,
-                      child: _ImagePicker(
-                        path: _imagePath,
-                        onPick: _pickImage,
-                      ),
+                    _DropdownRow(
+                      label: '分类',
+                      value: selectedId,
+                      items: {
+                        for (final c in flattenPreorder(categories))
+                          c.id: categoryPath(categories, c.id),
+                      },
+                      onChanged: (v) => setState(() => _categoryId = v),
                     ),
-                    const SizedBox(width: 28),
-                    Expanded(
-                      child: _FormCard(
+                    _split(
+                      _LabeledField(label: '类别', hint: '如衬衫、长裤', controller: _type),
+                      _LabeledField(label: '款式', hint: '如阔腿裤、直筒裤', controller: _style),
+                    ),
+                    _split(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _DropdownRow(
-                            label: '分类',
-                            value: selectedId,
-                            items: {
-                              for (final c in flattenPreorder(categories))
-                                c.id: categoryPath(categories, c.id),
-                            },
-                            onChanged: (v) => setState(() => _categoryId = v),
-                          ),
-                          _split(
-                            _LabeledField(label: '类别', hint: '如衬衫、长裤', controller: _type),
-                            _LabeledField(label: '款式', hint: '如阔腿裤、直筒裤', controller: _style),
-                          ),
-                          _split(
-                            _LabeledField(label: '颜色', hint: '手填颜色', controller: _color),
-                            _SeasonPicker(
-                              selected: _seasons,
-                              onChanged: (next) => setState(() {
-                                _seasons
-                                  ..clear()
-                                  ..addAll(next);
-                              }),
-                            ),
-                          ),
-                          _split(
-                            _LabeledField(label: '面料', hint: '手填面料', controller: _fabric),
-                            _LabeledField(label: '品牌', hint: '手填品牌', controller: _brand),
-                          ),
-                          _split(
-                            _LabeledField(
-                              label: '价格',
-                              hint: '元',
-                              controller: _price,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                              ],
-                            ),
-                            _DateRow(
-                              label: '购入时间',
-                              value: _purchasedAt,
-                              onTap: _pickDate,
-                              onClear: () => setState(() => _purchasedAt = null),
-                            ),
-                          ),
-                          if (sizeFields.isNotEmpty) ...[
-                            const Padding(
-                              padding: EdgeInsets.only(top: 8, bottom: 4),
-                              child: Text('尺码', style: TextStyle(fontWeight: FontWeight.w700)),
-                            ),
+                          _LabeledField(label: '颜色', hint: '手填或用识别结果', controller: _color),
+                          if (_detectedColorHint != null) ...[
+                            const SizedBox(height: 6),
                             Wrap(
-                              spacing: 12,
-                              runSpacing: 12,
+                              spacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
-                                for (final field in sizeFields)
-                                  SizedBox(
-                                    width: 160,
-                                    child: _LabeledField(
-                                      label: field,
-                                      hint: field,
-                                      controller: _measureControllers[field]!,
-                                    ),
+                                Text(
+                                  '识别：$_detectedColorHint',
+                                  style: const TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 12,
                                   ),
+                                ),
+                                TextButton(
+                                  onPressed: _applyDetectedColor,
+                                  child: const Text('填入'),
+                                ),
                               ],
                             ),
                           ],
-                          _LabeledField(
-                            label: '购买信息',
-                            hint: '商场专柜、淘宝、闲鱼等',
-                            controller: _purchaseInfo,
-                          ),
-                          _LabeledField(
-                            label: '存放位置',
-                            hint: '输入存放位置',
-                            controller: _location,
-                          ),
-                          _LabeledField(
-                            label: '标签',
-                            hint: '用逗号分隔',
-                            controller: _tags,
-                          ),
-                          _LabeledField(
-                            label: '备注',
-                            hint: '输入备注信息',
-                            controller: _note,
-                            maxLines: 4,
-                          ),
                         ],
                       ),
+                      _SeasonPicker(
+                        selected: _seasons,
+                        onChanged: (next) => setState(() {
+                          _seasons
+                            ..clear()
+                            ..addAll(next);
+                        }),
+                      ),
+                    ),
+                    _split(
+                      _LabeledField(label: '面料', hint: '手填面料', controller: _fabric),
+                      _LabeledField(label: '品牌', hint: '手填品牌', controller: _brand),
+                    ),
+                    _split(
+                      _LabeledField(
+                        label: '价格',
+                        hint: '元',
+                        controller: _price,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                        ],
+                      ),
+                      _DateRow(
+                        label: '购入时间',
+                        value: _purchasedAt,
+                        onTap: _pickDate,
+                        onClear: () => setState(() => _purchasedAt = null),
+                      ),
+                    ),
+                    if (sizeFields.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8, bottom: 4),
+                        child: Text('尺码', style: TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          for (final field in sizeFields)
+                            SizedBox(
+                              width: 160,
+                              child: _LabeledField(
+                                label: field,
+                                hint: field,
+                                controller: _measureControllers[field]!,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                    _LabeledField(
+                      label: '购买信息',
+                      hint: '商场专柜、淘宝、闲鱼等',
+                      controller: _purchaseInfo,
+                    ),
+                    _LabeledField(
+                      label: '存放位置',
+                      hint: '输入存放位置',
+                      controller: _location,
+                    ),
+                    _LabeledField(
+                      label: '标签',
+                      hint: '用逗号分隔',
+                      controller: _tags,
+                    ),
+                    _LabeledField(
+                      label: '备注',
+                      hint: '输入备注信息',
+                      controller: _note,
+                      maxLines: 4,
                     ),
                   ],
                 ),
@@ -379,6 +912,16 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
         ],
       ),
     );
+  }
+
+  String? get _detectedColorHint {
+    if (_photos.isEmpty) return null;
+    final selected = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+    if (!selected.colors.isEmpty) return selected.colors.detail;
+    for (final photo in _photos) {
+      if (photo.isPrimary && !photo.colors.isEmpty) return photo.colors.detail;
+    }
+    return null;
   }
 
   Widget _split(Widget left, Widget right) {
@@ -393,49 +936,22 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   }
 }
 
-class _ImagePicker extends StatelessWidget {
-  const _ImagePicker({required this.path, required this.onPick});
+enum _EditStage { photos, form }
 
-  final String? path;
-  final VoidCallback onPick;
+enum _RefineOpKind { click, erase, fill }
 
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPick,
-        child: SizedBox(
-          height: 380,
-          child: path == null
-              ? const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.add_photo_alternate_outlined, size: 48, color: AppColors.primary),
-                    SizedBox(height: 12),
-                    Text('点击选择图片', style: TextStyle(color: AppColors.textMuted)),
-                  ],
-                )
-              : Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.file(File(path!), fit: BoxFit.cover),
-                    const Positioned(
-                      right: 12,
-                      bottom: 12,
-                      child: Chip(
-                        label: Text('更换图片'),
-                        backgroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
+class _RefineSnapshot {
+  const _RefineSnapshot({
+    required this.maskPath,
+    required this.processedPath,
+    required this.refinePreviewPath,
+    required this.colors,
+  });
+
+  final String? maskPath;
+  final String? processedPath;
+  final String? refinePreviewPath;
+  final ColorAnalysis colors;
 }
 
 class _FormCard extends StatelessWidget {

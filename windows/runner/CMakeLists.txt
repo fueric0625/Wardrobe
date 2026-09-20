@@ -11,6 +11,7 @@ add_executable(${BINARY_NAME} WIN32
   "main.cpp"
   "utils.cpp"
   "win32_window.cpp"
+  "garment_onnx.cpp"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
   "Runner.rc"
   "runner.exe.manifest"
@@ -34,7 +35,19 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 # dependencies here.
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
 target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib")
+target_link_libraries(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/third_party/onnxruntime/lib/onnxruntime.lib")
+set_target_properties(${BINARY_NAME} PROPERTIES ENABLE_EXPORTS ON)
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+target_include_directories(${BINARY_NAME} SYSTEM PRIVATE "${CMAKE_SOURCE_DIR}/third_party/onnxruntime/include")
+
+file(GLOB ORT_DLLS "${CMAKE_SOURCE_DIR}/third_party/onnxruntime/lib/*.dll")
+foreach(ORT_DLL ${ORT_DLLS})
+  add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${ORT_DLL}"
+      "$<TARGET_FILE_DIR:${BINARY_NAME}>"
+  )
+endforeach()
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)

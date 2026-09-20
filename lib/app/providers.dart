@@ -3,6 +3,9 @@ import 'package:wardrobe/core/catalogs.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/storage/image_store.dart';
+import 'package:wardrobe/core/vision/garment_pipeline.dart';
+import 'package:wardrobe/core/vision/sam_click.dart';
+import 'package:wardrobe/core/vision/u2net_segmenter.dart';
 import 'package:wardrobe/data/category_repository.dart';
 import 'package:wardrobe/data/cover_repository.dart';
 import 'package:wardrobe/data/item_repository.dart';
@@ -20,6 +23,25 @@ final itemRepositoryProvider = Provider<ItemRepository>((ref) {
   return LocalItemRepository(
     ref.watch(databaseProvider),
     ref.watch(imageStoreProvider),
+  );
+});
+
+final u2netSegmenterProvider = Provider<U2NetSegmenter>((ref) {
+  final segmenter = U2NetSegmenter();
+  ref.onDispose(segmenter.dispose);
+  return segmenter;
+});
+
+final samClickSegmenterProvider = Provider<SamClickSegmenter>((ref) {
+  final segmenter = SamClickSegmenter();
+  ref.onDispose(segmenter.dispose);
+  return segmenter;
+});
+
+final garmentPipelineProvider = Provider<GarmentPipeline>((ref) {
+  return GarmentPipeline(
+    ref.watch(u2netSegmenterProvider),
+    clickSegmenter: ref.watch(samClickSegmenterProvider),
   );
 });
 
@@ -73,6 +95,11 @@ final outfitCategoryRowsProvider = Provider<List<Category>>((ref) {
 
 final clothingItemsProvider = StreamProvider<List<ClothingItem>>((ref) {
   return ref.watch(itemRepositoryProvider).watchAll();
+});
+
+final itemImagesProvider =
+    StreamProvider.family<List<ClothingItemImage>, String>((ref, itemId) {
+  return ref.watch(itemRepositoryProvider).watchImages(itemId);
 });
 
 final outfitsProvider = StreamProvider<List<Outfit>>((ref) {

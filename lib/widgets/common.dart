@@ -3,6 +3,45 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/widgets/zoom_viewport.dart';
+
+class Checkerboard extends StatelessWidget {
+  const Checkerboard({super.key, this.square = 10});
+
+  final double square;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _CheckerPainter(square),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _CheckerPainter extends CustomPainter {
+  _CheckerPainter(this.square);
+
+  final double square;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final light = Paint()..color = const Color(0xFFF3F4F8);
+    final dark = Paint()..color = const Color(0xFFE4E7F0);
+    canvas.drawRect(Offset.zero & size, light);
+    for (var y = 0.0; y < size.height; y += square) {
+      final row = (y / square).floor();
+      for (var x = 0.0; x < size.width; x += square) {
+        if ((row + (x / square).floor()).isOdd) continue;
+        canvas.drawRect(Rect.fromLTWH(x, y, square, square), dark);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CheckerPainter oldDelegate) =>
+      oldDelegate.square != square;
+}
 
 class LocalCover extends StatelessWidget {
   const LocalCover({
@@ -10,11 +49,15 @@ class LocalCover extends StatelessWidget {
     required this.path,
     this.borderRadius = 20,
     this.placeholder,
+    this.fit = BoxFit.cover,
+    this.checkerboard = false,
   });
 
   final String? path;
   final double borderRadius;
   final Widget? placeholder;
+  final BoxFit fit;
+  final bool checkerboard;
 
   @override
   Widget build(BuildContext context) {
@@ -25,16 +68,26 @@ class LocalCover extends StatelessWidget {
             child: Icon(Icons.add, size: 42, color: AppColors.primary),
           );
     }
-    return Image.file(
+    final image = Image.file(
       file,
-      fit: BoxFit.cover,
+      key: ValueKey(path),
+      fit: fit,
       width: double.infinity,
       height: double.infinity,
+      gaplessPlayback: false,
       errorBuilder: (_, _, _) =>
           placeholder ??
           const Center(
             child: Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
           ),
+    );
+    if (!checkerboard) return image;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const Checkerboard(),
+        image,
+      ],
     );
   }
 }
@@ -144,7 +197,7 @@ class ItemTile extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  LocalCover(path: coverPath),
+                  LocalCover(path: coverPath, fit: BoxFit.contain),
                   if (isCover)
                     const Positioned(
                       left: 10,
@@ -371,9 +424,10 @@ class ReadOnlyField extends StatelessWidget {
 }
 
 class DetailHeroImage extends StatelessWidget {
-  const DetailHeroImage({super.key, required this.path});
+  const DetailHeroImage({super.key, required this.path, this.checkerboard = false});
 
   final String? path;
+  final bool checkerboard;
 
   @override
   Widget build(BuildContext context) {
@@ -383,10 +437,14 @@ class DetailHeroImage extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
         height: 380,
-        child: LocalCover(
-          path: path,
-          placeholder: const Center(
-            child: Icon(Icons.image_outlined, size: 48, color: AppColors.textMuted),
+        child: ZoomViewport(
+          child: LocalCover(
+            path: path,
+            fit: BoxFit.contain,
+            checkerboard: checkerboard,
+            placeholder: const Center(
+              child: Icon(Icons.image_outlined, size: 48, color: AppColors.textMuted),
+            ),
           ),
         ),
       ),

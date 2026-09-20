@@ -2207,6 +2207,574 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   }
 }
 
+class $ClothingItemImagesTable extends ClothingItemImages
+    with TableInfo<$ClothingItemImagesTable, ClothingItemImage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ClothingItemImagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('garment'),
+  );
+  static const VerificationMeta _originalPathMeta = const VerificationMeta(
+    'originalPath',
+  );
+  @override
+  late final GeneratedColumn<String> originalPath = GeneratedColumn<String>(
+    'original_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _processedPathMeta = const VerificationMeta(
+    'processedPath',
+  );
+  @override
+  late final GeneratedColumn<String> processedPath = GeneratedColumn<String>(
+    'processed_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maskPathMeta = const VerificationMeta(
+    'maskPath',
+  );
+  @override
+  late final GeneratedColumn<String> maskPath = GeneratedColumn<String>(
+    'mask_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _colorJsonMeta = const VerificationMeta(
+    'colorJson',
+  );
+  @override
+  late final GeneratedColumn<String> colorJson = GeneratedColumn<String>(
+    'color_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _isPrimaryMeta = const VerificationMeta(
+    'isPrimary',
+  );
+  @override
+  late final GeneratedColumn<bool> isPrimary = GeneratedColumn<bool>(
+    'is_primary',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_primary" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    itemId,
+    sortOrder,
+    role,
+    originalPath,
+    processedPath,
+    maskPath,
+    colorJson,
+    isPrimary,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'clothing_item_images';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ClothingItemImage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    }
+    if (data.containsKey('original_path')) {
+      context.handle(
+        _originalPathMeta,
+        originalPath.isAcceptableOrUnknown(
+          data['original_path']!,
+          _originalPathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_originalPathMeta);
+    }
+    if (data.containsKey('processed_path')) {
+      context.handle(
+        _processedPathMeta,
+        processedPath.isAcceptableOrUnknown(
+          data['processed_path']!,
+          _processedPathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mask_path')) {
+      context.handle(
+        _maskPathMeta,
+        maskPath.isAcceptableOrUnknown(data['mask_path']!, _maskPathMeta),
+      );
+    }
+    if (data.containsKey('color_json')) {
+      context.handle(
+        _colorJsonMeta,
+        colorJson.isAcceptableOrUnknown(data['color_json']!, _colorJsonMeta),
+      );
+    }
+    if (data.containsKey('is_primary')) {
+      context.handle(
+        _isPrimaryMeta,
+        isPrimary.isAcceptableOrUnknown(data['is_primary']!, _isPrimaryMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ClothingItemImage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ClothingItemImage(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      )!,
+      originalPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}original_path'],
+      )!,
+      processedPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}processed_path'],
+      ),
+      maskPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mask_path'],
+      ),
+      colorJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color_json'],
+      )!,
+      isPrimary: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_primary'],
+      )!,
+    );
+  }
+
+  @override
+  $ClothingItemImagesTable createAlias(String alias) {
+    return $ClothingItemImagesTable(attachedDatabase, alias);
+  }
+}
+
+class ClothingItemImage extends DataClass
+    implements Insertable<ClothingItemImage> {
+  final String id;
+  final String itemId;
+  final int sortOrder;
+  final String role;
+  final String originalPath;
+  final String? processedPath;
+  final String? maskPath;
+  final String colorJson;
+  final bool isPrimary;
+  const ClothingItemImage({
+    required this.id,
+    required this.itemId,
+    required this.sortOrder,
+    required this.role,
+    required this.originalPath,
+    this.processedPath,
+    this.maskPath,
+    required this.colorJson,
+    required this.isPrimary,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['item_id'] = Variable<String>(itemId);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['role'] = Variable<String>(role);
+    map['original_path'] = Variable<String>(originalPath);
+    if (!nullToAbsent || processedPath != null) {
+      map['processed_path'] = Variable<String>(processedPath);
+    }
+    if (!nullToAbsent || maskPath != null) {
+      map['mask_path'] = Variable<String>(maskPath);
+    }
+    map['color_json'] = Variable<String>(colorJson);
+    map['is_primary'] = Variable<bool>(isPrimary);
+    return map;
+  }
+
+  ClothingItemImagesCompanion toCompanion(bool nullToAbsent) {
+    return ClothingItemImagesCompanion(
+      id: Value(id),
+      itemId: Value(itemId),
+      sortOrder: Value(sortOrder),
+      role: Value(role),
+      originalPath: Value(originalPath),
+      processedPath: processedPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(processedPath),
+      maskPath: maskPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maskPath),
+      colorJson: Value(colorJson),
+      isPrimary: Value(isPrimary),
+    );
+  }
+
+  factory ClothingItemImage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ClothingItemImage(
+      id: serializer.fromJson<String>(json['id']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      role: serializer.fromJson<String>(json['role']),
+      originalPath: serializer.fromJson<String>(json['originalPath']),
+      processedPath: serializer.fromJson<String?>(json['processedPath']),
+      maskPath: serializer.fromJson<String?>(json['maskPath']),
+      colorJson: serializer.fromJson<String>(json['colorJson']),
+      isPrimary: serializer.fromJson<bool>(json['isPrimary']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'itemId': serializer.toJson<String>(itemId),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'role': serializer.toJson<String>(role),
+      'originalPath': serializer.toJson<String>(originalPath),
+      'processedPath': serializer.toJson<String?>(processedPath),
+      'maskPath': serializer.toJson<String?>(maskPath),
+      'colorJson': serializer.toJson<String>(colorJson),
+      'isPrimary': serializer.toJson<bool>(isPrimary),
+    };
+  }
+
+  ClothingItemImage copyWith({
+    String? id,
+    String? itemId,
+    int? sortOrder,
+    String? role,
+    String? originalPath,
+    Value<String?> processedPath = const Value.absent(),
+    Value<String?> maskPath = const Value.absent(),
+    String? colorJson,
+    bool? isPrimary,
+  }) => ClothingItemImage(
+    id: id ?? this.id,
+    itemId: itemId ?? this.itemId,
+    sortOrder: sortOrder ?? this.sortOrder,
+    role: role ?? this.role,
+    originalPath: originalPath ?? this.originalPath,
+    processedPath: processedPath.present
+        ? processedPath.value
+        : this.processedPath,
+    maskPath: maskPath.present ? maskPath.value : this.maskPath,
+    colorJson: colorJson ?? this.colorJson,
+    isPrimary: isPrimary ?? this.isPrimary,
+  );
+  ClothingItemImage copyWithCompanion(ClothingItemImagesCompanion data) {
+    return ClothingItemImage(
+      id: data.id.present ? data.id.value : this.id,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      role: data.role.present ? data.role.value : this.role,
+      originalPath: data.originalPath.present
+          ? data.originalPath.value
+          : this.originalPath,
+      processedPath: data.processedPath.present
+          ? data.processedPath.value
+          : this.processedPath,
+      maskPath: data.maskPath.present ? data.maskPath.value : this.maskPath,
+      colorJson: data.colorJson.present ? data.colorJson.value : this.colorJson,
+      isPrimary: data.isPrimary.present ? data.isPrimary.value : this.isPrimary,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClothingItemImage(')
+          ..write('id: $id, ')
+          ..write('itemId: $itemId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('role: $role, ')
+          ..write('originalPath: $originalPath, ')
+          ..write('processedPath: $processedPath, ')
+          ..write('maskPath: $maskPath, ')
+          ..write('colorJson: $colorJson, ')
+          ..write('isPrimary: $isPrimary')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    itemId,
+    sortOrder,
+    role,
+    originalPath,
+    processedPath,
+    maskPath,
+    colorJson,
+    isPrimary,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ClothingItemImage &&
+          other.id == this.id &&
+          other.itemId == this.itemId &&
+          other.sortOrder == this.sortOrder &&
+          other.role == this.role &&
+          other.originalPath == this.originalPath &&
+          other.processedPath == this.processedPath &&
+          other.maskPath == this.maskPath &&
+          other.colorJson == this.colorJson &&
+          other.isPrimary == this.isPrimary);
+}
+
+class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
+  final Value<String> id;
+  final Value<String> itemId;
+  final Value<int> sortOrder;
+  final Value<String> role;
+  final Value<String> originalPath;
+  final Value<String?> processedPath;
+  final Value<String?> maskPath;
+  final Value<String> colorJson;
+  final Value<bool> isPrimary;
+  final Value<int> rowid;
+  const ClothingItemImagesCompanion({
+    this.id = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.role = const Value.absent(),
+    this.originalPath = const Value.absent(),
+    this.processedPath = const Value.absent(),
+    this.maskPath = const Value.absent(),
+    this.colorJson = const Value.absent(),
+    this.isPrimary = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ClothingItemImagesCompanion.insert({
+    required String id,
+    required String itemId,
+    required int sortOrder,
+    this.role = const Value.absent(),
+    required String originalPath,
+    this.processedPath = const Value.absent(),
+    this.maskPath = const Value.absent(),
+    this.colorJson = const Value.absent(),
+    this.isPrimary = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       itemId = Value(itemId),
+       sortOrder = Value(sortOrder),
+       originalPath = Value(originalPath);
+  static Insertable<ClothingItemImage> custom({
+    Expression<String>? id,
+    Expression<String>? itemId,
+    Expression<int>? sortOrder,
+    Expression<String>? role,
+    Expression<String>? originalPath,
+    Expression<String>? processedPath,
+    Expression<String>? maskPath,
+    Expression<String>? colorJson,
+    Expression<bool>? isPrimary,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (itemId != null) 'item_id': itemId,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (role != null) 'role': role,
+      if (originalPath != null) 'original_path': originalPath,
+      if (processedPath != null) 'processed_path': processedPath,
+      if (maskPath != null) 'mask_path': maskPath,
+      if (colorJson != null) 'color_json': colorJson,
+      if (isPrimary != null) 'is_primary': isPrimary,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ClothingItemImagesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? itemId,
+    Value<int>? sortOrder,
+    Value<String>? role,
+    Value<String>? originalPath,
+    Value<String?>? processedPath,
+    Value<String?>? maskPath,
+    Value<String>? colorJson,
+    Value<bool>? isPrimary,
+    Value<int>? rowid,
+  }) {
+    return ClothingItemImagesCompanion(
+      id: id ?? this.id,
+      itemId: itemId ?? this.itemId,
+      sortOrder: sortOrder ?? this.sortOrder,
+      role: role ?? this.role,
+      originalPath: originalPath ?? this.originalPath,
+      processedPath: processedPath ?? this.processedPath,
+      maskPath: maskPath ?? this.maskPath,
+      colorJson: colorJson ?? this.colorJson,
+      isPrimary: isPrimary ?? this.isPrimary,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (originalPath.present) {
+      map['original_path'] = Variable<String>(originalPath.value);
+    }
+    if (processedPath.present) {
+      map['processed_path'] = Variable<String>(processedPath.value);
+    }
+    if (maskPath.present) {
+      map['mask_path'] = Variable<String>(maskPath.value);
+    }
+    if (colorJson.present) {
+      map['color_json'] = Variable<String>(colorJson.value);
+    }
+    if (isPrimary.present) {
+      map['is_primary'] = Variable<bool>(isPrimary.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClothingItemImagesCompanion(')
+          ..write('id: $id, ')
+          ..write('itemId: $itemId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('role: $role, ')
+          ..write('originalPath: $originalPath, ')
+          ..write('processedPath: $processedPath, ')
+          ..write('maskPath: $maskPath, ')
+          ..write('colorJson: $colorJson, ')
+          ..write('isPrimary: $isPrimary, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2214,6 +2782,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OutfitsTable outfits = $OutfitsTable(this);
   late final $CategoryCoversTable categoryCovers = $CategoryCoversTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
+  late final $ClothingItemImagesTable clothingItemImages =
+      $ClothingItemImagesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2223,6 +2793,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     outfits,
     categoryCovers,
     categories,
+    clothingItemImages,
   ];
 }
 
@@ -3368,6 +3939,310 @@ typedef $$CategoriesTableProcessedTableManager =
       Category,
       PrefetchHooks Function()
     >;
+typedef $$ClothingItemImagesTableCreateCompanionBuilder =
+    ClothingItemImagesCompanion Function({
+      required String id,
+      required String itemId,
+      required int sortOrder,
+      Value<String> role,
+      required String originalPath,
+      Value<String?> processedPath,
+      Value<String?> maskPath,
+      Value<String> colorJson,
+      Value<bool> isPrimary,
+      Value<int> rowid,
+    });
+typedef $$ClothingItemImagesTableUpdateCompanionBuilder =
+    ClothingItemImagesCompanion Function({
+      Value<String> id,
+      Value<String> itemId,
+      Value<int> sortOrder,
+      Value<String> role,
+      Value<String> originalPath,
+      Value<String?> processedPath,
+      Value<String?> maskPath,
+      Value<String> colorJson,
+      Value<bool> isPrimary,
+      Value<int> rowid,
+    });
+
+class $$ClothingItemImagesTableFilterComposer
+    extends Composer<_$AppDatabase, $ClothingItemImagesTable> {
+  $$ClothingItemImagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originalPath => $composableBuilder(
+    column: $table.originalPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get processedPath => $composableBuilder(
+    column: $table.processedPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get maskPath => $composableBuilder(
+    column: $table.maskPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get colorJson => $composableBuilder(
+    column: $table.colorJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPrimary => $composableBuilder(
+    column: $table.isPrimary,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ClothingItemImagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ClothingItemImagesTable> {
+  $$ClothingItemImagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originalPath => $composableBuilder(
+    column: $table.originalPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get processedPath => $composableBuilder(
+    column: $table.processedPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get maskPath => $composableBuilder(
+    column: $table.maskPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get colorJson => $composableBuilder(
+    column: $table.colorJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPrimary => $composableBuilder(
+    column: $table.isPrimary,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ClothingItemImagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ClothingItemImagesTable> {
+  $$ClothingItemImagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get originalPath => $composableBuilder(
+    column: $table.originalPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get processedPath => $composableBuilder(
+    column: $table.processedPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get maskPath =>
+      $composableBuilder(column: $table.maskPath, builder: (column) => column);
+
+  GeneratedColumn<String> get colorJson =>
+      $composableBuilder(column: $table.colorJson, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPrimary =>
+      $composableBuilder(column: $table.isPrimary, builder: (column) => column);
+}
+
+class $$ClothingItemImagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ClothingItemImagesTable,
+          ClothingItemImage,
+          $$ClothingItemImagesTableFilterComposer,
+          $$ClothingItemImagesTableOrderingComposer,
+          $$ClothingItemImagesTableAnnotationComposer,
+          $$ClothingItemImagesTableCreateCompanionBuilder,
+          $$ClothingItemImagesTableUpdateCompanionBuilder,
+          (
+            ClothingItemImage,
+            BaseReferences<
+              _$AppDatabase,
+              $ClothingItemImagesTable,
+              ClothingItemImage
+            >,
+          ),
+          ClothingItemImage,
+          PrefetchHooks Function()
+        > {
+  $$ClothingItemImagesTableTableManager(
+    _$AppDatabase db,
+    $ClothingItemImagesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ClothingItemImagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ClothingItemImagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ClothingItemImagesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> itemId = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<String> originalPath = const Value.absent(),
+                Value<String?> processedPath = const Value.absent(),
+                Value<String?> maskPath = const Value.absent(),
+                Value<String> colorJson = const Value.absent(),
+                Value<bool> isPrimary = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ClothingItemImagesCompanion(
+                id: id,
+                itemId: itemId,
+                sortOrder: sortOrder,
+                role: role,
+                originalPath: originalPath,
+                processedPath: processedPath,
+                maskPath: maskPath,
+                colorJson: colorJson,
+                isPrimary: isPrimary,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String itemId,
+                required int sortOrder,
+                Value<String> role = const Value.absent(),
+                required String originalPath,
+                Value<String?> processedPath = const Value.absent(),
+                Value<String?> maskPath = const Value.absent(),
+                Value<String> colorJson = const Value.absent(),
+                Value<bool> isPrimary = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ClothingItemImagesCompanion.insert(
+                id: id,
+                itemId: itemId,
+                sortOrder: sortOrder,
+                role: role,
+                originalPath: originalPath,
+                processedPath: processedPath,
+                maskPath: maskPath,
+                colorJson: colorJson,
+                isPrimary: isPrimary,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ClothingItemImagesTable, ClothingItemImage>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ClothingItemImagesTable,
+                    ClothingItemImage
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ClothingItemImagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ClothingItemImagesTable,
+      ClothingItemImage,
+      $$ClothingItemImagesTableFilterComposer,
+      $$ClothingItemImagesTableOrderingComposer,
+      $$ClothingItemImagesTableAnnotationComposer,
+      $$ClothingItemImagesTableCreateCompanionBuilder,
+      $$ClothingItemImagesTableUpdateCompanionBuilder,
+      (
+        ClothingItemImage,
+        BaseReferences<
+          _$AppDatabase,
+          $ClothingItemImagesTable,
+          ClothingItemImage
+        >,
+      ),
+      ClothingItemImage,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3380,4 +4255,6 @@ class $AppDatabaseManager {
       $$CategoryCoversTableTableManager(_db, _db.categoryCovers);
   $$CategoriesTableTableManager get categories =>
       $$CategoriesTableTableManager(_db, _db.categories);
+  $$ClothingItemImagesTableTableManager get clothingItemImages =>
+      $$ClothingItemImagesTableTableManager(_db, _db.clothingItemImages);
 }

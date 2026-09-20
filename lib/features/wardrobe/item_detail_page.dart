@@ -8,6 +8,7 @@ import 'package:wardrobe/core/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/theme.dart';
 import 'package:wardrobe/features/wardrobe/category_item_dialogs.dart';
+import 'package:wardrobe/features/wardrobe/item_photos.dart';
 import 'package:wardrobe/widgets/common.dart';
 
 class ItemDetailPage extends ConsumerWidget {
@@ -58,6 +59,10 @@ class ItemDetailPage extends ConsumerWidget {
             category == null ? <String>[] : inheritedSizeFields(categories, category);
         final path = categoryPath(categories, item.categoryId);
         final coverTargets = coverCategoriesForItem(categories, item.categoryId);
+        final images = ref.watch(itemImagesProvider(item.id)).maybeWhen(
+              data: (rows) => rows,
+              orElse: () => const <ClothingItemImage>[],
+            );
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -113,7 +118,10 @@ class ItemDetailPage extends ConsumerWidget {
                       children: [
                         SizedBox(
                           width: 320,
-                          child: DetailHeroImage(path: item.imagePath),
+                          child: ItemPhotoViewer(
+                            images: images,
+                            fallbackPath: item.imagePath,
+                          ),
                         ),
                         const SizedBox(width: 28),
                         Expanded(

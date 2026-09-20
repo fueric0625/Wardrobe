@@ -15,7 +15,8 @@
 
 - `flutter_windows.dll`
 - `sqlite3.dll`
-- `data\`（资源与 AOT 库）
+- `onnxruntime.dll`（以及同级的 `onnxruntime_providers_shared.dll`，若有）
+- `data\`（资源与 AOT 库，含抠图模型）
 
 ## 对方电脑要求
 
