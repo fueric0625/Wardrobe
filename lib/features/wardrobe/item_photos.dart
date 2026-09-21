@@ -4,12 +4,11 @@ import 'package:wardrobe/core/theme.dart';
 import 'package:wardrobe/core/vision/color_extract.dart';
 import 'package:wardrobe/core/vision/erase_brush.dart';
 import 'package:wardrobe/core/vision/garment_pipeline.dart';
-import 'package:wardrobe/core/vision/image_ops.dart';
 import 'package:wardrobe/core/vision/sam_click.dart';
+import 'package:wardrobe/core/vision/tag_ocr.dart';
 import 'package:wardrobe/data/item_repository.dart';
 import 'package:wardrobe/features/wardrobe/click_prompt_overlay.dart';
 import 'package:wardrobe/features/wardrobe/erase_brush_overlay.dart';
-import 'package:wardrobe/features/wardrobe/fill_box_overlay.dart';
 import 'package:wardrobe/widgets/common.dart';
 import 'package:wardrobe/widgets/zoom_viewport.dart';
 
@@ -20,7 +19,9 @@ class EditableItemPhoto {
     this.processedPath,
     this.maskPath,
     this.isPrimary = false,
+    this.role = ItemPhotoRole.garment,
     this.colors = ColorAnalysis.empty,
+    this.ocr = const TagOcrResult(),
     this.showProcessed = true,
     this.busy = false,
     this.busyHint,
@@ -38,7 +39,9 @@ class EditableItemPhoto {
       processedPath: processed,
       maskPath: row.maskPath,
       isPrimary: row.isPrimary,
+      role: ItemPhotoRole.parse(row.role),
       colors: ColorAnalysis.decode(row.colorJson),
+      ocr: TagOcrResult.decode(row.ocrJson),
       showProcessed: processed != null && processed.isNotEmpty,
     );
   }
@@ -48,7 +51,9 @@ class EditableItemPhoto {
   String? processedPath;
   String? maskPath;
   bool isPrimary;
+  ItemPhotoRole role;
   ColorAnalysis colors;
+  TagOcrResult ocr;
   bool showProcessed;
   bool busy;
   String? busyHint;
@@ -56,6 +61,8 @@ class EditableItemPhoto {
   int? originalWidth;
   int? originalHeight;
   String? refinePreviewPath;
+
+  bool get isTag => role == ItemPhotoRole.tag;
 
   String get previewPath {
     if (showProcessed && processedPath != null && processedPath!.isNotEmpty) {
@@ -70,9 +77,10 @@ class EditableItemPhoto {
       originalPath: originalPath,
       processedPath: processedPath,
       maskPath: maskPath,
-      role: ItemPhotoRole.garment,
-      isPrimary: isPrimary,
+      role: role,
+      isPrimary: isPrimary && role == ItemPhotoRole.garment,
       colorJson: colors.toJson(),
+      ocrJson: ocr.encode(),
     );
   }
 }
@@ -95,14 +103,18 @@ class ItemPhotoStudio extends StatelessWidget {
     required this.refineTool,
     required this.eraseProtect,
     required this.eraseRadius,
-    required this.fillWithBox,
+    required this.fillSampling,
+    required this.hasFillSample,
+    required this.hasClickOutline,
     required this.onSelect,
     required this.onAdd,
+    this.onAddTag,
     required this.onRemove,
     required this.onSetPrimary,
     required this.onToggleProcessed,
     required this.onReprocess,
     required this.onStartRefine,
+    this.onRecognize,
     required this.onCancelRefine,
     required this.onUndoRefine,
     required this.canUndo,
@@ -111,9 +123,9 @@ class ItemPhotoStudio extends StatelessWidget {
     required this.onRefineTool,
     required this.onEraseProtect,
     required this.onEraseRadius,
-    required this.onFillWithBox,
-    required this.onFillBox,
-    required this.onFillBrush,
+    required this.onFillSampling,
+    required this.onFillSample,
+    required this.onFillPaint,
   });
 
   final List<EditableItemPhoto> photos;
@@ -123,14 +135,18 @@ class ItemPhotoStudio extends StatelessWidget {
   final RefineTool refineTool;
   final bool eraseProtect;
   final int eraseRadius;
-  final bool fillWithBox;
+  final bool fillSampling;
+  final bool hasFillSample;
+  final bool hasClickOutline;
   final ValueChanged<int> onSelect;
   final VoidCallback onAdd;
+  final VoidCallback? onAddTag;
   final VoidCallback onRemove;
   final VoidCallback onSetPrimary;
   final VoidCallback onToggleProcessed;
   final VoidCallback onReprocess;
   final VoidCallback onStartRefine;
+  final VoidCallback? onRecognize;
   final VoidCallback onCancelRefine;
   final VoidCallback onUndoRefine;
   final bool canUndo;
@@ -139,14 +155,14 @@ class ItemPhotoStudio extends StatelessWidget {
   final ValueChanged<RefineTool> onRefineTool;
   final ValueChanged<bool> onEraseProtect;
   final ValueChanged<int> onEraseRadius;
-  final ValueChanged<bool> onFillWithBox;
-  final ValueChanged<PixelRect> onFillBox;
-  final ValueChanged<List<EraseStamp>> onFillBrush;
+  final ValueChanged<bool> onFillSampling;
+  final ValueChanged<List<EraseStamp>> onFillSample;
+  final ValueChanged<List<EraseStamp>> onFillPaint;
 
   @override
   Widget build(BuildContext context) {
     if (photos.isEmpty) {
-      return _EmptyAdd(onAdd: onAdd);
+      return _EmptyAdd(onAdd: onAdd, onAddTag: onAddTag);
     }
     final selected = photos[selectedIndex.clamp(0, photos.length - 1)];
     return Column(
@@ -159,11 +175,11 @@ class ItemPhotoStudio extends StatelessWidget {
             points: refinePoints,
             tool: refineTool,
             eraseRadius: eraseRadius,
-            fillWithBox: fillWithBox,
+            fillSampling: fillSampling,
             onAddPoint: onAddPoint,
             onEraseStroke: onEraseStroke,
-            onFillBox: onFillBox,
-            onFillBrush: onFillBrush,
+            onFillSample: onFillSample,
+            onFillPaint: onFillPaint,
           ),
         ),
         const SizedBox(height: 12),
@@ -174,11 +190,14 @@ class ItemPhotoStudio extends StatelessWidget {
             tool: refineTool,
             eraseProtect: eraseProtect,
             eraseRadius: eraseRadius,
-            fillWithBox: fillWithBox,
+            fillSampling: fillSampling,
+            hasFillSample: hasFillSample,
+            hasClickOutline: hasClickOutline,
+            allowFill: !selected.isTag,
             onTool: onRefineTool,
             onProtect: onEraseProtect,
             onRadius: onEraseRadius,
-            onFillWithBox: onFillWithBox,
+            onFillSampling: onFillSampling,
             onUndo: onUndoRefine,
             onCancel: onCancelRefine,
           )
@@ -190,6 +209,7 @@ class ItemPhotoStudio extends StatelessWidget {
             onToggleProcessed: onToggleProcessed,
             onReprocess: onReprocess,
             onStartRefine: onStartRefine,
+            onRecognize: onRecognize,
           ),
         const SizedBox(height: 12),
         _ThumbStrip(
@@ -198,6 +218,7 @@ class ItemPhotoStudio extends StatelessWidget {
           enabled: !refining && !selected.busy,
           onSelect: onSelect,
           onAdd: onAdd,
+          onAddTag: onAddTag,
         ),
       ],
     );
@@ -305,9 +326,24 @@ class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
     }
     final image = widget.images[_index.clamp(0, widget.images.length - 1)];
     final path = itemImagePreviewPath(image);
+    final isTag = ItemPhotoRole.parse(image.role) == ItemPhotoRole.tag;
     return Column(
       children: [
-        DetailHeroImage(path: path, checkerboard: true),
+        Stack(
+          children: [
+            DetailHeroImage(path: path, checkerboard: true),
+            if (isTag)
+              const Positioned(
+                left: 12,
+                top: 12,
+                child: Chip(
+                  label: Text('吊牌'),
+                  backgroundColor: Colors.white,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+          ],
+        ),
         if (widget.images.length > 1) ...[
           const SizedBox(height: 10),
           SizedBox(
@@ -319,6 +355,7 @@ class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
               itemBuilder: (context, i) {
                 final row = widget.images[i];
                 final selected = i == _index;
+                final tag = ItemPhotoRole.parse(row.role) == ItemPhotoRole.tag;
                 return InkWell(
                   onTap: () => setState(() => _index = i),
                   borderRadius: BorderRadius.circular(12),
@@ -333,10 +370,27 @@ class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
                       ),
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: LocalCover(
-                      path: itemImagePreviewPath(row),
-                      fit: BoxFit.contain,
-                      checkerboard: true,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        LocalCover(
+                          path: itemImagePreviewPath(row),
+                          fit: BoxFit.contain,
+                          checkerboard: true,
+                        ),
+                        if (tag)
+                          const Align(
+                            alignment: Alignment.bottomCenter,
+                            child: ColoredBox(
+                              color: Color(0xAAFFFFFF),
+                              child: Text(
+                                '吊牌',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 10),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 );
@@ -350,9 +404,10 @@ class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
 }
 
 class _EmptyAdd extends StatelessWidget {
-  const _EmptyAdd({required this.onAdd});
+  const _EmptyAdd({required this.onAdd, this.onAddTag});
 
   final VoidCallback onAdd;
+  final VoidCallback? onAddTag;
 
   @override
   Widget build(BuildContext context) {
@@ -360,19 +415,33 @@ class _EmptyAdd extends StatelessWidget {
       color: AppColors.surface,
       borderRadius: BorderRadius.circular(24),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onAdd,
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add_photo_alternate_outlined, size: 56, color: AppColors.primary),
-              SizedBox(height: 12),
-              Text('点击添加图片，可多选', style: TextStyle(color: AppColors.textMuted)),
-              SizedBox(height: 4),
-              Text('添加后直接点衣服和衣架，不必等自动抠图', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-            ],
-          ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.add_photo_alternate_outlined, size: 56, color: AppColors.primary),
+            const SizedBox(height: 12),
+            const Text('添加衣物图，可多选', style: TextStyle(color: AppColors.textMuted)),
+            const SizedBox(height: 4),
+            const Text('添加后直接点衣服和衣架；吊牌可另加', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              children: [
+                FilledButton.icon(
+                  onPressed: onAdd,
+                  icon: const Icon(Icons.checkroom_outlined, size: 18),
+                  label: const Text('衣物图'),
+                ),
+                if (onAddTag != null)
+                  OutlinedButton.icon(
+                    onPressed: onAddTag,
+                    icon: const Icon(Icons.style_outlined, size: 18),
+                    label: const Text('吊牌'),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -386,11 +455,11 @@ class _PreviewCard extends StatelessWidget {
     required this.points,
     required this.tool,
     required this.eraseRadius,
-    required this.fillWithBox,
+    required this.fillSampling,
     required this.onAddPoint,
     required this.onEraseStroke,
-    required this.onFillBox,
-    required this.onFillBrush,
+    required this.onFillSample,
+    required this.onFillPaint,
   });
 
   final EditableItemPhoto photo;
@@ -398,11 +467,11 @@ class _PreviewCard extends StatelessWidget {
   final List<PromptPoint> points;
   final RefineTool tool;
   final int eraseRadius;
-  final bool fillWithBox;
+  final bool fillSampling;
   final ValueChanged<PromptPoint> onAddPoint;
   final ValueChanged<List<EraseStamp>> onEraseStroke;
-  final ValueChanged<PixelRect> onFillBox;
-  final ValueChanged<List<EraseStamp>> onFillBrush;
+  final ValueChanged<List<EraseStamp>> onFillSample;
+  final ValueChanged<List<EraseStamp>> onFillPaint;
 
   @override
   Widget build(BuildContext context) {
@@ -440,19 +509,15 @@ class _PreviewCard extends StatelessWidget {
                         radius: eraseRadius,
                         onStroke: onEraseStroke,
                       ),
-                    RefineTool.fill => fillWithBox
-                        ? FillBoxOverlay(
-                            imageWidth: width,
-                            imageHeight: height,
-                            onBox: onFillBox,
-                          )
-                        : EraseBrushOverlay(
-                            imageWidth: width,
-                            imageHeight: height,
-                            radius: eraseRadius,
-                            accent: AppColors.primary,
-                            onStroke: onFillBrush,
-                          ),
+                    RefineTool.fill => EraseBrushOverlay(
+                        imageWidth: width,
+                        imageHeight: height,
+                        radius: eraseRadius,
+                        accent: fillSampling
+                            ? AppColors.primary
+                            : const Color(0xFF3D8B6E),
+                        onStroke: fillSampling ? onFillSample : onFillPaint,
+                      ),
                     RefineTool.click => ClickPromptOverlay(
                         imageWidth: width,
                         imageHeight: height,
@@ -489,6 +554,16 @@ class _PreviewCard extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
               ),
             ),
+          if (photo.isTag && !refining)
+            const Positioned(
+              left: 12,
+              top: 12,
+              child: Chip(
+                label: Text('吊牌'),
+                backgroundColor: Colors.white,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
           if (photo.error != null && !refining)
             Positioned(
               left: 12,
@@ -521,6 +596,7 @@ class _PhotoActions extends StatelessWidget {
     required this.onToggleProcessed,
     required this.onReprocess,
     required this.onStartRefine,
+    this.onRecognize,
   });
 
   final EditableItemPhoto photo;
@@ -529,6 +605,7 @@ class _PhotoActions extends StatelessWidget {
   final VoidCallback onToggleProcessed;
   final VoidCallback onReprocess;
   final VoidCallback onStartRefine;
+  final VoidCallback? onRecognize;
 
   @override
   Widget build(BuildContext context) {
@@ -545,15 +622,21 @@ class _PhotoActions extends StatelessWidget {
           onPressed: photo.busy ? null : onStartRefine,
           child: const Text('精修'),
         ),
-        if (!photo.isPrimary)
+        if (!photo.isPrimary && !photo.isTag)
           TextButton(
             onPressed: photo.busy ? null : onSetPrimary,
             child: const Text('设为封面'),
           ),
-        TextButton(
-          onPressed: photo.busy ? null : onReprocess,
-          child: const Text('自动抠图'),
-        ),
+        if (!photo.isTag)
+          TextButton(
+            onPressed: photo.busy ? null : onReprocess,
+            child: const Text('自动抠图'),
+          ),
+        if (photo.isTag && onRecognize != null)
+          TextButton(
+            onPressed: photo.busy ? null : onRecognize,
+            child: const Text('识别文字'),
+          ),
         TextButton(
           onPressed: photo.busy ? null : onRemove,
           child: const Text('删除这张', style: TextStyle(color: Colors.redAccent)),
@@ -570,11 +653,14 @@ class _RefineActions extends StatelessWidget {
     required this.tool,
     required this.eraseProtect,
     required this.eraseRadius,
-    required this.fillWithBox,
+    required this.fillSampling,
+    required this.hasFillSample,
+    required this.hasClickOutline,
+    this.allowFill = true,
     required this.onTool,
     required this.onProtect,
     required this.onRadius,
-    required this.onFillWithBox,
+    required this.onFillSampling,
     required this.onUndo,
     required this.onCancel,
   });
@@ -584,11 +670,14 @@ class _RefineActions extends StatelessWidget {
   final RefineTool tool;
   final bool eraseProtect;
   final int eraseRadius;
-  final bool fillWithBox;
+  final bool fillSampling;
+  final bool hasFillSample;
+  final bool hasClickOutline;
+  final bool allowFill;
   final ValueChanged<RefineTool> onTool;
   final ValueChanged<bool> onProtect;
   final ValueChanged<int> onRadius;
-  final ValueChanged<bool> onFillWithBox;
+  final ValueChanged<bool> onFillSampling;
   final VoidCallback onUndo;
   final VoidCallback onCancel;
 
@@ -613,13 +702,14 @@ class _RefineActions extends StatelessWidget {
             FilterChip(
               label: const Text('擦除'),
               selected: tool == RefineTool.erase,
-              onSelected: busy ? null : (_) => onTool(RefineTool.erase),
+              onSelected: busy || !hasClickOutline ? null : (_) => onTool(RefineTool.erase),
             ),
-            FilterChip(
-              label: const Text('填补'),
-              selected: tool == RefineTool.fill,
-              onSelected: busy ? null : (_) => onTool(RefineTool.fill),
-            ),
+            if (allowFill)
+              FilterChip(
+                label: const Text('填补'),
+                selected: tool == RefineTool.fill,
+                onSelected: busy || !hasClickOutline ? null : (_) => onTool(RefineTool.fill),
+              ),
             if (erasing)
               FilterChip(
                 label: const Text('保护衣服色'),
@@ -628,17 +718,17 @@ class _RefineActions extends StatelessWidget {
               ),
             if (filling) ...[
               FilterChip(
-                label: const Text('框选'),
-                selected: fillWithBox,
-                onSelected: busy ? null : (_) => onFillWithBox(true),
+                label: const Text('取样'),
+                selected: fillSampling,
+                onSelected: busy ? null : (_) => onFillSampling(true),
               ),
               FilterChip(
-                label: const Text('笔选'),
-                selected: !fillWithBox,
-                onSelected: busy ? null : (_) => onFillWithBox(false),
+                label: Text(hasFillSample ? '涂抹' : '涂抹（先取样）'),
+                selected: !fillSampling,
+                onSelected: busy || !hasFillSample ? null : (_) => onFillSampling(false),
               ),
             ],
-            if (erasing || (filling && !fillWithBox))
+            if (erasing || filling)
               SizedBox(
                 width: 140,
                 child: Slider(
@@ -659,10 +749,20 @@ class _RefineActions extends StatelessWidget {
         ),
         Text(
           filling
-              ? '框住或涂过带花纹的布料；空洞会按这块纹理补上，更深的衣架阴影会再清一轮。单击也能取样。滚轮放大，中键或空格拖动'
+              ? (fillSampling
+                  ? '先涂一块带花纹的布取样，再点「涂抹」画要补的位置。笔触盖住的像素都会改掉。滚轮放大，中键或空格拖动'
+                  : '在要补的位置涂抹，按刚才取的纹理填上。滚轮放大，中键或空格拖动')
               : erasing
-                  ? '拖动擦除杂色；填补后会再清一层更深的衣架阴影。滚轮放大，中键或空格拖动'
-                  : '左键点衣服，右键点衣架；滚轮放大，中键或空格拖动',
+                  ? (allowFill
+                      ? '拖动擦除杂色；默认跳过衣服色，可关掉保护后硬擦。滚轮放大，中键或空格拖动'
+                      : '拖动擦掉吊牌外的杂物。滚轮放大，中键或空格拖动')
+                  : hasClickOutline
+                      ? (allowFill
+                          ? '左键点衣服，右键点衣架；点好轮廓后再擦除或填补。滚轮放大，中键或空格拖动'
+                          : '左键点吊牌，右键点背景；点好后再识别文字。滚轮放大，中键或空格拖动')
+                      : (allowFill
+                          ? '左键点衣服，右键点衣架，先选出大体轮廓。滚轮放大，中键或空格拖动'
+                          : '左键点吊牌，右键点背景，先抠掉不是吊牌的部分。滚轮放大，中键或空格拖动'),
           style: const TextStyle(color: AppColors.textMuted),
         ),
       ],
@@ -678,6 +778,7 @@ class _ThumbStrip extends StatelessWidget {
     required this.enabled,
     required this.onSelect,
     required this.onAdd,
+    this.onAddTag,
   });
 
   final List<EditableItemPhoto> photos;
@@ -685,6 +786,7 @@ class _ThumbStrip extends StatelessWidget {
   final bool enabled;
   final ValueChanged<int> onSelect;
   final VoidCallback onAdd;
+  final VoidCallback? onAddTag;
 
   @override
   Widget build(BuildContext context) {
@@ -696,13 +798,29 @@ class _ThumbStrip extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, i) {
           if (i == photos.length) {
-            return OutlinedButton(
-              onPressed: enabled ? onAdd : null,
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(72, 72),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            return PopupMenuButton<String>(
+              enabled: enabled,
+              tooltip: '添加图片',
+              onSelected: (v) {
+                if (v == 'tag') {
+                  onAddTag?.call();
+                } else {
+                  onAdd();
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'garment', child: Text('衣物图')),
+                if (onAddTag != null)
+                  const PopupMenuItem(value: 'tag', child: Text('吊牌')),
+              ],
+              child: OutlinedButton(
+                onPressed: null,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(72, 72),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Icon(Icons.add, color: AppColors.primary),
               ),
-              child: const Icon(Icons.add, color: AppColors.primary),
             );
           }
           final photo = photos[i];
@@ -729,6 +847,14 @@ class _ThumbStrip extends StatelessWidget {
                     fit: BoxFit.contain,
                     checkerboard: true,
                   ),
+                  if (photo.isTag)
+                    const Align(
+                      alignment: Alignment.bottomCenter,
+                      child: ColoredBox(
+                        color: Color(0xAAFFFFFF),
+                        child: Text('吊牌', textAlign: TextAlign.center, style: TextStyle(fontSize: 10)),
+                      ),
+                    ),
                   if (photo.busy)
                     const ColoredBox(
                       color: Color(0x66FFFFFF),
@@ -745,6 +871,81 @@ class _ThumbStrip extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class HangtagOcrBlock extends StatelessWidget {
+  const HangtagOcrBlock({
+    super.key,
+    required this.text,
+    this.imagePaths = const [],
+  });
+
+  final String text;
+  final List<String> imagePaths;
+
+  @override
+  Widget build(BuildContext context) {
+    final body = text.trim();
+    if (body.isEmpty && imagePaths.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('吊牌识别原文', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        const SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (imagePaths.isNotEmpty) ...[
+              SizedBox(
+                width: 132,
+                height: 200,
+                child: imagePaths.length == 1
+                    ? _thumb(imagePaths.first)
+                    : ListView.separated(
+                        itemCount: imagePaths.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
+                        itemBuilder: (context, i) {
+                          return SizedBox(height: 120, child: _thumb(imagePaths[i]));
+                        },
+                      ),
+              ),
+              const SizedBox(width: 16),
+            ],
+            Expanded(
+              child: Text(
+                body.isEmpty ? '未识别到文字' : body,
+                style: TextStyle(
+                  color: body.isEmpty ? AppColors.textMuted : AppColors.text,
+                  fontSize: 15,
+                  height: 1.45,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _thumb(String path) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: LocalCover(
+          path: path,
+          fit: BoxFit.contain,
+          checkerboard: true,
+          borderRadius: 12,
+        ),
       ),
     );
   }

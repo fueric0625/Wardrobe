@@ -386,4 +386,30 @@ __declspec(dllexport) int garment_onnx_session_run(
   return ok;
 }
 
+__declspec(dllexport) int garment_onnx_session_io_count(const char* name, int* n_in, int* n_out) {
+  LoadedSession* loaded = find_session(name);
+  if (loaded == nullptr) {
+    return 1;
+  }
+  if (n_in != nullptr) {
+    *n_in = static_cast<int>(loaded->input_names.size());
+  }
+  if (n_out != nullptr) {
+    *n_out = static_cast<int>(loaded->output_names.size());
+  }
+  return 0;
+}
+
+__declspec(dllexport) const char* garment_onnx_session_io_name(const char* name, int output, int index) {
+  LoadedSession* loaded = find_session(name);
+  if (loaded == nullptr) {
+    return "";
+  }
+  const auto& names = output ? loaded->output_names : loaded->input_names;
+  if (index < 0 || static_cast<size_t>(index) >= names.size() || names[static_cast<size_t>(index)] == nullptr) {
+    return "";
+  }
+  return names[static_cast<size_t>(index)];
+}
+
 }  // extern "C"

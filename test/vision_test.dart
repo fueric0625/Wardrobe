@@ -11,7 +11,7 @@ import 'package:wardrobe/core/vision/fill_patch.dart';
 import 'package:wardrobe/core/vision/garment_pipeline.dart';
 import 'package:wardrobe/core/vision/image_ops.dart';
 import 'package:wardrobe/core/vision/sam_click.dart';
-import 'package:wardrobe/core/vision/shadow_heal.dart';
+import 'package:wardrobe/core/vision/tag_ocr.dart';
 import 'package:wardrobe/core/vision/u2net_segmenter.dart';
 
 void main() {
@@ -392,72 +392,6 @@ void main() {
     expect(maskLevel(mask.getPixel(30, 30)), lessThan(24));
   });
 
-  test('eraseDarkerShadows punches a dark stain next to an erased hole', () {
-    final rgb = img.Image(width: 80, height: 80, numChannels: 3);
-    img.fill(rgb, color: img.ColorRgb8(18, 28, 48));
-    final mask = img.Image(width: 80, height: 80, numChannels: 3);
-    img.fill(mask, color: img.ColorRgb8(255, 255, 255));
-    final before = img.Image.from(mask);
-    for (var y = 28; y < 36; y++) {
-      for (var x = 20; x < 60; x++) {
-        mask.setPixelRgb(x, y, 0, 0, 0);
-      }
-    }
-    final after = img.Image.from(mask);
-    for (var y = 36; y < 48; y++) {
-      for (var x = 20; x < 60; x++) {
-        rgb.setPixelRgb(x, y, 6, 10, 18);
-      }
-    }
-    final punched = eraseDarkerShadows(
-      rgb,
-      mask,
-      before,
-      after,
-      const [FillPatch.box(PixelRect(x: 4, y: 4, width: 16, height: 16))],
-    );
-    expect(punched, greaterThan(0));
-    expect(maskLevel(mask.getPixel(40, 40)), lessThan(24));
-    expect(maskLevel(mask.getPixel(8, 8)), 255);
-    expect(rgb.getPixel(8, 8).b.toInt(), 48);
-  });
-
-  test('second fill after darker-shadow erase copies sample texture', () {
-    final rgb = img.Image(width: 80, height: 80, numChannels: 3);
-    final mask = img.Image(width: 80, height: 80, numChannels: 3);
-    img.fill(mask, color: img.ColorRgb8(255, 255, 255));
-    for (var y = 0; y < 80; y++) {
-      for (var x = 0; x < 80; x++) {
-        if (x.isEven) {
-          rgb.setPixelRgb(x, y, 18, 28, 48);
-        } else {
-          rgb.setPixelRgb(x, y, 18, 28, 96);
-        }
-      }
-    }
-    final before = img.Image.from(mask);
-    for (var y = 28; y < 36; y++) {
-      for (var x = 20; x < 60; x++) {
-        mask.setPixelRgb(x, y, 0, 0, 0);
-      }
-    }
-    final after = img.Image.from(mask);
-    for (var y = 36; y < 48; y++) {
-      for (var x = 20; x < 60; x++) {
-        rgb.setPixelRgb(x, y, 6, 10, 18);
-      }
-    }
-    const patch = FillPatch.box(PixelRect(x: 4, y: 4, width: 16, height: 16));
-    final beforeShadow = img.Image.from(mask);
-    eraseDarkerShadows(rgb, mask, before, after, const [patch]);
-    applyFillPatch(rgb, mask, patch, beforeErase: beforeShadow);
-    expect(maskLevel(mask.getPixel(40, 40)), 255);
-    final a = rgb.getPixel(40, 40).b.toInt();
-    final b = rgb.getPixel(41, 40).b.toInt();
-    expect((a - b).abs(), greaterThan(20));
-    expect(rgb.getPixel(40, 40).r.toInt(), lessThan(40));
-  });
-
   test('refineEdits reapplies erase after a fake SAM click', () async {
     final image = img.Image(width: 40, height: 40, numChannels: 3);
     img.fill(image, color: img.ColorRgb8(20, 90, 200));
@@ -490,7 +424,7 @@ void main() {
     expect(maskLevel(mask.getPixel(20, 9)), lessThan(24));
   });
 
-  test('fill patch paints sampled garment color into a hole in the box', () {
+  test('fill paints sampled fabric onto the painted hole', () {
     final rgb = img.Image(width: 40, height: 40, numChannels: 3);
     img.fill(rgb, color: img.ColorRgb8(18, 28, 48));
     final mask = img.Image(width: 40, height: 40, numChannels: 3);
@@ -504,7 +438,10 @@ void main() {
     final filled = applyFillPatch(
       rgb,
       mask,
-      const FillPatch.box(PixelRect(x: 4, y: 4, width: 24, height: 24)),
+      const FillStroke(
+        sample: FillPatch.box(PixelRect(x: 20, y: 20, width: 12, height: 12)),
+        paint: [EraseStamp(x: 10, y: 10, radius: 4)],
+      ),
     );
     expect(filled, greaterThan(0));
     expect(maskLevel(mask.getPixel(10, 10)), 255);
@@ -512,7 +449,7 @@ void main() {
     expect(rgb.getPixel(10, 10).r.toInt(), lessThan(80));
   });
 
-  test('fill patch copies stripe texture from the sample', () {
+  test('fill copies stripe texture from the sample onto the paint', () {
     final rgb = img.Image(width: 40, height: 40, numChannels: 3);
     final mask = img.Image(width: 40, height: 40, numChannels: 3);
     img.fill(mask, color: img.ColorRgb8(255, 255, 255));
@@ -531,13 +468,13 @@ void main() {
         rgb.setPixelRgb(x, y, 210, 198, 176);
       }
     }
-    final before = img.Image(width: 40, height: 40, numChannels: 3);
-    img.fill(before, color: img.ColorRgb8(255, 255, 255));
     applyFillPatch(
       rgb,
       mask,
-      const FillPatch.box(PixelRect(x: 4, y: 4, width: 8, height: 8)),
-      beforeErase: before,
+      const FillStroke(
+        sample: FillPatch.box(PixelRect(x: 4, y: 4, width: 8, height: 8)),
+        paint: [EraseStamp(x: 15, y: 15, radius: 5)],
+      ),
     );
     expect(maskLevel(mask.getPixel(14, 14)), 255);
     final a = rgb.getPixel(14, 14).b.toInt();
@@ -545,7 +482,7 @@ void main() {
     expect((a - b).abs(), greaterThan(20));
   });
 
-  test('fill patch skips a far-away hole outside the sample', () {
+  test('fill skips a hole that was not painted', () {
     final rgb = img.Image(width: 80, height: 80, numChannels: 3);
     img.fill(rgb, color: img.ColorRgb8(18, 28, 48));
     final mask = img.Image(width: 80, height: 80, numChannels: 3);
@@ -554,14 +491,39 @@ void main() {
     applyFillPatch(
       rgb,
       mask,
-      const FillPatch.box(PixelRect(x: 60, y: 60, width: 12, height: 12)),
-      maxDist: 24,
+      const FillStroke(
+        sample: FillPatch.box(PixelRect(x: 60, y: 60, width: 12, height: 12)),
+        paint: [EraseStamp(x: 64, y: 64, radius: 6)],
+      ),
     );
     expect(maskLevel(mask.getPixel(2, 2)), lessThan(24));
-    expect(maskLevel(mask.getPixel(64, 64)), 255);
   });
 
-  test('refineEdits fill restores an erased hole from nearby color', () async {
+  test('fill overwrites every painted pixel, even outside the click outline', () {
+    final rgb = img.Image(width: 40, height: 40, numChannels: 3);
+    img.fill(rgb, color: img.ColorRgb8(18, 28, 48));
+    final mask = img.Image(width: 40, height: 40, numChannels: 3);
+    img.fill(mask, color: img.ColorRgb8(0, 0, 0));
+    for (var y = 8; y < 32; y++) {
+      for (var x = 8; x < 32; x++) {
+        mask.setPixelRgb(x, y, 255, 255, 255);
+      }
+    }
+    rgb.setPixelRgb(4, 4, 210, 198, 176);
+    applyFillPatch(
+      rgb,
+      mask,
+      const FillStroke(
+        sample: FillPatch.box(PixelRect(x: 12, y: 12, width: 8, height: 8)),
+        paint: [EraseStamp(x: 4, y: 4, radius: 4)],
+      ),
+    );
+    expect(maskLevel(mask.getPixel(4, 4)), 255);
+    expect(rgb.getPixel(4, 4).r.toInt(), lessThan(80));
+    expect(maskLevel(mask.getPixel(20, 20)), 255);
+  });
+
+  test('refineEdits fill restores a painted hole inside the outline', () async {
     final image = img.Image(width: 40, height: 40, numChannels: 3);
     img.fill(image, color: img.ColorRgb8(18, 28, 48));
     final existing = img.Image(width: 40, height: 40, numChannels: 3);
@@ -577,7 +539,10 @@ void main() {
         ),
       ],
       fills: const [
-        FillPatch.box(PixelRect(x: 2, y: 2, width: 22, height: 22)),
+        FillStroke(
+          sample: FillPatch.box(PixelRect(x: 24, y: 24, width: 10, height: 10)),
+          paint: [EraseStamp(x: 8, y: 8, radius: 5)],
+        ),
       ],
       palette: const [RgbSwatch(18, 28, 48)],
     );
@@ -585,73 +550,6 @@ void main() {
     expect(maskLevel(mask.getPixel(8, 8)), 255);
     final full = img.decodeImage(result.fullCutoutPng!)!;
     expect(full.getPixel(8, 8).b.toInt(), greaterThan(30));
-  });
-
-  test('fill still works when the box is mostly the hole', () {
-    final rgb = img.Image(width: 40, height: 40, numChannels: 3);
-    img.fill(rgb, color: img.ColorRgb8(18, 28, 48));
-    final mask = img.Image(width: 40, height: 40, numChannels: 3);
-    img.fill(mask, color: img.ColorRgb8(255, 255, 255));
-    for (var y = 10; y < 30; y++) {
-      for (var x = 10; x < 30; x++) {
-        mask.setPixelRgb(x, y, 0, 0, 0);
-        rgb.setPixelRgb(x, y, 210, 198, 176);
-      }
-    }
-    final filled = applyFillPatch(
-      rgb,
-      mask,
-      const FillPatch.box(PixelRect(x: 8, y: 8, width: 24, height: 24)),
-    );
-    expect(filled, greaterThan(0));
-    expect(maskLevel(mask.getPixel(20, 20)), 255);
-    expect(rgb.getPixel(20, 20).r.toInt(), lessThan(80));
-  });
-
-  test('fill replaces leftover hanger color inside the sample box', () {
-    final rgb = img.Image(width: 40, height: 40, numChannels: 3);
-    img.fill(rgb, color: img.ColorRgb8(18, 28, 48));
-    final mask = img.Image(width: 40, height: 40, numChannels: 3);
-    img.fill(mask, color: img.ColorRgb8(255, 255, 255));
-    for (var y = 8; y < 32; y++) {
-      for (var x = 16; x < 22; x++) {
-        rgb.setPixelRgb(x, y, 210, 198, 176);
-      }
-    }
-    final filled = applyFillPatch(
-      rgb,
-      mask,
-      const FillPatch.box(PixelRect(x: 10, y: 6, width: 22, height: 28)),
-      palette: const [RgbSwatch(18, 28, 48)],
-    );
-    expect(filled, greaterThan(0));
-    expect(maskLevel(mask.getPixel(18, 20)), 255);
-    expect(rgb.getPixel(18, 20).r.toInt(), lessThan(80));
-    expect(rgb.getPixel(18, 20).b.toInt(), greaterThan(30));
-  });
-
-  test('fill restores a far erased hole from sampled fabric', () {
-    final rgb = img.Image(width: 80, height: 80, numChannels: 3);
-    img.fill(rgb, color: img.ColorRgb8(18, 28, 48));
-    final mask = img.Image(width: 80, height: 80, numChannels: 3);
-    img.fill(mask, color: img.ColorRgb8(255, 255, 255));
-    final before = img.Image.from(mask);
-    for (var y = 6; y < 14; y++) {
-      for (var x = 6; x < 14; x++) {
-        mask.setPixelRgb(x, y, 0, 0, 0);
-        rgb.setPixelRgb(x, y, 210, 198, 176);
-      }
-    }
-    final filled = applyFillPatch(
-      rgb,
-      mask,
-      const FillPatch.box(PixelRect(x: 60, y: 60, width: 12, height: 12)),
-      beforeErase: before,
-      palette: const [RgbSwatch(18, 28, 48)],
-    );
-    expect(filled, greaterThan(0));
-    expect(maskLevel(mask.getPixel(8, 8)), 255);
-    expect(rgb.getPixel(8, 8).r.toInt(), lessThan(80));
   });
 
   test('ContainLayout maps a click to original pixels', () {
@@ -747,6 +645,94 @@ void main() {
   test('parseWindowsMultiSelect keeps a single full path', () {
     final units = Uint16List.fromList([...'D:\\one.png'.codeUnits, 0, 0]);
     expect(parseWindowsMultiSelect(units), ['D:\\one.png']);
+  });
+
+  test('parseTagText reads labeled brand fabric size and measures', () {
+    final result = parseTagText('''
+品牌：UNIQLO
+成分：棉 100%
+尺码：M
+衣长 70
+胸围 108
+''');
+    expect(result.brand, 'UNIQLO');
+    expect(result.fabric, contains('棉'));
+    expect(result.sizeLabel, 'M');
+    expect(result.measurements['衣长'], '70');
+    expect(result.measurements['胸围'], '108');
+  });
+
+  test('parseTagText guesses latin brand and fiber mix', () {
+    final result = parseTagText('NIKE\nSIZE M\n聚酯纤维 92% 氨纶 8%');
+    expect(result.brand, 'NIKE');
+    expect(result.sizeLabel, 'M');
+    expect(result.fabric, contains('聚酯纤维'));
+    expect(result.fabric, contains('氨纶'));
+  });
+
+  test('parseTagText reads 170/88A', () {
+    final result = parseTagText('号型 170/88A');
+    expect(result.sizeLabel, '170/88A');
+  });
+
+  test('ocrCtcClassCount uses blank plus space (6625)', () {
+    expect(ocrCtcClassCount(40 * 6625, 6623), 6625);
+    expect(ocrCtcClassCount(80 * 6624, 6623), 6624);
+  });
+
+  test('ocrCtcDecode skips blanks, repeats, and can emit space', () {
+    const keys = ['A', 'B', 'C'];
+    List<double> step(int best) => [
+          for (var c = 0; c < 5; c++) c == best ? 8.0 : 0.0,
+        ];
+    final logits = [
+      ...step(1),
+      ...step(1),
+      ...step(0),
+      ...step(2),
+      ...step(4),
+      ...step(3),
+    ];
+    expect(ocrCtcDecode(logits, keys), 'AB C');
+  });
+
+  test('ocrCtcDecode drops low-confidence noise', () {
+    const keys = ['A', 'B', 'C'];
+    List<double> step(int best, double v) => [
+          for (var c = 0; c < 5; c++) c == best ? v : 0.0,
+        ];
+    final logits = [...step(1, 0.12), ...step(2, 0.11), ...step(3, 0.10)];
+    expect(ocrCtcDecode(logits, keys), 'ABC');
+    expect(ocrCtcDecode(logits, keys, minConfidence: 0.45), '');
+  });
+
+  test('sortOcrBoxes reads top-to-bottom then left-to-right', () {
+    final boxes = [
+      const PixelRect(x: 80, y: 10, width: 40, height: 12),
+      const PixelRect(x: 50, y: 200, width: 40, height: 12),
+      const PixelRect(x: 10, y: 80, width: 60, height: 12),
+      const PixelRect(x: 20, y: 198, width: 20, height: 12),
+    ];
+    sortOcrBoxes(boxes);
+    expect(boxes.map((b) => b.x).toList(), [80, 10, 20, 50]);
+    expect(boxes.first.y, 10);
+  });
+
+  test('TagOcrResult json round-trips', () {
+    const result = TagOcrResult(
+      lines: ['品牌：A', '衣长 70'],
+      brand: 'A',
+      fabric: '棉',
+      sizeLabel: 'M',
+      measurements: {'衣长': '70'},
+    );
+    final decoded = TagOcrResult.decode(result.encode());
+    expect(decoded.brand, 'A');
+    expect(decoded.fabric, '棉');
+    expect(decoded.sizeLabel, 'M');
+    expect(decoded.measurements['衣长'], '70');
+    expect(decoded.text, contains('衣长 70'));
+    expect(TagOcrResult.decode('').isEmpty, isTrue);
   });
 }
 

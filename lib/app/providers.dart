@@ -5,6 +5,7 @@ import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/storage/image_store.dart';
 import 'package:wardrobe/core/vision/garment_pipeline.dart';
 import 'package:wardrobe/core/vision/sam_click.dart';
+import 'package:wardrobe/core/vision/tag_ocr.dart';
 import 'package:wardrobe/core/vision/u2net_segmenter.dart';
 import 'package:wardrobe/data/category_repository.dart';
 import 'package:wardrobe/data/cover_repository.dart';
@@ -36,6 +37,12 @@ final samClickSegmenterProvider = Provider<SamClickSegmenter>((ref) {
   final segmenter = SamClickSegmenter();
   ref.onDispose(segmenter.dispose);
   return segmenter;
+});
+
+final tagOcrProvider = Provider<TagOcr>((ref) {
+  final ocr = TagOcr();
+  ref.onDispose(ocr.dispose);
+  return ocr;
 });
 
 final garmentPipelineProvider = Provider<GarmentPipeline>((ref) {

@@ -73,6 +73,9 @@ flutter:
     - assets/models/u2netp.onnx
     - assets/models/mobile_sam_encoder.onnx
     - assets/models/mobile_sam_decoder.onnx
+    - assets/models/ppocr_v4_det.onnx
+    - assets/models/ppocr_v4_rec.onnx
+    - assets/models/ppocr_keys_v1.txt
 
   # To add assets to your application, add an assets section, like this:
   # assets:

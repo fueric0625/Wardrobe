@@ -1,3 +1,39 @@
+/// 衣架阴影挖补。当前**没有接到精修流程**，只留着方便以后加开关或更严的一版。
+///
+/// ## 当时做什么
+/// 擦除 + 纹理填补之后，洞旁边常留下更深的衣架影子。这轮在擦除洞附近，把仍在
+/// mask 里、比取样布更暗、但色相接近的像素抠掉，再由调用方用同一笔填补盖上。
+///
+/// 深蓝上 Lab ΔL 太紧，所以判断改成亮度（luma）+ 余弦色相。
+///
+/// ## 为什么摘掉
+/// 深色印花、褶皱、真实阴影容易跟衣架影子一起被挖掉。精修改成点选 → 擦除 →
+/// 取样/涂抹填补，不再自动第二轮。
+///
+/// ## 以后怎么接回去
+/// 擦除前把 mask 存成 `beforeErase`，擦完存 `afterErase`。[patches] 用取样区域
+/// （现在是 `FillStroke.sample`）：
+///
+/// ```dart
+/// final punched = eraseDarkerShadows(
+///   rgb,
+///   mask,
+///   beforeErase,
+///   afterErase,
+///   [for (final stroke in fills) stroke.sample],
+///   palette: frozen,
+/// );
+/// if (punched > 0) {
+///   for (final stroke in fills) {
+///     applyFillPatch(rgb, mask, stroke, palette: frozen);
+///   }
+/// }
+/// ```
+///
+/// [radius]：离擦除洞多远还要搜；[minDeltaY]：要比取样布暗多少；
+/// [minHueCos]：色相要多接近。花纹多的衣服应把后两个调严。
+library;
+
 import 'dart:math' as math;
 
 import 'package:image/image.dart' as img;
@@ -9,8 +45,8 @@ import 'package:wardrobe/core/vision/image_ops.dart';
 const _dx = [-1, 0, 1, -1, 1, -1, 0, 1];
 const _dy = [-1, -1, -1, 0, 0, 1, 1, 1];
 
-/// Second pass after erase+fill: punch fabric that is clearly darker than the
-/// sampled cloth, then the caller fills those holes with the same texture.
+/// Punch fabric that is clearly darker than the sampled cloth, near an erased
+/// hole. Caller should fill those holes afterwards. See the library doc above.
 int eraseDarkerShadows(
   img.Image rgb,
   img.Image mask,

@@ -56,67 +56,61 @@ class FillPatch {
   }
 }
 
-/// Clone texture from [patch] into holes and leftover junk.
-///
-/// The box or brush is a fabric sample: its knit/print is stamped onto
-/// targets, with a short blend only at the seam.
+class FillStroke {
+  const FillStroke({required this.sample, required this.paint});
+
+  final FillPatch sample;
+  final List<EraseStamp> paint;
+
+  bool paints(int x, int y) {
+    for (final stamp in paint) {
+      final radius = stamp.radius < 1 ? 1 : stamp.radius;
+      final dx = x - stamp.x;
+      final dy = y - stamp.y;
+      if (dx * dx + dy * dy <= radius * radius) return true;
+    }
+    return false;
+  }
+}
+
+/// Clone texture from [stroke.sample] onto every pixel under [stroke.paint].
 int applyFillPatch(
   img.Image rgb,
   img.Image mask,
-  FillPatch patch, {
-  img.Image? beforeErase,
+  FillStroke stroke, {
   List<RgbSwatch> palette = const [],
-  int maxDist = 96,
-  int rim = 2,
-  double replaceDeltaE = 28,
 }) {
   final w = math.min(rgb.width, mask.width);
   final h = math.min(rgb.height, mask.height);
-  if (w <= 0 || h <= 0) return 0;
-  final area = patch.bounds(w, h);
+  if (w <= 0 || h <= 0 || stroke.paint.isEmpty) return 0;
+  final sample = stroke.sample;
+  final area = sample.bounds(w, h);
   final labs = [for (final swatch in palette) rgbToLab(swatch.r, swatch.g, swatch.b)];
 
   var meanR = 0.0;
   var meanG = 0.0;
   var meanB = 0.0;
   var meanN = 0;
-  void sampleMean({required bool Function(int x, int y, img.Pixel p) keep}) {
-    if (meanN > 0) return;
-    for (var y = area.y; y < area.bottom && y < h; y++) {
-      for (var x = area.x; x < area.right && x < w; x++) {
-        if (!patch.contains(x, y)) continue;
-        if (maskLevel(mask.getPixel(x, y)) < 128) continue;
-        final p = rgb.getPixel(x, y);
-        if (!keep(x, y, p)) continue;
-        meanR += p.r.toDouble();
-        meanG += p.g.toDouble();
-        meanB += p.b.toDouble();
-        meanN++;
+  for (var y = area.y; y < area.bottom && y < h; y++) {
+    for (var x = area.x; x < area.right && x < w; x++) {
+      if (!sample.contains(x, y)) continue;
+      if (maskLevel(mask.getPixel(x, y)) < 128) continue;
+      final p = rgb.getPixel(x, y);
+      if (labs.isNotEmpty &&
+          minDeltaE(p.r.toInt(), p.g.toInt(), p.b.toInt(), labs) > 32) {
+        continue;
       }
+      meanR += p.r.toDouble();
+      meanG += p.g.toDouble();
+      meanB += p.b.toDouble();
+      meanN++;
     }
   }
-
-  if (labs.isNotEmpty) {
-    sampleMean(
-      keep: (_, _, p) =>
-          minDeltaE(p.r.toInt(), p.g.toInt(), p.b.toInt(), labs) <= 32,
-    );
-  }
-  sampleMean(keep: (_, _, _) => true);
   if (meanN == 0) {
-    final pad = maxDist < 1 ? 1 : maxDist;
-    final sx0 = math.max(0, area.x - pad);
-    final sy0 = math.max(0, area.y - pad);
-    final sx1 = math.min(w, area.right + pad);
-    final sy1 = math.min(h, area.bottom + pad);
-    for (var y = sy0; y < sy1 && meanN < 64; y++) {
-      for (var x = sx0; x < sx1 && meanN < 64; x++) {
-        if (maskLevel(mask.getPixel(x, y)) < 128) continue;
+    for (var y = area.y; y < area.bottom && y < h && meanN < 64; y++) {
+      for (var x = area.x; x < area.right && x < w && meanN < 64; x++) {
+        if (!sample.contains(x, y)) continue;
         final p = rgb.getPixel(x, y);
-        if (labs.isNotEmpty &&
-            minDeltaE(p.r.toInt(), p.g.toInt(), p.b.toInt(), labs) > 32) {
-          continue;
-        }
         meanR += p.r.toDouble();
         meanG += p.g.toDouble();
         meanB += p.b.toDouble();
@@ -129,271 +123,85 @@ int applyFillPatch(
     meanG /= meanN;
     meanB /= meanN;
   }
-  final meanLab = meanN > 0
-      ? rgbToLab(meanR.round().clamp(0, 255), meanG.round().clamp(0, 255), meanB.round().clamp(0, 255))
-      : null;
 
   final toFill = List<bool>.filled(w * h, false);
   var seedCount = 0;
-  void mark(int x, int y) {
-    final i = y * w + x;
-    if (toFill[i]) return;
-    toFill[i] = true;
-    seedCount++;
-  }
-
-  for (var y = 0; y < h; y++) {
-    for (var x = 0; x < w; x++) {
-      final inside = patch.contains(x, y);
-      final off = maskLevel(mask.getPixel(x, y)) < 128;
-      if (off) {
-        if (inside) mark(x, y);
-        continue;
+  var fillCx = 0;
+  var fillCy = 0;
+  var x0 = w;
+  var y0 = h;
+  var x1 = 0;
+  var y1 = 0;
+  for (final stamp in stroke.paint) {
+    final radius = stamp.radius < 1 ? 1 : stamp.radius;
+    final sx0 = (stamp.x - radius).clamp(0, w - 1);
+    final sy0 = (stamp.y - radius).clamp(0, h - 1);
+    final sx1 = (stamp.x + radius).clamp(0, w - 1);
+    final sy1 = (stamp.y + radius).clamp(0, h - 1);
+    final r2 = radius * radius;
+    for (var y = sy0; y <= sy1; y++) {
+      for (var x = sx0; x <= sx1; x++) {
+        final dx = x - stamp.x;
+        final dy = y - stamp.y;
+        if (dx * dx + dy * dy > r2) continue;
+        final i = y * w + x;
+        if (toFill[i]) continue;
+        toFill[i] = true;
+        seedCount++;
+        fillCx += x;
+        fillCy += y;
+        if (x < x0) x0 = x;
+        if (y < y0) y0 = y;
+        if (x + 1 > x1) x1 = x + 1;
+        if (y + 1 > y1) y1 = y + 1;
       }
-      if (!inside || meanLab == null) continue;
-      final p = rgb.getPixel(x, y);
-      final d = deltaE(rgbToLab(p.r.toInt(), p.g.toInt(), p.b.toInt()), meanLab);
-      if (d > replaceDeltaE) mark(x, y);
     }
-  }
-  if (beforeErase != null) {
-    _markErasedHoles(mask, beforeErase, w, h, mark);
   }
   if (seedCount == 0) return 0;
 
   final atlas = _TextureAtlas.build(
     rgb,
     mask,
-    patch,
+    sample,
     area: area,
     w: w,
     h: h,
     toFill: toFill,
     labs: labs,
   );
-  var fillCx = 0;
-  var fillCy = 0;
-  var fillN = 0;
-  for (var y = 0; y < h; y++) {
-    for (var x = 0; x < w; x++) {
-      if (!toFill[y * w + x]) continue;
-      fillCx += x;
-      fillCy += y;
-      fillN++;
-    }
-  }
-  final shiftX = atlas == null || fillN == 0 ? 0 : atlas.cx - fillCx ~/ fillN;
-  final shiftY = atlas == null || fillN == 0 ? 0 : atlas.cy - fillCy ~/ fillN;
-
-  var x0 = w;
-  var y0 = h;
-  var x1 = 0;
-  var y1 = 0;
-  for (var y = 0; y < h; y++) {
-    for (var x = 0; x < w; x++) {
-      if (!toFill[y * w + x]) continue;
-      if (x < x0) x0 = x;
-      if (y < y0) y0 = y;
-      if (x + 1 > x1) x1 = x + 1;
-      if (y + 1 > y1) y1 = y + 1;
-    }
-  }
-  const workPad = 8;
-  x0 = math.max(0, x0 - workPad);
-  y0 = math.max(0, y0 - workPad);
-  x1 = math.min(w, x1 + workPad);
-  y1 = math.min(h, y1 + workPad);
-
-  final grow = rim < 0 ? 0 : rim;
-  for (var pass = 0; pass < grow; pass++) {
-    final extra = <int>[];
-    for (var y = y0; y < y1; y++) {
-      for (var x = x0; x < x1; x++) {
-        final i = y * w + x;
-        if (toFill[i] || maskLevel(mask.getPixel(x, y)) < 128) continue;
-        if (_touchesFill(toFill, w, h, x, y)) extra.add(i);
-      }
-    }
-    for (final i in extra) {
-      toFill[i] = true;
-    }
-  }
-
-  final dist = List<int>.filled(w * h, 1 << 20);
-  final queue = <int>[];
-  for (var y = y0; y < y1; y++) {
-    for (var x = x0; x < x1; x++) {
-      final i = y * w + x;
-      if (toFill[i]) continue;
-      if (maskLevel(mask.getPixel(x, y)) < 128) continue;
-      dist[i] = 0;
-      queue.add(i);
-    }
-  }
-  for (var q = 0; q < queue.length; q++) {
-    final i = queue[q];
-    final x = i % w;
-    final y = i ~/ w;
-    final nd = dist[i] + 1;
-    for (var k = 0; k < 8; k++) {
-      final nx = x + _dx[k];
-      final ny = y + _dy[k];
-      if (nx < x0 || ny < y0 || nx >= x1 || ny >= y1) continue;
-      final ni = ny * w + nx;
-      if (!toFill[ni] || dist[ni] <= nd) continue;
-      dist[ni] = nd;
-      queue.add(ni);
-    }
-  }
-
-  final order = <int>[];
-  for (var y = y0; y < y1; y++) {
-    for (var x = x0; x < x1; x++) {
-      final i = y * w + x;
-      if (toFill[i]) order.add(i);
-    }
-  }
-  order.sort((a, b) => dist[a].compareTo(dist[b]));
-
-  final done = List<bool>.filled(w * h, false);
-  for (var y = y0; y < y1; y++) {
-    for (var x = x0; x < x1; x++) {
-      final i = y * w + x;
-      done[i] = !toFill[i] && maskLevel(mask.getPixel(x, y)) >= 128;
-    }
-  }
+  final shiftX = atlas == null ? 0 : atlas.cx - fillCx ~/ seedCount;
+  final shiftY = atlas == null ? 0 : atlas.cy - fillCy ~/ seedCount;
 
   var filled = 0;
-  for (final i in order) {
-    final x = i % w;
-    final y = i ~/ w;
-    var sumR = 0.0;
-    var sumG = 0.0;
-    var sumB = 0.0;
-    var sumW = 0.0;
-    for (var r = 1; r <= 6 && sumW == 0; r++) {
-      for (var ny = y - r; ny <= y + r; ny++) {
-        for (var nx = x - r; nx <= x + r; nx++) {
-          if ((ny != y - r && ny != y + r) && (nx != x - r && nx != x + r)) {
-            continue;
-          }
-          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-          final ni = ny * w + nx;
-          if (!done[ni]) continue;
-          final d2 = (nx - x) * (nx - x) + (ny - y) * (ny - y);
-          final weight = 1.0 / (d2 + 0.5);
-          final p = rgb.getPixel(nx, ny);
-          sumR += p.r.toDouble() * weight;
-          sumG += p.g.toDouble() * weight;
-          sumB += p.b.toDouble() * weight;
-          sumW += weight;
-        }
+  for (var y = y0; y < y1; y++) {
+    for (var x = x0; x < x1; x++) {
+      final i = y * w + x;
+      if (!toFill[i]) continue;
+      late final int r;
+      late final int g;
+      late final int b;
+      if (atlas != null) {
+        final tex = atlas.at(x + shiftX, y + shiftY);
+        r = tex.$1;
+        g = tex.$2;
+        b = tex.$3;
+      } else if (meanN > 0) {
+        r = meanR.round().clamp(0, 255);
+        g = meanG.round().clamp(0, 255);
+        b = meanB.round().clamp(0, 255);
+      } else {
+        continue;
       }
+      rgb.setPixelRgb(x, y, r, g, b);
+      mask.setPixelRgb(x, y, 255, 255, 255);
+      filled++;
     }
-    var r = meanR;
-    var g = meanG;
-    var b = meanB;
-    if (atlas != null) {
-      final tex = atlas.at(x + shiftX, y + shiftY);
-      r = tex.$1.toDouble();
-      g = tex.$2.toDouble();
-      b = tex.$3.toDouble();
-      if (sumW > 0 && dist[i] <= 2) {
-        final t = dist[i] <= 1 ? 0.4 : 0.18;
-        r = r * (1 - t) + sumR / sumW * t;
-        g = g * (1 - t) + sumG / sumW * t;
-        b = b * (1 - t) + sumB / sumW * t;
-      }
-    } else if (sumW > 0 && meanN > 0) {
-      r = sumR / sumW * 0.82 + meanR * 0.18;
-      g = sumG / sumW * 0.82 + meanG * 0.18;
-      b = sumB / sumW * 0.82 + meanB * 0.18;
-    } else if (sumW > 0) {
-      r = sumR / sumW;
-      g = sumG / sumW;
-      b = sumB / sumW;
-    } else if (meanN == 0) {
-      continue;
-    }
-    rgb.setPixelRgb(
-      x,
-      y,
-      r.round().clamp(0, 255),
-      g.round().clamp(0, 255),
-      b.round().clamp(0, 255),
-    );
-    mask.setPixelRgb(x, y, 255, 255, 255);
-    done[i] = true;
-    filled++;
   }
-  if (filled == 0) return 0;
   return filled;
 }
 
 const _dx = [-1, 0, 1, -1, 1, -1, 0, 1];
 const _dy = [-1, -1, -1, 0, 0, 1, 1, 1];
-
-bool _touchesKeep(img.Image mask, int w, int h, int x, int y) {
-  for (var k = 0; k < 8; k++) {
-    final nx = x + _dx[k];
-    final ny = y + _dy[k];
-    if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-    if (maskLevel(mask.getPixel(nx, ny)) >= 128) return true;
-  }
-  return false;
-}
-
-void _markErasedHoles(
-  img.Image mask,
-  img.Image beforeErase,
-  int w,
-  int h,
-  void Function(int x, int y) mark,
-) {
-  final erased = List<bool>.filled(w * h, false);
-  for (var y = 0; y < h; y++) {
-    for (var x = 0; x < w; x++) {
-      if (maskLevel(mask.getPixel(x, y)) >= 128) continue;
-      if (maskLevel(beforeErase.getPixel(x, y)) < 24) continue;
-      erased[y * w + x] = true;
-    }
-  }
-  final queue = <int>[];
-  for (var y = 0; y < h; y++) {
-    for (var x = 0; x < w; x++) {
-      final i = y * w + x;
-      if (!erased[i] || !_touchesKeep(mask, w, h, x, y)) continue;
-      erased[i] = false;
-      queue.add(i);
-      mark(x, y);
-    }
-  }
-  for (var q = 0; q < queue.length; q++) {
-    final i = queue[q];
-    final x = i % w;
-    final y = i ~/ w;
-    for (var k = 0; k < 8; k++) {
-      final nx = x + _dx[k];
-      final ny = y + _dy[k];
-      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-      final ni = ny * w + nx;
-      if (!erased[ni]) continue;
-      erased[ni] = false;
-      queue.add(ni);
-      mark(nx, ny);
-    }
-  }
-}
-
-bool _touchesFill(List<bool> toFill, int w, int h, int x, int y) {
-  for (var k = 0; k < 8; k++) {
-    final nx = x + _dx[k];
-    final ny = y + _dy[k];
-    if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-    if (toFill[ny * w + nx]) return true;
-  }
-  return false;
-}
 
 int _mod(int value, int modulo) {
   final n = value % modulo;

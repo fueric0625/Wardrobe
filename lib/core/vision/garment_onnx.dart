@@ -52,6 +52,10 @@ typedef _VoidNative = Void Function();
 typedef _VoidDart = void Function();
 typedef _CloseNamedNative = Void Function(Pointer<Utf8> name);
 typedef _CloseNamedDart = void Function(Pointer<Utf8> name);
+typedef _IoCountNative = Int32 Function(Pointer<Utf8> name, Pointer<Int32> nIn, Pointer<Int32> nOut);
+typedef _IoCountDart = int Function(Pointer<Utf8> name, Pointer<Int32> nIn, Pointer<Int32> nOut);
+typedef _IoNameNative = Pointer<Utf8> Function(Pointer<Utf8> name, Int32 output, Int32 index);
+typedef _IoNameDart = Pointer<Utf8> Function(Pointer<Utf8> name, int output, int index);
 typedef _ErrNative = Pointer<Utf8> Function();
 typedef _ErrDart = Pointer<Utf8> Function();
 
@@ -81,6 +85,8 @@ class GarmentOnnx {
   static _VoidDart? _close;
   static _CloseNamedDart? _closeNamed;
   static _ErrDart? _lastError;
+  static _IoCountDart? _ioCount;
+  static _IoNameDart? _ioName;
 
   static bool get isBound {
     try {
@@ -107,6 +113,12 @@ class GarmentOnnx {
       'garment_onnx_session_close',
     );
     _lastError = lib.lookupFunction<_ErrNative, _ErrDart>('garment_onnx_last_error');
+    _ioCount = lib.lookupFunction<_IoCountNative, _IoCountDart>(
+      'garment_onnx_session_io_count',
+    );
+    _ioName = lib.lookupFunction<_IoNameNative, _IoNameDart>(
+      'garment_onnx_session_io_name',
+    );
   }
 
   static DynamicLibrary _open() {
@@ -271,6 +283,34 @@ class GarmentOnnx {
       for (final ptr in outBufs) {
         malloc.free(ptr);
       }
+    }
+  }
+
+  static ({List<String> inputs, List<String> outputs}) sessionIo(String name) {
+    _ensure();
+    final namePtr = name.toNativeUtf8();
+    final nIn = malloc<Int32>();
+    final nOut = malloc<Int32>();
+    try {
+      final rc = _ioCount!(namePtr, nIn, nOut);
+      if (rc != 0) {
+        throw OnnxUnavailableException(lastError());
+      }
+      final inputs = <String>[];
+      final outputs = <String>[];
+      for (var i = 0; i < nIn.value; i++) {
+        final ptr = _ioName!(namePtr, 0, i);
+        if (ptr != nullptr) inputs.add(ptr.toDartString());
+      }
+      for (var i = 0; i < nOut.value; i++) {
+        final ptr = _ioName!(namePtr, 1, i);
+        if (ptr != nullptr) outputs.add(ptr.toDartString());
+      }
+      return (inputs: inputs, outputs: outputs);
+    } finally {
+      malloc.free(namePtr);
+      malloc.free(nIn);
+      malloc.free(nOut);
     }
   }
 

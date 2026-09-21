@@ -19,8 +19,9 @@ import 'package:wardrobe/core/vision/color_extract.dart';
 import 'package:wardrobe/core/vision/erase_brush.dart';
 import 'package:wardrobe/core/vision/fill_patch.dart';
 import 'package:wardrobe/core/vision/garment_pipeline.dart';
-import 'package:wardrobe/core/vision/image_ops.dart';
 import 'package:wardrobe/core/vision/sam_click.dart';
+import 'package:wardrobe/core/vision/tag_ocr.dart';
+import 'package:wardrobe/features/wardrobe/category_cascade.dart';
 import 'package:wardrobe/features/wardrobe/item_photos.dart';
 import 'package:image/image.dart' as img;
 
@@ -59,10 +60,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   var _refineTool = RefineTool.click;
   var _eraseProtect = true;
   var _eraseRadius = 16;
-  var _fillWithBox = true;
+  var _fillSampling = true;
+  FillPatch? _fillSample;
   final _refinePoints = <PromptPoint>[];
   final _eraseStrokes = <EraseStroke>[];
-  final _fillPatches = <FillPatch>[];
+  final _fillStrokes = <FillStroke>[];
   final _refineOps = <_RefineOpKind>[];
   List<RgbSwatch> _refinePalette = const [];
   _RefineSnapshot? _refineBase;
@@ -173,20 +175,22 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     return value.toString();
   }
 
-  Future<void> _addPhotos() async {
+  Future<void> _addPhotos({bool tag = false}) async {
     final paths = await pickImagePaths();
     if (paths.isEmpty) return;
     for (var i = 0; i < paths.length; i++) {
-      await _ingest(paths[i], keepBusy: i == paths.length - 1);
+      await _ingest(paths[i], keepBusy: i == paths.length - 1, tag: tag);
     }
     if (mounted) await _startRefine();
   }
 
-  Future<void> _ingest(String path, {required bool keepBusy}) async {
+  Future<void> _ingest(String path, {required bool keepBusy, bool tag = false}) async {
+    final hasGarment = _photos.any((p) => !p.isTag);
     final photo = EditableItemPhoto(
       id: const Uuid().v4(),
       originalPath: path,
-      isPrimary: _photos.isEmpty,
+      isPrimary: !tag && !hasGarment,
+      role: tag ? ItemPhotoRole.tag : ItemPhotoRole.garment,
       busy: true,
       busyHint: '正在打开图片…',
     );
@@ -224,7 +228,8 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       final result = await ref.read(garmentPipelineProvider).processBytes(bytes);
       _refinePoints.clear();
       _eraseStrokes.clear();
-      _fillPatches.clear();
+      _fillStrokes.clear();
+      _fillSample = null;
       _refineOps.clear();
       _refineBase = null;
       _refinePalette = const [];
@@ -286,7 +291,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   }
 
   void _maybeFillColor(EditableItemPhoto photo) {
-    if (!photo.isPrimary) return;
+    if (photo.isTag || !photo.isPrimary) return;
     if (_color.text.trim().isNotEmpty) return;
     if (photo.colors.isEmpty) return;
     _color.text = photo.colors.label;
@@ -310,7 +315,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     final index = _selectedPhoto.clamp(0, _photos.length - 1);
     final photo = _photos.removeAt(index);
     if (photo.isPrimary && _photos.isNotEmpty) {
-      _photos.first.isPrimary = true;
+      final next = _photos.cast<EditableItemPhoto?>().firstWhere(
+            (p) => p != null && !p.isTag,
+            orElse: () => null,
+          );
+      if (next != null) next.isPrimary = true;
     }
     _selectedPhoto = _photos.isEmpty ? 0 : index.clamp(0, _photos.length - 1);
     _clearRefineSession();
@@ -320,6 +329,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   void _setPrimary() {
     if (_photos.isEmpty) return;
     final index = _selectedPhoto.clamp(0, _photos.length - 1);
+    if (_photos[index].isTag) return;
     for (var i = 0; i < _photos.length; i++) {
       _photos[i].isPrimary = i == index;
     }
@@ -331,9 +341,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     _refining = false;
     _refineTool = RefineTool.click;
     _eraseProtect = true;
+    _fillSampling = true;
+    _fillSample = null;
     _refinePoints.clear();
     _eraseStrokes.clear();
-    _fillPatches.clear();
+    _fillStrokes.clear();
     _refineOps.clear();
     _refinePalette = const [];
     _refineBase = null;
@@ -384,11 +396,12 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
         photo.error = null;
         _refinePoints.clear();
         _eraseStrokes.clear();
-        _fillPatches.clear();
+        _fillStrokes.clear();
+        _fillSample = null;
         _refineOps.clear();
         _refineTool = RefineTool.click;
         _eraseProtect = true;
-        _fillWithBox = true;
+        _fillSampling = true;
         _refinePalette = List<RgbSwatch>.of(photo.colors.palette);
         _refineBase = _RefineSnapshot(
           maskPath: photo.maskPath,
@@ -418,6 +431,27 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     photo.originalHeight = decoded.height;
   }
 
+  bool get _hasClickOutline => _refinePoints.any((point) => point.positive);
+
+  void _setRefineTool(RefineTool tool) {
+    if (tool == RefineTool.fill &&
+        _photos.isNotEmpty &&
+        _photos[_selectedPhoto.clamp(0, _photos.length - 1)].isTag) {
+      return;
+    }
+    if (tool != RefineTool.click && !_hasClickOutline) {
+      final isTag = _photos.isNotEmpty &&
+          _photos[_selectedPhoto.clamp(0, _photos.length - 1)].isTag;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isTag ? '先点选吊牌轮廓，再擦除' : '先点选衣服轮廓，再擦除或填补'),
+        ),
+      );
+      return;
+    }
+    setState(() => _refineTool = tool);
+  }
+
   void _addRefinePoint(PromptPoint point) {
     if (!_refining || _photos.isEmpty) return;
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
@@ -429,6 +463,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
 
   void _addEraseStroke(List<EraseStamp> stamps) {
     if (!_refining || _photos.isEmpty || stamps.isEmpty) return;
+    if (!_hasClickOutline) return;
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
     if (photo.busy) return;
     _eraseStrokes.add(EraseStroke(stamps: stamps, protectColor: _eraseProtect));
@@ -436,20 +471,32 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     _rebuildRefine();
   }
 
-  void _addFillBox(PixelRect box) {
-    _addFillPatch(FillPatch.box(box));
+  void _addFillSample(List<EraseStamp> stamps) {
+    if (!_refining || stamps.isEmpty || !_hasClickOutline) return;
+    if (_photos.isNotEmpty &&
+        _photos[_selectedPhoto.clamp(0, _photos.length - 1)].isTag) {
+      return;
+    }
+    setState(() {
+      _fillSample = FillPatch.brush(stamps);
+      _fillSampling = false;
+    });
   }
 
-  void _addFillBrush(List<EraseStamp> stamps) {
-    if (stamps.isEmpty) return;
-    _addFillPatch(FillPatch.brush(stamps));
-  }
-
-  void _addFillPatch(FillPatch patch) {
-    if (!_refining || _photos.isEmpty) return;
+  void _addFillPaint(List<EraseStamp> stamps) {
+    if (!_refining || _photos.isEmpty || stamps.isEmpty) return;
+    if (!_hasClickOutline) return;
+    if (_photos[_selectedPhoto.clamp(0, _photos.length - 1)].isTag) return;
+    final sample = _fillSample;
+    if (sample == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('先涂一块花纹取样')),
+      );
+      return;
+    }
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
     if (photo.busy) return;
-    _fillPatches.add(patch);
+    _fillStrokes.add(FillStroke(sample: sample, paint: stamps));
     _refineOps.add(_RefineOpKind.fill);
     _rebuildRefine();
   }
@@ -457,7 +504,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   Future<void> _rebuildRefine() async {
     if (_photos.isEmpty) return;
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
-    if (_refinePoints.isEmpty && _eraseStrokes.isEmpty && _fillPatches.isEmpty) {
+    if (_refinePoints.isEmpty && _eraseStrokes.isEmpty && _fillStrokes.isEmpty) {
       _restoreRefineBase(photo);
       return;
     }
@@ -478,14 +525,18 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
             maskBytes: maskBytes,
             points: List<PromptPoint>.of(_refinePoints),
             strokes: List<EraseStroke>.of(_eraseStrokes),
-            fills: List<FillPatch>.of(_fillPatches),
+            fills: photo.isTag ? const [] : List<FillStroke>.of(_fillStrokes),
             palette: _refinePalette,
           );
       await _applyResult(photo, result, replaceOriginal: false);
       if (!mounted) return;
-      if (_fillPatches.isNotEmpty && result.filledCount == 0) {
+      if (photo.isTag) {
+        await _runTagOcr(photo);
+      }
+      if (!mounted) return;
+      if (!photo.isTag && _fillStrokes.isNotEmpty && result.filledCount == 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('没有补上。把衣服颜色和要补的位置一起框进去')),
+          const SnackBar(content: Text('没有补上。先取样，再涂要改的位置')),
         );
       }
       setState(() => _refining = true);
@@ -517,6 +568,94 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     });
   }
 
+  Future<void> _runTagOcr(EditableItemPhoto photo) async {
+    if (!photo.isTag) return;
+    setState(() {
+      photo.busy = true;
+      photo.busyHint = '正在识别吊牌文字…';
+    });
+    try {
+      final path = photo.processedPath ?? photo.originalPath;
+      final bytes = await File(path).readAsBytes();
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) {
+        if (!mounted) return;
+        setState(() {
+          photo.busy = false;
+          photo.busyHint = null;
+          photo.error = '无法读取这张图';
+        });
+        return;
+      }
+      final result = await ref.read(tagOcrProvider).recognize(decoded);
+      if (!mounted) return;
+      setState(() {
+        photo.ocr = result;
+        photo.busy = false;
+        photo.busyHint = null;
+        if (result.isEmpty) {
+          photo.error = '没有识别到文字，可再点选吊牌后重试';
+        }
+      });
+      _maybeFillTagFields();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        photo.busy = false;
+        photo.busyHint = null;
+        photo.error = '识别失败，可稍后重试';
+      });
+    }
+  }
+
+  TagOcrResult get _mergedTagOcr {
+    final lines = <String>[];
+    String? brand;
+    String? fabric;
+    String? sizeLabel;
+    final measurements = <String, String>{};
+    for (final photo in _photos) {
+      if (!photo.isTag || photo.ocr.isEmpty) continue;
+      lines.addAll(photo.ocr.lines);
+      brand ??= photo.ocr.brand;
+      fabric ??= photo.ocr.fabric;
+      sizeLabel ??= photo.ocr.sizeLabel;
+      for (final entry in photo.ocr.measurements.entries) {
+        measurements.putIfAbsent(entry.key, () => entry.value);
+      }
+    }
+    if (lines.isEmpty && brand == null && fabric == null && sizeLabel == null) {
+      return const TagOcrResult();
+    }
+    return TagOcrResult(
+      lines: lines,
+      brand: brand,
+      fabric: fabric,
+      sizeLabel: sizeLabel,
+      measurements: measurements,
+    );
+  }
+
+  void _maybeFillTagFields() {
+    final ocr = _mergedTagOcr;
+    if (ocr.isEmpty) return;
+    if (_fabric.text.trim().isEmpty && ocr.fabric != null && ocr.fabric!.isNotEmpty) {
+      _fabric.text = ocr.fabric!;
+    }
+    if (_brand.text.trim().isEmpty && ocr.brand != null && ocr.brand!.isNotEmpty) {
+      _brand.text = ocr.brand!;
+    }
+    _applySizeOcr(allSizeFieldNames());
+  }
+
+  Future<void> _ocrPendingTags() async {
+    for (final photo in List<EditableItemPhoto>.of(_photos)) {
+      if (!photo.isTag) continue;
+      if (photo.ocr.text.isNotEmpty) continue;
+      await _runTagOcr(photo);
+    }
+  }
+
   void _undoRefine() {
     if (!_refining || _photos.isEmpty || _refineOps.isEmpty) return;
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
@@ -527,13 +666,21 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       case _RefineOpKind.erase:
         if (_eraseStrokes.isNotEmpty) _eraseStrokes.removeLast();
       case _RefineOpKind.fill:
-        if (_fillPatches.isNotEmpty) _fillPatches.removeLast();
+        if (_fillStrokes.isNotEmpty) _fillStrokes.removeLast();
     }
     _rebuildRefine();
   }
 
-  void _cancelRefine() {
+  Future<void> _cancelRefine() async {
+    if (_photos.isEmpty) {
+      setState(_clearRefineSession);
+      return;
+    }
+    final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
     setState(_clearRefineSession);
+    if (photo.isTag && photo.ocr.isEmpty) {
+      await _runTagOcr(photo);
+    }
   }
 
   Future<void> _save() async {
@@ -663,10 +810,12 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                 FilledButton(
                   onPressed: busy
                       ? null
-                      : () => setState(() {
-                            _clearRefineSession();
-                            _stage = _EditStage.form;
-                          }),
+                      : () async {
+                          _clearRefineSession();
+                          await _ocrPendingTags();
+                          if (!mounted) return;
+                          setState(() => _stage = _EditStage.form);
+                        },
                   child: Text(_isEditing ? '完成' : '下一步'),
                 ),
               ],
@@ -684,13 +833,17 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                   setState(() {
                     _selectedPhoto = i;
                     _clearRefineSession();
+                    if (_photos[i].isTag && _refineTool == RefineTool.fill) {
+                      _refineTool = RefineTool.click;
+                    }
                   });
                   final photo = _photos[i];
                   if (photo.processedPath == null && photo.maskPath == null) {
                     _startRefine();
                   }
                 },
-                onAdd: _addPhotos,
+                onAdd: () => _addPhotos(),
+                onAddTag: () => _addPhotos(tag: true),
                 onRemove: _removeSelectedPhoto,
                 onSetPrimary: _setPrimary,
                 onToggleProcessed: () {
@@ -708,21 +861,27 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                   );
                 },
                 onStartRefine: _startRefine,
+                onRecognize: () {
+                  if (_photos.isEmpty) return;
+                  _runTagOcr(_photos[_selectedPhoto.clamp(0, _photos.length - 1)]);
+                },
                 onCancelRefine: _cancelRefine,
                 onUndoRefine: _undoRefine,
                 canUndo: _refineOps.isNotEmpty,
+                hasClickOutline: _hasClickOutline,
                 onAddPoint: _addRefinePoint,
                 onEraseStroke: _addEraseStroke,
                 refineTool: _refineTool,
                 eraseProtect: _eraseProtect,
                 eraseRadius: _eraseRadius,
-                fillWithBox: _fillWithBox,
-                onRefineTool: (tool) => setState(() => _refineTool = tool),
+                fillSampling: _fillSampling,
+                hasFillSample: _fillSample != null,
+                onRefineTool: _setRefineTool,
                 onEraseProtect: (v) => setState(() => _eraseProtect = v),
                 onEraseRadius: (v) => setState(() => _eraseRadius = v),
-                onFillWithBox: (v) => setState(() => _fillWithBox = v),
-                onFillBox: _addFillBox,
-                onFillBrush: _addFillBrush,
+                onFillSampling: (v) => setState(() => _fillSampling = v),
+                onFillSample: _addFillSample,
+                onFillPaint: _addFillPaint,
               ),
             ),
           ),
@@ -792,13 +951,9 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                 const SizedBox(height: 16),
                 _FormCard(
                   children: [
-                    _DropdownRow(
-                      label: '分类',
+                    CategoryCascadePicker(
+                      categories: categories,
                       value: selectedId,
-                      items: {
-                        for (final c in flattenPreorder(categories))
-                          c.id: categoryPath(categories, c.id),
-                      },
                       onChanged: (v) => setState(() => _categoryId = v),
                     ),
                     _split(
@@ -842,8 +997,26 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                       ),
                     ),
                     _split(
-                      _LabeledField(label: '面料', hint: '手填面料', controller: _fabric),
-                      _LabeledField(label: '品牌', hint: '手填品牌', controller: _brand),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _LabeledField(label: '面料', hint: '手填面料', controller: _fabric),
+                          _ocrFillHint(
+                            value: _mergedTagOcr.fabric,
+                            onApply: () => setState(() => _fabric.text = _mergedTagOcr.fabric ?? ''),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _LabeledField(label: '品牌', hint: '手填品牌', controller: _brand),
+                          _ocrFillHint(
+                            value: _mergedTagOcr.brand,
+                            onApply: () => setState(() => _brand.text = _mergedTagOcr.brand ?? ''),
+                          ),
+                        ],
+                      ),
                     ),
                     _split(
                       _LabeledField(
@@ -882,6 +1055,10 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                             ),
                         ],
                       ),
+                      _ocrFillHint(
+                        value: _sizeOcrHint(sizeFields),
+                        onApply: () => _applySizeOcr(sizeFields),
+                      ),
                     ],
                     _LabeledField(
                       label: '购买信息',
@@ -904,6 +1081,14 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                       controller: _note,
                       maxLines: 4,
                     ),
+                    if (_mergedTagOcr.text.isNotEmpty || _tagPreviewPaths.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: HangtagOcrBlock(
+                          text: _mergedTagOcr.text,
+                          imagePaths: _tagPreviewPaths,
+                        ),
+                      ),
                   ],
                 ),
               ],
@@ -914,14 +1099,75 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     );
   }
 
+  List<String> get _tagPreviewPaths => [
+        for (final photo in _photos)
+          if (photo.isTag) photo.processedPath ?? photo.previewPath,
+      ];
+
   String? get _detectedColorHint {
     if (_photos.isEmpty) return null;
     final selected = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
-    if (!selected.colors.isEmpty) return selected.colors.detail;
+    if (!selected.isTag && !selected.colors.isEmpty) return selected.colors.detail;
     for (final photo in _photos) {
       if (photo.isPrimary && !photo.colors.isEmpty) return photo.colors.detail;
     }
     return null;
+  }
+
+  String? _sizeOcrHint(List<String> sizeFields) {
+    final ocr = _mergedTagOcr;
+    final parts = <String>[
+      if (ocr.sizeLabel != null && ocr.sizeLabel!.isNotEmpty) ocr.sizeLabel!,
+      for (final field in sizeFields)
+        if (ocr.measurements[field] != null) '$field ${ocr.measurements[field]}',
+    ];
+    if (parts.isEmpty) return null;
+    return parts.join(' · ');
+  }
+
+  void _applySizeOcr(List<String> sizeFields) {
+    final ocr = _mergedTagOcr;
+    setState(() {
+      for (final field in sizeFields) {
+        final value = ocr.measurements[field];
+        if (value == null || value.isEmpty) continue;
+        final controller = _measureControllers[field];
+        if (controller != null && controller.text.trim().isEmpty) {
+          controller.text = value;
+        }
+      }
+      if (ocr.sizeLabel != null && ocr.sizeLabel!.isNotEmpty) {
+        for (final field in sizeFields) {
+          if (field != '尺寸') continue;
+          final controller = _measureControllers[field];
+          if (controller != null && controller.text.trim().isEmpty) {
+            controller.text = ocr.sizeLabel!;
+          }
+        }
+      }
+    });
+  }
+
+  Widget _ocrFillHint({
+    required String? value,
+    required VoidCallback onApply,
+  }) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Wrap(
+        spacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            '识别：$text',
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+          ),
+          TextButton(onPressed: onApply, child: const Text('填入')),
+        ],
+      ),
+    );
   }
 
   Widget _split(Widget left, Widget right) {
@@ -1010,45 +1256,6 @@ class _LabeledField extends StatelessWidget {
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           decoration: InputDecoration(hintText: hint),
-        ),
-      ],
-    );
-  }
-}
-
-class _DropdownRow extends StatelessWidget {
-  const _DropdownRow({
-    required this.label,
-    required this.value,
-    required this.items,
-    required this.onChanged,
-  });
-
-  final String label;
-  final String value;
-  final Map<String, String> items;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
-        const SizedBox(height: 6),
-        if (items.isEmpty)
-          const Text('暂无分类', style: TextStyle(color: AppColors.textMuted))
-        else
-          DropdownButtonFormField<String>(
-          key: ValueKey(value),
-          initialValue: items.containsKey(value) ? value : items.keys.first,
-          items: [
-            for (final entry in items.entries)
-              DropdownMenuItem(value: entry.key, child: Text(entry.value)),
-          ],
-          onChanged: (v) {
-            if (v != null) onChanged(v);
-          },
         ),
       ],
     );

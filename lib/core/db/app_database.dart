@@ -79,6 +79,7 @@ class ClothingItemImages extends Table {
   TextColumn get processedPath => text().nullable()();
   TextColumn get maskPath => text().nullable()();
   TextColumn get colorJson => text().withDefault(const Constant(''))();
+  TextColumn get ocrJson => text().withDefault(const Constant(''))();
   BoolColumn get isPrimary => boolean().withDefault(const Constant(false))();
 
   @override
@@ -94,7 +95,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -117,6 +118,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 5) {
             await m.createTable(clothingItemImages);
             await _backfillItemImages();
+          }
+          if (from < 6) {
+            await m.addColumn(clothingItemImages, clothingItemImages.ocrJson);
           }
         },
       );

@@ -13,3 +13,12 @@ Split ONNX for click refine: image encoder once per photo, prompt decoder on eac
 - Encoder: `mobile_sam_encoder.onnx` from [Acly/MobileSAM](https://huggingface.co/Acly/MobileSAM/blob/main/mobile_sam_image_encoder.onnx) (`mobile_sam_image_encoder.onnx`)
 - Decoder: `mobile_sam_decoder.onnx` from [Acly/MobileSAM](https://huggingface.co/Acly/MobileSAM/blob/main/sam_mask_decoder_single.onnx) (`sam_mask_decoder_single.onnx`)
 - Original MobileSAM: Apache-2.0 (https://github.com/ChaoningZhang/MobileSAM)
+
+# RapidOCR PP-OCRv4 (hangtag)
+
+Detection + recognition ONNX plus PaddleOCR character dict. Loaded through the existing ONNX Runtime FFI (no cloud, no Python, no Flutter OCR plugin).
+
+- Detector: `ppocr_v4_det.onnx` from [SWHL/RapidOCR](https://huggingface.co/SWHL/RapidOCR)
+- Recognizer: `ppocr_v4_rec.onnx` from [SWHL/RapidOCR](https://huggingface.co/SWHL/RapidOCR)
+- Keys: `ppocr_keys_v1.txt` (PaddleOCR PP-OCR dict; CTC blank is index 0, space is the extra last class, giving 6625 classes)
+- PaddleOCR: Apache-2.0 (https://github.com/PaddlePaddle/PaddleOCR)

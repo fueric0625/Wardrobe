@@ -12,6 +12,7 @@ class ItemImageDraft {
     this.role = ItemPhotoRole.garment,
     this.isPrimary = false,
     this.colorJson = '',
+    this.ocrJson = '',
   });
 
   final String id;
@@ -21,6 +22,7 @@ class ItemImageDraft {
   final ItemPhotoRole role;
   final bool isPrimary;
   final String colorJson;
+  final String ocrJson;
 }
 
 abstract class ItemRepository {
@@ -84,7 +86,10 @@ class LocalItemRepository implements ItemRepository {
             break;
           }
         }
-        primary ??= stored.isEmpty ? null : stored.first;
+        primary ??= stored.cast<ItemImageDraft?>().firstWhere(
+              (image) => image?.role == ItemPhotoRole.garment,
+              orElse: () => null,
+            );
         toWrite = item.copyWith(
           imagePath: Value(_displayPath(primary)),
         );
@@ -117,8 +122,12 @@ class LocalItemRepository implements ItemRepository {
           processedPath: processed,
           maskPath: mask,
           role: draft.role,
-          isPrimary: draft.isPrimary || (i == 0 && !drafts.any((d) => d.isPrimary)),
+          isPrimary: draft.role == ItemPhotoRole.garment &&
+              (draft.isPrimary ||
+                  (!drafts.any((d) => d.role == ItemPhotoRole.garment && d.isPrimary) &&
+                      i == drafts.indexWhere((d) => d.role == ItemPhotoRole.garment))),
           colorJson: draft.colorJson,
+          ocrJson: draft.ocrJson,
         ),
       );
     }
@@ -138,6 +147,7 @@ class LocalItemRepository implements ItemRepository {
               processedPath: Value(draft.processedPath),
               maskPath: Value(draft.maskPath),
               colorJson: Value(draft.colorJson),
+              ocrJson: Value(draft.ocrJson),
               isPrimary: Value(draft.isPrimary),
             ),
           );

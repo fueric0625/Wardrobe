@@ -6,11 +6,10 @@ import 'package:wardrobe/core/vision/color_guide.dart';
 import 'package:wardrobe/core/vision/erase_brush.dart';
 import 'package:wardrobe/core/vision/fill_patch.dart';
 import 'package:wardrobe/core/vision/image_ops.dart';
-import 'package:wardrobe/core/vision/shadow_heal.dart';
 import 'package:wardrobe/core/vision/sam_click.dart';
 import 'package:wardrobe/core/vision/u2net_segmenter.dart';
 
-/// Kept for existing image rows; new photos always store `garment`.
+/// `garment` is clothing; `tag` is a hangtag photo (never used as cover).
 enum ItemPhotoRole {
   garment,
   tag;
@@ -110,13 +109,13 @@ class GarmentPipeline {
   }
 
   /// Rebuild the mask from optional SAM [points], then subtract [strokes]
-  /// and fill holes from sampled [fills].
+  /// and stamp [fills] onto the painted pixels.
   Future<GarmentProcessResult> refineEdits({
     required Uint8List originalBytes,
     Uint8List? maskBytes,
     List<PromptPoint> points = const [],
     List<EraseStroke> strokes = const [],
-    List<FillPatch> fills = const [],
+    List<FillStroke> fills = const [],
     List<RgbSwatch> palette = const [],
   }) async {
     final decoded = img.decodeImage(originalBytes);
@@ -142,49 +141,18 @@ class GarmentPipeline {
         );
       }
       final frozen = palette.isNotEmpty ? palette : extractPalette(original, mask);
-      img.Image? beforeErase;
-      if (strokes.isNotEmpty) {
-        beforeErase = img.Image.from(mask);
-      }
       for (final stroke in strokes) {
         applyEraseStroke(original, mask, stroke, palette: frozen);
       }
       final rgb = img.Image.from(original);
-      img.Image? afterErase;
-      if (beforeErase != null) {
-        afterErase = img.Image.from(mask);
-      }
       var filledCount = 0;
-      for (final patch in fills) {
+      for (final stroke in fills) {
         filledCount += applyFillPatch(
           rgb,
           mask,
-          patch,
-          beforeErase: beforeErase,
+          stroke,
           palette: frozen,
         );
-      }
-      if (fills.isNotEmpty && beforeErase != null && afterErase != null) {
-        final beforeShadow = img.Image.from(mask);
-        final punched = eraseDarkerShadows(
-          rgb,
-          mask,
-          beforeErase,
-          afterErase,
-          fills,
-          palette: frozen,
-        );
-        if (punched > 0) {
-          for (final patch in fills) {
-            filledCount += applyFillPatch(
-              rgb,
-              mask,
-              patch,
-              beforeErase: beforeShadow,
-              palette: frozen,
-            );
-          }
-        }
       }
       final result = _finish(rgb, mask, palette: frozen);
       if (fills.isEmpty) return result;

@@ -2297,6 +2297,18 @@ class $ClothingItemImagesTable extends ClothingItemImages
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _ocrJsonMeta = const VerificationMeta(
+    'ocrJson',
+  );
+  @override
+  late final GeneratedColumn<String> ocrJson = GeneratedColumn<String>(
+    'ocr_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _isPrimaryMeta = const VerificationMeta(
     'isPrimary',
   );
@@ -2322,6 +2334,7 @@ class $ClothingItemImagesTable extends ClothingItemImages
     processedPath,
     maskPath,
     colorJson,
+    ocrJson,
     isPrimary,
   ];
   @override
@@ -2395,6 +2408,12 @@ class $ClothingItemImagesTable extends ClothingItemImages
         colorJson.isAcceptableOrUnknown(data['color_json']!, _colorJsonMeta),
       );
     }
+    if (data.containsKey('ocr_json')) {
+      context.handle(
+        _ocrJsonMeta,
+        ocrJson.isAcceptableOrUnknown(data['ocr_json']!, _ocrJsonMeta),
+      );
+    }
     if (data.containsKey('is_primary')) {
       context.handle(
         _isPrimaryMeta,
@@ -2442,6 +2461,10 @@ class $ClothingItemImagesTable extends ClothingItemImages
         DriftSqlType.string,
         data['${effectivePrefix}color_json'],
       )!,
+      ocrJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ocr_json'],
+      )!,
       isPrimary: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_primary'],
@@ -2465,6 +2488,7 @@ class ClothingItemImage extends DataClass
   final String? processedPath;
   final String? maskPath;
   final String colorJson;
+  final String ocrJson;
   final bool isPrimary;
   const ClothingItemImage({
     required this.id,
@@ -2475,6 +2499,7 @@ class ClothingItemImage extends DataClass
     this.processedPath,
     this.maskPath,
     required this.colorJson,
+    required this.ocrJson,
     required this.isPrimary,
   });
   @override
@@ -2492,6 +2517,7 @@ class ClothingItemImage extends DataClass
       map['mask_path'] = Variable<String>(maskPath);
     }
     map['color_json'] = Variable<String>(colorJson);
+    map['ocr_json'] = Variable<String>(ocrJson);
     map['is_primary'] = Variable<bool>(isPrimary);
     return map;
   }
@@ -2510,6 +2536,7 @@ class ClothingItemImage extends DataClass
           ? const Value.absent()
           : Value(maskPath),
       colorJson: Value(colorJson),
+      ocrJson: Value(ocrJson),
       isPrimary: Value(isPrimary),
     );
   }
@@ -2528,6 +2555,7 @@ class ClothingItemImage extends DataClass
       processedPath: serializer.fromJson<String?>(json['processedPath']),
       maskPath: serializer.fromJson<String?>(json['maskPath']),
       colorJson: serializer.fromJson<String>(json['colorJson']),
+      ocrJson: serializer.fromJson<String>(json['ocrJson']),
       isPrimary: serializer.fromJson<bool>(json['isPrimary']),
     );
   }
@@ -2543,6 +2571,7 @@ class ClothingItemImage extends DataClass
       'processedPath': serializer.toJson<String?>(processedPath),
       'maskPath': serializer.toJson<String?>(maskPath),
       'colorJson': serializer.toJson<String>(colorJson),
+      'ocrJson': serializer.toJson<String>(ocrJson),
       'isPrimary': serializer.toJson<bool>(isPrimary),
     };
   }
@@ -2556,6 +2585,7 @@ class ClothingItemImage extends DataClass
     Value<String?> processedPath = const Value.absent(),
     Value<String?> maskPath = const Value.absent(),
     String? colorJson,
+    String? ocrJson,
     bool? isPrimary,
   }) => ClothingItemImage(
     id: id ?? this.id,
@@ -2568,6 +2598,7 @@ class ClothingItemImage extends DataClass
         : this.processedPath,
     maskPath: maskPath.present ? maskPath.value : this.maskPath,
     colorJson: colorJson ?? this.colorJson,
+    ocrJson: ocrJson ?? this.ocrJson,
     isPrimary: isPrimary ?? this.isPrimary,
   );
   ClothingItemImage copyWithCompanion(ClothingItemImagesCompanion data) {
@@ -2584,6 +2615,7 @@ class ClothingItemImage extends DataClass
           : this.processedPath,
       maskPath: data.maskPath.present ? data.maskPath.value : this.maskPath,
       colorJson: data.colorJson.present ? data.colorJson.value : this.colorJson,
+      ocrJson: data.ocrJson.present ? data.ocrJson.value : this.ocrJson,
       isPrimary: data.isPrimary.present ? data.isPrimary.value : this.isPrimary,
     );
   }
@@ -2599,6 +2631,7 @@ class ClothingItemImage extends DataClass
           ..write('processedPath: $processedPath, ')
           ..write('maskPath: $maskPath, ')
           ..write('colorJson: $colorJson, ')
+          ..write('ocrJson: $ocrJson, ')
           ..write('isPrimary: $isPrimary')
           ..write(')'))
         .toString();
@@ -2614,6 +2647,7 @@ class ClothingItemImage extends DataClass
     processedPath,
     maskPath,
     colorJson,
+    ocrJson,
     isPrimary,
   );
   @override
@@ -2628,6 +2662,7 @@ class ClothingItemImage extends DataClass
           other.processedPath == this.processedPath &&
           other.maskPath == this.maskPath &&
           other.colorJson == this.colorJson &&
+          other.ocrJson == this.ocrJson &&
           other.isPrimary == this.isPrimary);
 }
 
@@ -2640,6 +2675,7 @@ class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
   final Value<String?> processedPath;
   final Value<String?> maskPath;
   final Value<String> colorJson;
+  final Value<String> ocrJson;
   final Value<bool> isPrimary;
   final Value<int> rowid;
   const ClothingItemImagesCompanion({
@@ -2651,6 +2687,7 @@ class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
     this.processedPath = const Value.absent(),
     this.maskPath = const Value.absent(),
     this.colorJson = const Value.absent(),
+    this.ocrJson = const Value.absent(),
     this.isPrimary = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2663,6 +2700,7 @@ class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
     this.processedPath = const Value.absent(),
     this.maskPath = const Value.absent(),
     this.colorJson = const Value.absent(),
+    this.ocrJson = const Value.absent(),
     this.isPrimary = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2678,6 +2716,7 @@ class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
     Expression<String>? processedPath,
     Expression<String>? maskPath,
     Expression<String>? colorJson,
+    Expression<String>? ocrJson,
     Expression<bool>? isPrimary,
     Expression<int>? rowid,
   }) {
@@ -2690,6 +2729,7 @@ class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
       if (processedPath != null) 'processed_path': processedPath,
       if (maskPath != null) 'mask_path': maskPath,
       if (colorJson != null) 'color_json': colorJson,
+      if (ocrJson != null) 'ocr_json': ocrJson,
       if (isPrimary != null) 'is_primary': isPrimary,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2704,6 +2744,7 @@ class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
     Value<String?>? processedPath,
     Value<String?>? maskPath,
     Value<String>? colorJson,
+    Value<String>? ocrJson,
     Value<bool>? isPrimary,
     Value<int>? rowid,
   }) {
@@ -2716,6 +2757,7 @@ class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
       processedPath: processedPath ?? this.processedPath,
       maskPath: maskPath ?? this.maskPath,
       colorJson: colorJson ?? this.colorJson,
+      ocrJson: ocrJson ?? this.ocrJson,
       isPrimary: isPrimary ?? this.isPrimary,
       rowid: rowid ?? this.rowid,
     );
@@ -2748,6 +2790,9 @@ class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
     if (colorJson.present) {
       map['color_json'] = Variable<String>(colorJson.value);
     }
+    if (ocrJson.present) {
+      map['ocr_json'] = Variable<String>(ocrJson.value);
+    }
     if (isPrimary.present) {
       map['is_primary'] = Variable<bool>(isPrimary.value);
     }
@@ -2768,6 +2813,7 @@ class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
           ..write('processedPath: $processedPath, ')
           ..write('maskPath: $maskPath, ')
           ..write('colorJson: $colorJson, ')
+          ..write('ocrJson: $ocrJson, ')
           ..write('isPrimary: $isPrimary, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3949,6 +3995,7 @@ typedef $$ClothingItemImagesTableCreateCompanionBuilder =
       Value<String?> processedPath,
       Value<String?> maskPath,
       Value<String> colorJson,
+      Value<String> ocrJson,
       Value<bool> isPrimary,
       Value<int> rowid,
     });
@@ -3962,6 +4009,7 @@ typedef $$ClothingItemImagesTableUpdateCompanionBuilder =
       Value<String?> processedPath,
       Value<String?> maskPath,
       Value<String> colorJson,
+      Value<String> ocrJson,
       Value<bool> isPrimary,
       Value<int> rowid,
     });
@@ -4012,6 +4060,11 @@ class $$ClothingItemImagesTableFilterComposer
 
   ColumnFilters<String> get colorJson => $composableBuilder(
     column: $table.colorJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ocrJson => $composableBuilder(
+    column: $table.ocrJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4070,6 +4123,11 @@ class $$ClothingItemImagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get ocrJson => $composableBuilder(
+    column: $table.ocrJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isPrimary => $composableBuilder(
     column: $table.isPrimary,
     builder: (column) => ColumnOrderings(column),
@@ -4112,6 +4170,9 @@ class $$ClothingItemImagesTableAnnotationComposer
 
   GeneratedColumn<String> get colorJson =>
       $composableBuilder(column: $table.colorJson, builder: (column) => column);
+
+  GeneratedColumn<String> get ocrJson =>
+      $composableBuilder(column: $table.ocrJson, builder: (column) => column);
 
   GeneratedColumn<bool> get isPrimary =>
       $composableBuilder(column: $table.isPrimary, builder: (column) => column);
@@ -4165,6 +4226,7 @@ class $$ClothingItemImagesTableTableManager
                 Value<String?> processedPath = const Value.absent(),
                 Value<String?> maskPath = const Value.absent(),
                 Value<String> colorJson = const Value.absent(),
+                Value<String> ocrJson = const Value.absent(),
                 Value<bool> isPrimary = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ClothingItemImagesCompanion(
@@ -4176,6 +4238,7 @@ class $$ClothingItemImagesTableTableManager
                 processedPath: processedPath,
                 maskPath: maskPath,
                 colorJson: colorJson,
+                ocrJson: ocrJson,
                 isPrimary: isPrimary,
                 rowid: rowid,
               ),
@@ -4189,6 +4252,7 @@ class $$ClothingItemImagesTableTableManager
                 Value<String?> processedPath = const Value.absent(),
                 Value<String?> maskPath = const Value.absent(),
                 Value<String> colorJson = const Value.absent(),
+                Value<String> ocrJson = const Value.absent(),
                 Value<bool> isPrimary = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ClothingItemImagesCompanion.insert(
@@ -4200,6 +4264,7 @@ class $$ClothingItemImagesTableTableManager
                 processedPath: processedPath,
                 maskPath: maskPath,
                 colorJson: colorJson,
+                ocrJson: ocrJson,
                 isPrimary: isPrimary,
                 rowid: rowid,
               ),

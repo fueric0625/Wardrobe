@@ -7,6 +7,8 @@ import 'package:wardrobe/core/catalogs.dart';
 import 'package:wardrobe/core/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/vision/garment_pipeline.dart';
+import 'package:wardrobe/core/vision/tag_ocr.dart';
 import 'package:wardrobe/features/wardrobe/category_item_dialogs.dart';
 import 'package:wardrobe/features/wardrobe/item_photos.dart';
 import 'package:wardrobe/widgets/common.dart';
@@ -63,6 +65,8 @@ class ItemDetailPage extends ConsumerWidget {
               data: (rows) => rows,
               orElse: () => const <ClothingItemImage>[],
             );
+        final tagOcr = _tagOcrText(images);
+        final tagPaths = _tagImagePaths(images);
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -170,6 +174,8 @@ class ItemDetailPage extends ConsumerWidget {
                               ReadOnlyField(label: '存放位置', value: item.location),
                               ReadOnlyField(label: '标签', value: item.tags),
                               ReadOnlyField(label: '备注', value: item.note),
+                              if (tagOcr.isNotEmpty || tagPaths.isNotEmpty)
+                                HangtagOcrBlock(text: tagOcr, imagePaths: tagPaths),
                             ],
                           ),
                         ),
@@ -236,4 +242,21 @@ String? _joinTokens(String raw) {
   final parts = raw.split(RegExp(r'[,，\s]+')).where((s) => s.isNotEmpty);
   if (parts.isEmpty) return null;
   return parts.join('、');
+}
+
+String _tagOcrText(List<ClothingItemImage> images) {
+  final parts = <String>[];
+  for (final image in images) {
+    if (ItemPhotoRole.parse(image.role) != ItemPhotoRole.tag) continue;
+    final text = TagOcrResult.decode(image.ocrJson).text;
+    if (text.isNotEmpty) parts.add(text);
+  }
+  return parts.join('\n\n');
+}
+
+List<String> _tagImagePaths(List<ClothingItemImage> images) {
+  return [
+    for (final image in images)
+      if (ItemPhotoRole.parse(image.role) == ItemPhotoRole.tag) itemImagePreviewPath(image),
+  ];
 }
