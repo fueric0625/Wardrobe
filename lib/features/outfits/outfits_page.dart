@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wardrobe/app/providers.dart';
-import 'package:wardrobe/core/catalogs.dart';
-import 'package:wardrobe/core/category_tree.dart';
+import 'package:wardrobe/core/catalog/providers.dart';
+import 'package:wardrobe/features/outfits/providers.dart';
+import 'package:wardrobe/core/catalog/catalogs.dart';
+import 'package:wardrobe/core/catalog/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/theme.dart';
-import 'package:wardrobe/data/cover_repository.dart';
+import 'package:wardrobe/core/catalog/cover_repository.dart';
 import 'package:wardrobe/widgets/common.dart';
+import 'package:wardrobe/widgets/piece_collage.dart';
 
 class OutfitsPage extends ConsumerStatefulWidget {
   const OutfitsPage({super.key});
@@ -42,6 +44,7 @@ class _OutfitsPageState extends ConsumerState<OutfitsPage> {
     final asyncItems = ref.watch(outfitsProvider);
     final categories = ref.watch(outfitCategoryRowsProvider);
     final covers = ref.watch(categoryCoverRowsProvider);
+    final coversById = ref.watch(outfitCoversProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -77,11 +80,16 @@ class _OutfitsPageState extends ConsumerState<OutfitsPage> {
               ),
               Expanded(
                 child: searching
-                    ? _OutfitSearchGrid(items: matched, categories: categories)
+                    ? _OutfitSearchGrid(
+                        items: matched,
+                        categories: categories,
+                        coversById: coversById,
+                      )
                     : _CategoryGrid(
                         items: items,
                         categories: categories,
                         covers: covers,
+                        coversById: coversById,
                       ),
               ),
             ],
@@ -101,11 +109,13 @@ class _CategoryGrid extends StatelessWidget {
     required this.items,
     required this.categories,
     required this.covers,
+    required this.coversById,
   });
 
   final List<Outfit> items;
   final List<Category> categories;
   final List<CategoryCover> covers;
+  final Map<String, OutfitCoverModel> coversById;
 
   @override
   Widget build(BuildContext context) {
@@ -137,6 +147,7 @@ class _CategoryGrid extends StatelessWidget {
           label: category.label,
           count: inTree.length,
           coverPath: cover?.imagePath,
+          cover: outfitCoverArt(cover == null ? null : coversById[cover.id]),
           onTap: () => openOutfitCategory(context, category.id),
         );
       },
@@ -145,10 +156,15 @@ class _CategoryGrid extends StatelessWidget {
 }
 
 class _OutfitSearchGrid extends StatelessWidget {
-  const _OutfitSearchGrid({required this.items, required this.categories});
+  const _OutfitSearchGrid({
+    required this.items,
+    required this.categories,
+    required this.coversById,
+  });
 
   final List<Outfit> items;
   final List<Category> categories;
+  final Map<String, OutfitCoverModel> coversById;
 
   @override
   Widget build(BuildContext context) {
@@ -170,6 +186,7 @@ class _OutfitSearchGrid extends StatelessWidget {
         final item = items[index];
         return ItemTile(
           coverPath: item.imagePath,
+          cover: outfitCoverArt(coversById[item.id]),
           title: item.name.isEmpty
               ? categoryPath(categories, item.categoryId)
               : item.name,

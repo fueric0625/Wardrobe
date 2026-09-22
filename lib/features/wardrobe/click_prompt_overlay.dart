@@ -3,8 +3,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wardrobe/core/theme.dart';
-import 'package:wardrobe/core/vision/contain_map.dart';
-import 'package:wardrobe/core/vision/sam_click.dart';
+import 'package:wardrobe/core/vision/cutout/contain_map.dart';
+import 'package:wardrobe/core/vision/cutout/sam_click.dart';
 
 class ClickPromptOverlay extends StatefulWidget {
   const ClickPromptOverlay({

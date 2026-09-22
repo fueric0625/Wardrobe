@@ -1,13 +1,13 @@
 import 'package:go_router/go_router.dart';
 import 'package:wardrobe/app/shell.dart';
-import 'package:wardrobe/core/catalogs.dart';
+import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/features/calendar/calendar_page.dart';
 import 'package:wardrobe/features/outfits/outfit_category_page.dart';
 import 'package:wardrobe/features/outfits/outfit_detail_page.dart';
 import 'package:wardrobe/features/outfits/outfit_edit_page.dart';
 import 'package:wardrobe/features/outfits/outfits_page.dart';
 import 'package:wardrobe/features/wardrobe/category_items_page.dart';
-import 'package:wardrobe/features/wardrobe/category_manage_page.dart';
+import 'package:wardrobe/core/catalog/category_manage_page.dart';
 import 'package:wardrobe/features/wardrobe/item_detail_page.dart';
 import 'package:wardrobe/features/wardrobe/item_edit_page.dart';
 import 'package:wardrobe/features/wardrobe/wardrobe_page.dart';

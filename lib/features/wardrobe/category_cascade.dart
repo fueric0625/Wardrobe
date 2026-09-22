@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:wardrobe/core/catalogs.dart';
-import 'package:wardrobe/core/category_tree.dart';
+import 'package:wardrobe/core/catalog/catalogs.dart';
+import 'package:wardrobe/core/catalog/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/theme.dart';
 

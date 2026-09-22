@@ -11,25 +11,27 @@ class AppColors {
   static const sidebar = Color(0xFFFFFFFF);
 }
 
-ThemeData buildAppTheme() {
-  const font = 'Microsoft YaHei';
+ThemeData buildAppTheme(String fontFamily) {
   final scheme = ColorScheme.fromSeed(
     seedColor: AppColors.primary,
     brightness: Brightness.light,
     surface: AppColors.surface,
   ).copyWith(primary: AppColors.primary);
+  final base = ThemeData(useMaterial3: true, fontFamily: fontFamily);
+  final text = base.textTheme.apply(
+    fontFamily: fontFamily,
+    bodyColor: AppColors.text,
+    displayColor: AppColors.text,
+  );
 
-  return ThemeData(
-    useMaterial3: true,
-    fontFamily: font,
+  return base.copyWith(
     colorScheme: scheme,
+    textTheme: text,
+    primaryTextTheme: text,
     scaffoldBackgroundColor: AppColors.background,
-    textTheme: const TextTheme(
-      bodyMedium: TextStyle(color: AppColors.text, fontFamily: font),
-      titleMedium: TextStyle(
-        color: AppColors.text,
-        fontWeight: FontWeight.w600,
-        fontFamily: font,
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        textStyle: TextStyle(fontFamily: fontFamily, letterSpacing: 0),
       ),
     ),
     appBarTheme: const AppBarTheme(

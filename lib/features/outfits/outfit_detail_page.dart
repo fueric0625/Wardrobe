@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wardrobe/app/providers.dart';
-import 'package:wardrobe/core/catalogs.dart';
-import 'package:wardrobe/core/category_tree.dart';
+import 'package:wardrobe/core/catalog/providers.dart';
+import 'package:wardrobe/features/outfits/providers.dart';
+import 'package:wardrobe/core/catalog/catalogs.dart';
+import 'package:wardrobe/core/catalog/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/theme.dart';
-import 'package:wardrobe/features/wardrobe/category_item_dialogs.dart';
+import 'package:wardrobe/core/catalog/category_item_dialogs.dart';
+import 'package:wardrobe/features/wardrobe/providers.dart';
 import 'package:wardrobe/widgets/common.dart';
+import 'package:wardrobe/widgets/piece_collage.dart';
+import 'package:wardrobe/widgets/zoom_viewport.dart';
 
 class OutfitDetailPage extends ConsumerWidget {
   const OutfitDetailPage({super.key, required this.outfitId});
@@ -57,6 +61,25 @@ class OutfitDetailPage extends ConsumerWidget {
             .split(RegExp(r'[,，\s]+'))
             .where((s) => s.isNotEmpty)
             .join('、');
+        final clothingCategories = ref.watch(clothingCategoryRowsProvider);
+        final linkedIds = ref.watch(outfitClothingIdsProvider(item.id)).maybeWhen(
+              data: (ids) => ids,
+              orElse: () => const <String>[],
+            );
+        final clothes = ref.watch(clothingItemsProvider).maybeWhen(
+              data: (rows) => rows,
+              orElse: () => const <ClothingItem>[],
+            );
+        final byId = {for (final piece in clothes) piece.id: piece};
+        final linked = [
+          for (final id in linkedIds)
+            if (byId[id] != null) byId[id]!,
+        ];
+        final cutout = item.imagePath?.toLowerCase().endsWith('.png') ?? false;
+        final hasPhoto = item.imagePath != null && item.imagePath!.isNotEmpty;
+        final cover = ref.watch(outfitCoversProvider)[item.id];
+        final collagePieces = cover?.pieces ?? const <CollagePiece>[];
+        final hasCollage = !isCollageRemoved(item.collageLayout) && collagePieces.isNotEmpty;
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -112,7 +135,37 @@ class OutfitDetailPage extends ConsumerWidget {
                       children: [
                         SizedBox(
                           width: 320,
-                          child: DetailHeroImage(path: item.imagePath),
+                          child: Column(
+                            children: [
+                              if (!hasPhoto && !hasCollage)
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 48),
+                                  child: Text(
+                                    '还没有照片',
+                                    style: TextStyle(color: AppColors.textMuted),
+                                  ),
+                                ),
+                              if (hasPhoto)
+                                LabeledCoverCard(
+                                  label: '全身照',
+                                  onDelete: () => _deletePhoto(context, ref, item),
+                                  child: ZoomViewport(
+                                    child: LocalCover(
+                                      path: item.imagePath,
+                                      fit: BoxFit.contain,
+                                      checkerboard: cutout,
+                                    ),
+                                  ),
+                                ),
+                              if (hasPhoto && hasCollage) const SizedBox(height: 16),
+                              if (hasCollage)
+                                LabeledCoverCard(
+                                  label: '拼图',
+                                  onDelete: () => _deleteCollage(context, ref, item.id),
+                                  child: OutfitPieceCollage(pieces: collagePieces),
+                                ),
+                            ],
+                          ),
                         ),
                         const SizedBox(width: 28),
                         Expanded(
@@ -127,6 +180,37 @@ class OutfitDetailPage extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    if (linked.isNotEmpty) ...[
+                      const SizedBox(height: 28),
+                      const Text(
+                        '这套衣服',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 220,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: linked.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: 16),
+                          itemBuilder: (context, index) {
+                            final piece = linked[index];
+                            final title = piece.type.trim().isEmpty
+                                ? categoryPath(clothingCategories, piece.categoryId)
+                                : piece.type.trim();
+                            return SizedBox(
+                              width: 150,
+                              child: ItemTile(
+                                coverPath: piece.imagePath,
+                                title: title,
+                                subtitle: piece.brand,
+                                onTap: () => context.push('/wardrobe/item/${piece.id}'),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -135,6 +219,30 @@ class OutfitDetailPage extends ConsumerWidget {
         );
       },
     );
+  }
+
+  static Future<bool> _confirmRemove(BuildContext context, String title) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('删除')),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
+  static Future<void> _deletePhoto(BuildContext context, WidgetRef ref, Outfit item) async {
+    if (!await _confirmRemove(context, '删除这张全身照？')) return;
+    await ref.read(outfitRepositoryProvider).clearPhoto(item.id);
+  }
+
+  static Future<void> _deleteCollage(BuildContext context, WidgetRef ref, String id) async {
+    if (!await _confirmRemove(context, '删除这张拼图？')) return;
+    await ref.read(outfitRepositoryProvider).clearCollage(id);
   }
 
   static Future<void> _move(

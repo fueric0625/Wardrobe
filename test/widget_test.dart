@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wardrobe/core/catalogs.dart';
+import 'package:wardrobe/core/catalog/catalogs.dart';
 
 void main() {
   test('preset clothing category seeds match the v1 labels and size fields', () {

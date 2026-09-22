@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lunar/lunar.dart';
 import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/features/calendar/day_plan_panel.dart';
+import 'package:wardrobe/features/calendar/providers.dart';
+import 'package:wardrobe/features/calendar/virtual_weather.dart';
 
-class CalendarPage extends StatefulWidget {
+class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
 
   @override
-  State<CalendarPage> createState() => _CalendarPageState();
+  ConsumerState<CalendarPage> createState() => _CalendarPageState();
 }
 
-class _CalendarPageState extends State<CalendarPage> {
+class _CalendarPageState extends ConsumerState<CalendarPage> {
   late DateTime _visibleMonth;
   late DateTime _selected;
 
@@ -60,48 +64,49 @@ class _CalendarPageState extends State<CalendarPage> {
   Widget build(BuildContext context) {
     final today = DateTime.now();
     final days = _daysInGrid();
+    final eventDays = ref.watch(dayEventsProvider).maybeWhen(
+          data: (rows) => rows.map((row) => row.day).toSet(),
+          orElse: () => const <String>{},
+        );
+    final outfitDays = ref.watch(dayOutfitLinksProvider).maybeWhen(
+          data: (rows) => rows.map((row) => row.day).toSet(),
+          orElse: () => const <String>{},
+        );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(36, 24, 36, 28),
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              _CircleButton(label: '今', onTap: _goToday),
-              const Spacer(),
-              IconButton(
-                onPressed: () => _shiftMonth(-1),
-                icon: const Icon(Icons.chevron_left),
-                style: IconButton.styleFrom(backgroundColor: AppColors.primarySoft),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Text(
-                  DateFormat('yyyy-MM').format(_visibleMonth),
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-                ),
-              ),
-              IconButton(
-                onPressed: () => _shiftMonth(1),
-                icon: const Icon(Icons.chevron_right),
-                style: IconButton.styleFrom(backgroundColor: AppColors.primarySoft),
-              ),
-              const Spacer(),
-              IconButton(
-                tooltip: '筛选（后续开放）',
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('筛选后续开放')),
-                  );
-                },
-                icon: const Icon(Icons.tune, color: AppColors.textMuted),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
           Expanded(
+            flex: 3,
             child: Column(
               children: [
+                Row(
+                  children: [
+                    _CircleButton(label: '今', onTap: _goToday),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => _shiftMonth(-1),
+                      icon: const Icon(Icons.chevron_left),
+                      style: IconButton.styleFrom(backgroundColor: AppColors.primarySoft),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: Text(
+                        DateFormat('yyyy-MM').format(_visibleMonth),
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => _shiftMonth(1),
+                      icon: const Icon(Icons.chevron_right),
+                      style: IconButton.styleFrom(backgroundColor: AppColors.primarySoft),
+                    ),
+                    const Spacer(),
+                  ],
+                ),
+                const SizedBox(height: 18),
                 Row(
                   children: [
                     for (final day in _weekdays)
@@ -142,6 +147,12 @@ class _CalendarPageState extends State<CalendarPage> {
                                           _selected,
                                         ),
                                         isToday: _sameDay(days[week * 7 + weekday], today),
+                                        marked: eventDays.contains(
+                                              calendarDayKey(days[week * 7 + weekday]),
+                                            ) ||
+                                            outfitDays.contains(
+                                              calendarDayKey(days[week * 7 + weekday]),
+                                            ),
                                         onTap: () => setState(
                                           () => _selected = days[week * 7 + weekday],
                                         ),
@@ -158,26 +169,10 @@ class _CalendarPageState extends State<CalendarPage> {
               ],
             ),
           ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              DateFormat('yyyy-MM-dd').format(_selected),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('添加穿着记录后续开放')),
-              );
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('点击添加记录'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(220, 48),
-              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+          const SizedBox(width: 20),
+          SizedBox(
+            width: 360,
+            child: DayPlanPanel(date: _selected),
           ),
         ],
       ),
@@ -221,6 +216,7 @@ class _DayCell extends StatelessWidget {
     required this.inMonth,
     required this.selected,
     required this.isToday,
+    required this.marked,
     required this.onTap,
   });
 
@@ -229,6 +225,7 @@ class _DayCell extends StatelessWidget {
   final bool inMonth;
   final bool selected;
   final bool isToday;
+  final bool marked;
   final VoidCallback onTap;
 
   @override
@@ -269,6 +266,15 @@ class _DayCell extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   color: inMonth ? AppColors.textMuted : AppColors.textMuted.withValues(alpha: 0.4),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: marked ? AppColors.primary : Colors.transparent,
+                  shape: BoxShape.circle,
                 ),
               ),
             ],

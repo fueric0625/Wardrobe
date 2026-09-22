@@ -120,12 +120,14 @@ class CategoryCard extends StatelessWidget {
     required this.count,
     required this.coverPath,
     required this.onTap,
+    this.cover,
   });
 
   final String label;
   final int count;
   final String? coverPath;
   final VoidCallback onTap;
+  final Widget? cover;
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +143,7 @@ class CategoryCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  LocalCover(path: coverPath),
+                  cover ?? LocalCover(path: coverPath),
                   Positioned(
                     right: 10,
                     bottom: 10,
@@ -174,6 +176,8 @@ class ItemTile extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
     this.isCover = false,
+    this.selected = false,
+    this.cover,
   });
 
   final String? coverPath;
@@ -181,6 +185,8 @@ class ItemTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
   final bool isCover;
+  final bool selected;
+  final Widget? cover;
 
   @override
   Widget build(BuildContext context) {
@@ -197,12 +203,18 @@ class ItemTile extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  LocalCover(path: coverPath, fit: BoxFit.contain),
+                  cover ?? LocalCover(path: coverPath, fit: BoxFit.contain),
                   if (isCover)
                     const Positioned(
                       left: 10,
                       top: 10,
                       child: _CoverBadge(),
+                    ),
+                  if (selected)
+                    const Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Icon(Icons.check_circle, color: AppColors.primary, size: 28),
                     ),
                 ],
               ),
@@ -424,10 +436,16 @@ class ReadOnlyField extends StatelessWidget {
 }
 
 class DetailHeroImage extends StatelessWidget {
-  const DetailHeroImage({super.key, required this.path, this.checkerboard = false});
+  const DetailHeroImage({
+    super.key,
+    required this.path,
+    this.checkerboard = false,
+    this.cover,
+  });
 
   final String? path;
   final bool checkerboard;
+  final Widget? cover;
 
   @override
   Widget build(BuildContext context) {
@@ -438,14 +456,15 @@ class DetailHeroImage extends StatelessWidget {
       child: SizedBox(
         height: 380,
         child: ZoomViewport(
-          child: LocalCover(
-            path: path,
-            fit: BoxFit.contain,
-            checkerboard: checkerboard,
-            placeholder: const Center(
-              child: Icon(Icons.image_outlined, size: 48, color: AppColors.textMuted),
-            ),
-          ),
+          child: cover ??
+              LocalCover(
+                path: path,
+                fit: BoxFit.contain,
+                checkerboard: checkerboard,
+                placeholder: const Center(
+                  child: Icon(Icons.image_outlined, size: 48, color: AppColors.textMuted),
+                ),
+              ),
         ),
       ),
     );

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wardrobe/core/app_font.dart';
 import 'package:wardrobe/core/theme.dart';
 
 class AppShell extends StatelessWidget {
@@ -87,6 +89,9 @@ class _Sidebar extends StatelessWidget {
               selected: index == 2,
               onTap: () => onSelect(2),
             ),
+            const Spacer(),
+            const _FontButton(),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -142,3 +147,51 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
+
+class _FontButton extends ConsumerWidget {
+  const _FontButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(appFontProvider);
+    return PopupMenuButton<String>(
+      tooltip: '字体',
+      offset: const Offset(80, 0),
+      onSelected: (family) => ref.read(appFontProvider.notifier).select(family),
+      itemBuilder: (context) => [
+        for (final choice in appFontChoices)
+          PopupMenuItem(
+            value: choice.family,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 24,
+                  child: current == choice.family
+                      ? const Icon(Icons.check, size: 18, color: AppColors.primary)
+                      : null,
+                ),
+                Text(
+                  choice.label,
+                  style: TextStyle(fontFamily: choice.family, fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+      ],
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          children: [
+            Icon(Icons.text_fields, color: AppColors.textMuted, size: 22),
+            SizedBox(height: 4),
+            Text(
+              '字体',
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

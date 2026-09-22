@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wardrobe/app/router.dart';
+import 'package:wardrobe/core/app_font.dart';
 import 'package:wardrobe/core/theme.dart';
 
 class WardrobeApp extends ConsumerWidget {
@@ -11,7 +12,7 @@ class WardrobeApp extends ConsumerWidget {
     return MaterialApp.router(
       title: '衣橱',
       debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
+      theme: buildAppTheme(ref.watch(appFontProvider)),
       routerConfig: appRouter,
     );
   }

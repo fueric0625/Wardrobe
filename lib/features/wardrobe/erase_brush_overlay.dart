@@ -1,8 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:wardrobe/core/vision/contain_map.dart';
-import 'package:wardrobe/core/vision/erase_brush.dart';
+import 'package:wardrobe/core/vision/cutout/contain_map.dart';
+import 'package:wardrobe/core/vision/cutout/erase_brush.dart';
 
 class EraseBrushOverlay extends StatefulWidget {
   const EraseBrushOverlay({

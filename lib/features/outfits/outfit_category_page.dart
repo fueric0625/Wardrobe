@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wardrobe/app/providers.dart';
-import 'package:wardrobe/core/catalogs.dart';
-import 'package:wardrobe/core/category_tree.dart';
+import 'package:wardrobe/core/catalog/providers.dart';
+import 'package:wardrobe/features/outfits/providers.dart';
+import 'package:wardrobe/core/catalog/catalogs.dart';
+import 'package:wardrobe/core/catalog/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/theme.dart';
-import 'package:wardrobe/data/cover_repository.dart';
+import 'package:wardrobe/core/catalog/cover_repository.dart';
 import 'package:wardrobe/features/outfits/outfits_page.dart';
-import 'package:wardrobe/features/wardrobe/category_item_dialogs.dart';
+import 'package:wardrobe/core/catalog/category_item_dialogs.dart';
 import 'package:wardrobe/widgets/common.dart';
+import 'package:wardrobe/widgets/piece_collage.dart';
 
 class OutfitCategoryPage extends ConsumerStatefulWidget {
   const OutfitCategoryPage({super.key, required this.categoryId});
@@ -48,6 +50,7 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
           CategoryPickItem(
             id: item.id,
             imagePath: item.imagePath,
+            cover: outfitCoverArt(ref.read(outfitCoversProvider)[item.id]),
             label: item.name.trim().isEmpty ? '未命名' : item.name.trim(),
           ),
       ],
@@ -90,6 +93,7 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
     final category = categoryById(categories, widget.categoryId);
     final asyncItems = ref.watch(outfitsProvider);
     final covers = ref.watch(categoryCoverRowsProvider);
+    final coversById = ref.watch(outfitCoversProvider);
     final customCoverId = coverItemIdOf(
       covers,
       CategoryKind.outfit,
@@ -238,12 +242,14 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
                               label: child.label,
                               count: inTree.length,
                               coverPath: cover?.imagePath,
+                              cover: outfitCoverArt(cover == null ? null : coversById[cover.id]),
                               onTap: () => openOutfitCategory(context, child.id),
                             );
                           }
                           final item = items[index - children.length];
                           return ItemTile(
                             coverPath: item.imagePath,
+                            cover: outfitCoverArt(coversById[item.id]),
                             title: item.name.isEmpty ? '未命名' : item.name,
                             subtitle: item.season,
                             isCover: customCoverId == item.id,

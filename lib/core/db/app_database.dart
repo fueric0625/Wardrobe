@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
 import 'package:uuid/uuid.dart';
-import 'package:wardrobe/core/catalogs.dart';
+import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/storage/app_paths.dart';
 
 part 'app_database.g.dart';
@@ -38,6 +38,11 @@ class Outfits extends Table {
   TextColumn get id => text()();
   TextColumn get categoryId => text()();
   TextColumn get imagePath => text().nullable()();
+  TextColumn get sourceImagePath => text().nullable()();
+  /// `photo` uses the full-body image. `collage` uses the arranged clothes.
+  TextColumn get coverMode => text().withDefault(const Constant('photo'))();
+  /// JSON placements for a manual collage. Empty means an automatic layout.
+  TextColumn get collageLayout => text().nullable()();
   TextColumn get name => text().withDefault(const Constant(''))();
   TextColumn get season => text().withDefault(const Constant(''))();
   TextColumn get note => text().withDefault(const Constant(''))();
@@ -86,8 +91,48 @@ class ClothingItemImages extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Clothes from the wardrobe that belong to one outfit. One clothing item once.
+class OutfitItems extends Table {
+  TextColumn get outfitId => text()();
+  TextColumn get clothingItemId => text()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {outfitId, clothingItemId};
+}
+
+/// A plan note on one calendar day, such as 外出 or 会议.
+class DayEvents extends Table {
+  TextColumn get id => text()();
+  TextColumn get day => text()();
+  TextColumn get title => text()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Outfits planned for a calendar day. One outfit appears once per day.
+class DayOutfits extends Table {
+  TextColumn get day => text()();
+  TextColumn get outfitId => text()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {day, outfitId};
+}
+
 @DriftDatabase(
-  tables: [ClothingItems, Outfits, CategoryCovers, Categories, ClothingItemImages],
+  tables: [
+    ClothingItems,
+    Outfits,
+    CategoryCovers,
+    Categories,
+    ClothingItemImages,
+    OutfitItems,
+    DayEvents,
+    DayOutfits,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -95,7 +140,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -121,6 +166,18 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 6) {
             await m.addColumn(clothingItemImages, clothingItemImages.ocrJson);
+          }
+          if (from < 7) {
+            await m.addColumn(outfits, outfits.sourceImagePath);
+            await m.createTable(outfitItems);
+          }
+          if (from < 8) {
+            await m.createTable(dayEvents);
+            await m.createTable(dayOutfits);
+          }
+          if (from < 9) {
+            await m.addColumn(outfits, outfits.coverMode);
+            await m.addColumn(outfits, outfits.collageLayout);
           }
         },
       );

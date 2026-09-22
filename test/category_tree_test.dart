@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wardrobe/core/catalogs.dart';
-import 'package:wardrobe/core/category_tree.dart';
+import 'package:wardrobe/core/catalog/catalogs.dart';
+import 'package:wardrobe/core/catalog/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 
 Category cat({
@@ -75,6 +75,47 @@ void main() {
     expect(
       siblingLabelTaken(all, parentId: 'tops', label: '卫衣', exceptId: 'hoodie'),
       isFalse,
+    );
+  });
+
+  test('subcategory filter keeps only that branch of clothes', () {
+    final now = DateTime.utc(2026, 1, 1);
+    ClothingItem piece(String id, String categoryId) {
+      return ClothingItem(
+        id: id,
+        categoryId: categoryId,
+        type: '',
+        style: '',
+        color: '',
+        season: '',
+        fabric: '',
+        brand: '',
+        measurements: '{}',
+        purchaseInfo: '',
+        location: '',
+        tags: '',
+        note: '',
+        createdAt: now,
+        updatedAt: now,
+      );
+    }
+
+    final items = [
+      piece('hoodie-item', 'hoodie'),
+      piece('hooded-item', 'hooded'),
+      piece('shirt-item', 'shirt'),
+    ];
+    expect(
+      itemsInSubtree(items, all, 'tops').map((item) => item.id).toSet(),
+      {'hoodie-item', 'hooded-item', 'shirt-item'},
+    );
+    expect(
+      itemsInSubtree(items, all, 'hoodie').map((item) => item.id).toList(),
+      ['hoodie-item', 'hooded-item'],
+    );
+    expect(
+      itemsInSubtree(items, all, 'shirt').map((item) => item.id).toList(),
+      ['shirt-item'],
     );
   });
 }

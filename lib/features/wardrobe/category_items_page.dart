@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wardrobe/app/providers.dart';
-import 'package:wardrobe/core/catalogs.dart';
-import 'package:wardrobe/core/category_tree.dart';
+import 'package:wardrobe/core/catalog/providers.dart';
+import 'package:wardrobe/features/wardrobe/providers.dart';
+import 'package:wardrobe/core/catalog/catalogs.dart';
+import 'package:wardrobe/core/catalog/category_tree.dart';
 import 'package:wardrobe/core/db/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/theme.dart';
-import 'package:wardrobe/data/cover_repository.dart';
-import 'package:wardrobe/features/wardrobe/category_item_dialogs.dart';
+import 'package:wardrobe/core/catalog/cover_repository.dart';
+import 'package:wardrobe/core/catalog/category_item_dialogs.dart';
 import 'package:wardrobe/features/wardrobe/wardrobe_page.dart';
 import 'package:wardrobe/widgets/common.dart';
 

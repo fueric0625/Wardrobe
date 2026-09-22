@@ -1011,6 +1011,40 @@ class $OutfitsTable extends Outfits with TableInfo<$OutfitsTable, Outfit> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceImagePathMeta = const VerificationMeta(
+    'sourceImagePath',
+  );
+  @override
+  late final GeneratedColumn<String> sourceImagePath = GeneratedColumn<String>(
+    'source_image_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _coverModeMeta = const VerificationMeta(
+    'coverMode',
+  );
+  @override
+  late final GeneratedColumn<String> coverMode = GeneratedColumn<String>(
+    'cover_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('photo'),
+  );
+  static const VerificationMeta _collageLayoutMeta = const VerificationMeta(
+    'collageLayout',
+  );
+  @override
+  late final GeneratedColumn<String> collageLayout = GeneratedColumn<String>(
+    'collage_layout',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -1068,6 +1102,9 @@ class $OutfitsTable extends Outfits with TableInfo<$OutfitsTable, Outfit> {
     id,
     categoryId,
     imagePath,
+    sourceImagePath,
+    coverMode,
+    collageLayout,
     name,
     season,
     note,
@@ -1103,6 +1140,30 @@ class $OutfitsTable extends Outfits with TableInfo<$OutfitsTable, Outfit> {
       context.handle(
         _imagePathMeta,
         imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta),
+      );
+    }
+    if (data.containsKey('source_image_path')) {
+      context.handle(
+        _sourceImagePathMeta,
+        sourceImagePath.isAcceptableOrUnknown(
+          data['source_image_path']!,
+          _sourceImagePathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cover_mode')) {
+      context.handle(
+        _coverModeMeta,
+        coverMode.isAcceptableOrUnknown(data['cover_mode']!, _coverModeMeta),
+      );
+    }
+    if (data.containsKey('collage_layout')) {
+      context.handle(
+        _collageLayoutMeta,
+        collageLayout.isAcceptableOrUnknown(
+          data['collage_layout']!,
+          _collageLayoutMeta,
+        ),
       );
     }
     if (data.containsKey('name')) {
@@ -1160,6 +1221,18 @@ class $OutfitsTable extends Outfits with TableInfo<$OutfitsTable, Outfit> {
         DriftSqlType.string,
         data['${effectivePrefix}image_path'],
       ),
+      sourceImagePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_image_path'],
+      ),
+      coverMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cover_mode'],
+      )!,
+      collageLayout: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}collage_layout'],
+      ),
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
@@ -1193,6 +1266,13 @@ class Outfit extends DataClass implements Insertable<Outfit> {
   final String id;
   final String categoryId;
   final String? imagePath;
+  final String? sourceImagePath;
+
+  /// `photo` uses the full-body image. `collage` uses the arranged clothes.
+  final String coverMode;
+
+  /// JSON placements for a manual collage. Empty means an automatic layout.
+  final String? collageLayout;
   final String name;
   final String season;
   final String note;
@@ -1202,6 +1282,9 @@ class Outfit extends DataClass implements Insertable<Outfit> {
     required this.id,
     required this.categoryId,
     this.imagePath,
+    this.sourceImagePath,
+    required this.coverMode,
+    this.collageLayout,
     required this.name,
     required this.season,
     required this.note,
@@ -1215,6 +1298,13 @@ class Outfit extends DataClass implements Insertable<Outfit> {
     map['category_id'] = Variable<String>(categoryId);
     if (!nullToAbsent || imagePath != null) {
       map['image_path'] = Variable<String>(imagePath);
+    }
+    if (!nullToAbsent || sourceImagePath != null) {
+      map['source_image_path'] = Variable<String>(sourceImagePath);
+    }
+    map['cover_mode'] = Variable<String>(coverMode);
+    if (!nullToAbsent || collageLayout != null) {
+      map['collage_layout'] = Variable<String>(collageLayout);
     }
     map['name'] = Variable<String>(name);
     map['season'] = Variable<String>(season);
@@ -1231,6 +1321,13 @@ class Outfit extends DataClass implements Insertable<Outfit> {
       imagePath: imagePath == null && nullToAbsent
           ? const Value.absent()
           : Value(imagePath),
+      sourceImagePath: sourceImagePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceImagePath),
+      coverMode: Value(coverMode),
+      collageLayout: collageLayout == null && nullToAbsent
+          ? const Value.absent()
+          : Value(collageLayout),
       name: Value(name),
       season: Value(season),
       note: Value(note),
@@ -1248,6 +1345,9 @@ class Outfit extends DataClass implements Insertable<Outfit> {
       id: serializer.fromJson<String>(json['id']),
       categoryId: serializer.fromJson<String>(json['categoryId']),
       imagePath: serializer.fromJson<String?>(json['imagePath']),
+      sourceImagePath: serializer.fromJson<String?>(json['sourceImagePath']),
+      coverMode: serializer.fromJson<String>(json['coverMode']),
+      collageLayout: serializer.fromJson<String?>(json['collageLayout']),
       name: serializer.fromJson<String>(json['name']),
       season: serializer.fromJson<String>(json['season']),
       note: serializer.fromJson<String>(json['note']),
@@ -1262,6 +1362,9 @@ class Outfit extends DataClass implements Insertable<Outfit> {
       'id': serializer.toJson<String>(id),
       'categoryId': serializer.toJson<String>(categoryId),
       'imagePath': serializer.toJson<String?>(imagePath),
+      'sourceImagePath': serializer.toJson<String?>(sourceImagePath),
+      'coverMode': serializer.toJson<String>(coverMode),
+      'collageLayout': serializer.toJson<String?>(collageLayout),
       'name': serializer.toJson<String>(name),
       'season': serializer.toJson<String>(season),
       'note': serializer.toJson<String>(note),
@@ -1274,6 +1377,9 @@ class Outfit extends DataClass implements Insertable<Outfit> {
     String? id,
     String? categoryId,
     Value<String?> imagePath = const Value.absent(),
+    Value<String?> sourceImagePath = const Value.absent(),
+    String? coverMode,
+    Value<String?> collageLayout = const Value.absent(),
     String? name,
     String? season,
     String? note,
@@ -1283,6 +1389,13 @@ class Outfit extends DataClass implements Insertable<Outfit> {
     id: id ?? this.id,
     categoryId: categoryId ?? this.categoryId,
     imagePath: imagePath.present ? imagePath.value : this.imagePath,
+    sourceImagePath: sourceImagePath.present
+        ? sourceImagePath.value
+        : this.sourceImagePath,
+    coverMode: coverMode ?? this.coverMode,
+    collageLayout: collageLayout.present
+        ? collageLayout.value
+        : this.collageLayout,
     name: name ?? this.name,
     season: season ?? this.season,
     note: note ?? this.note,
@@ -1296,6 +1409,13 @@ class Outfit extends DataClass implements Insertable<Outfit> {
           ? data.categoryId.value
           : this.categoryId,
       imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
+      sourceImagePath: data.sourceImagePath.present
+          ? data.sourceImagePath.value
+          : this.sourceImagePath,
+      coverMode: data.coverMode.present ? data.coverMode.value : this.coverMode,
+      collageLayout: data.collageLayout.present
+          ? data.collageLayout.value
+          : this.collageLayout,
       name: data.name.present ? data.name.value : this.name,
       season: data.season.present ? data.season.value : this.season,
       note: data.note.present ? data.note.value : this.note,
@@ -1310,6 +1430,9 @@ class Outfit extends DataClass implements Insertable<Outfit> {
           ..write('id: $id, ')
           ..write('categoryId: $categoryId, ')
           ..write('imagePath: $imagePath, ')
+          ..write('sourceImagePath: $sourceImagePath, ')
+          ..write('coverMode: $coverMode, ')
+          ..write('collageLayout: $collageLayout, ')
           ..write('name: $name, ')
           ..write('season: $season, ')
           ..write('note: $note, ')
@@ -1324,6 +1447,9 @@ class Outfit extends DataClass implements Insertable<Outfit> {
     id,
     categoryId,
     imagePath,
+    sourceImagePath,
+    coverMode,
+    collageLayout,
     name,
     season,
     note,
@@ -1337,6 +1463,9 @@ class Outfit extends DataClass implements Insertable<Outfit> {
           other.id == this.id &&
           other.categoryId == this.categoryId &&
           other.imagePath == this.imagePath &&
+          other.sourceImagePath == this.sourceImagePath &&
+          other.coverMode == this.coverMode &&
+          other.collageLayout == this.collageLayout &&
           other.name == this.name &&
           other.season == this.season &&
           other.note == this.note &&
@@ -1348,6 +1477,9 @@ class OutfitsCompanion extends UpdateCompanion<Outfit> {
   final Value<String> id;
   final Value<String> categoryId;
   final Value<String?> imagePath;
+  final Value<String?> sourceImagePath;
+  final Value<String> coverMode;
+  final Value<String?> collageLayout;
   final Value<String> name;
   final Value<String> season;
   final Value<String> note;
@@ -1358,6 +1490,9 @@ class OutfitsCompanion extends UpdateCompanion<Outfit> {
     this.id = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.imagePath = const Value.absent(),
+    this.sourceImagePath = const Value.absent(),
+    this.coverMode = const Value.absent(),
+    this.collageLayout = const Value.absent(),
     this.name = const Value.absent(),
     this.season = const Value.absent(),
     this.note = const Value.absent(),
@@ -1369,6 +1504,9 @@ class OutfitsCompanion extends UpdateCompanion<Outfit> {
     required String id,
     required String categoryId,
     this.imagePath = const Value.absent(),
+    this.sourceImagePath = const Value.absent(),
+    this.coverMode = const Value.absent(),
+    this.collageLayout = const Value.absent(),
     this.name = const Value.absent(),
     this.season = const Value.absent(),
     this.note = const Value.absent(),
@@ -1383,6 +1521,9 @@ class OutfitsCompanion extends UpdateCompanion<Outfit> {
     Expression<String>? id,
     Expression<String>? categoryId,
     Expression<String>? imagePath,
+    Expression<String>? sourceImagePath,
+    Expression<String>? coverMode,
+    Expression<String>? collageLayout,
     Expression<String>? name,
     Expression<String>? season,
     Expression<String>? note,
@@ -1394,6 +1535,9 @@ class OutfitsCompanion extends UpdateCompanion<Outfit> {
       if (id != null) 'id': id,
       if (categoryId != null) 'category_id': categoryId,
       if (imagePath != null) 'image_path': imagePath,
+      if (sourceImagePath != null) 'source_image_path': sourceImagePath,
+      if (coverMode != null) 'cover_mode': coverMode,
+      if (collageLayout != null) 'collage_layout': collageLayout,
       if (name != null) 'name': name,
       if (season != null) 'season': season,
       if (note != null) 'note': note,
@@ -1407,6 +1551,9 @@ class OutfitsCompanion extends UpdateCompanion<Outfit> {
     Value<String>? id,
     Value<String>? categoryId,
     Value<String?>? imagePath,
+    Value<String?>? sourceImagePath,
+    Value<String>? coverMode,
+    Value<String?>? collageLayout,
     Value<String>? name,
     Value<String>? season,
     Value<String>? note,
@@ -1418,6 +1565,9 @@ class OutfitsCompanion extends UpdateCompanion<Outfit> {
       id: id ?? this.id,
       categoryId: categoryId ?? this.categoryId,
       imagePath: imagePath ?? this.imagePath,
+      sourceImagePath: sourceImagePath ?? this.sourceImagePath,
+      coverMode: coverMode ?? this.coverMode,
+      collageLayout: collageLayout ?? this.collageLayout,
       name: name ?? this.name,
       season: season ?? this.season,
       note: note ?? this.note,
@@ -1438,6 +1588,15 @@ class OutfitsCompanion extends UpdateCompanion<Outfit> {
     }
     if (imagePath.present) {
       map['image_path'] = Variable<String>(imagePath.value);
+    }
+    if (sourceImagePath.present) {
+      map['source_image_path'] = Variable<String>(sourceImagePath.value);
+    }
+    if (coverMode.present) {
+      map['cover_mode'] = Variable<String>(coverMode.value);
+    }
+    if (collageLayout.present) {
+      map['collage_layout'] = Variable<String>(collageLayout.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -1466,6 +1625,9 @@ class OutfitsCompanion extends UpdateCompanion<Outfit> {
           ..write('id: $id, ')
           ..write('categoryId: $categoryId, ')
           ..write('imagePath: $imagePath, ')
+          ..write('sourceImagePath: $sourceImagePath, ')
+          ..write('coverMode: $coverMode, ')
+          ..write('collageLayout: $collageLayout, ')
           ..write('name: $name, ')
           ..write('season: $season, ')
           ..write('note: $note, ')
@@ -2821,6 +2983,840 @@ class ClothingItemImagesCompanion extends UpdateCompanion<ClothingItemImage> {
   }
 }
 
+class $OutfitItemsTable extends OutfitItems
+    with TableInfo<$OutfitItemsTable, OutfitItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OutfitItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _outfitIdMeta = const VerificationMeta(
+    'outfitId',
+  );
+  @override
+  late final GeneratedColumn<String> outfitId = GeneratedColumn<String>(
+    'outfit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clothingItemIdMeta = const VerificationMeta(
+    'clothingItemId',
+  );
+  @override
+  late final GeneratedColumn<String> clothingItemId = GeneratedColumn<String>(
+    'clothing_item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [outfitId, clothingItemId, sortOrder];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'outfit_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OutfitItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('outfit_id')) {
+      context.handle(
+        _outfitIdMeta,
+        outfitId.isAcceptableOrUnknown(data['outfit_id']!, _outfitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_outfitIdMeta);
+    }
+    if (data.containsKey('clothing_item_id')) {
+      context.handle(
+        _clothingItemIdMeta,
+        clothingItemId.isAcceptableOrUnknown(
+          data['clothing_item_id']!,
+          _clothingItemIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_clothingItemIdMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {outfitId, clothingItemId};
+  @override
+  OutfitItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OutfitItem(
+      outfitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outfit_id'],
+      )!,
+      clothingItemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}clothing_item_id'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $OutfitItemsTable createAlias(String alias) {
+    return $OutfitItemsTable(attachedDatabase, alias);
+  }
+}
+
+class OutfitItem extends DataClass implements Insertable<OutfitItem> {
+  final String outfitId;
+  final String clothingItemId;
+  final int sortOrder;
+  const OutfitItem({
+    required this.outfitId,
+    required this.clothingItemId,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['outfit_id'] = Variable<String>(outfitId);
+    map['clothing_item_id'] = Variable<String>(clothingItemId);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  OutfitItemsCompanion toCompanion(bool nullToAbsent) {
+    return OutfitItemsCompanion(
+      outfitId: Value(outfitId),
+      clothingItemId: Value(clothingItemId),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory OutfitItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OutfitItem(
+      outfitId: serializer.fromJson<String>(json['outfitId']),
+      clothingItemId: serializer.fromJson<String>(json['clothingItemId']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'outfitId': serializer.toJson<String>(outfitId),
+      'clothingItemId': serializer.toJson<String>(clothingItemId),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  OutfitItem copyWith({
+    String? outfitId,
+    String? clothingItemId,
+    int? sortOrder,
+  }) => OutfitItem(
+    outfitId: outfitId ?? this.outfitId,
+    clothingItemId: clothingItemId ?? this.clothingItemId,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  OutfitItem copyWithCompanion(OutfitItemsCompanion data) {
+    return OutfitItem(
+      outfitId: data.outfitId.present ? data.outfitId.value : this.outfitId,
+      clothingItemId: data.clothingItemId.present
+          ? data.clothingItemId.value
+          : this.clothingItemId,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OutfitItem(')
+          ..write('outfitId: $outfitId, ')
+          ..write('clothingItemId: $clothingItemId, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(outfitId, clothingItemId, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OutfitItem &&
+          other.outfitId == this.outfitId &&
+          other.clothingItemId == this.clothingItemId &&
+          other.sortOrder == this.sortOrder);
+}
+
+class OutfitItemsCompanion extends UpdateCompanion<OutfitItem> {
+  final Value<String> outfitId;
+  final Value<String> clothingItemId;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const OutfitItemsCompanion({
+    this.outfitId = const Value.absent(),
+    this.clothingItemId = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OutfitItemsCompanion.insert({
+    required String outfitId,
+    required String clothingItemId,
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : outfitId = Value(outfitId),
+       clothingItemId = Value(clothingItemId);
+  static Insertable<OutfitItem> custom({
+    Expression<String>? outfitId,
+    Expression<String>? clothingItemId,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (outfitId != null) 'outfit_id': outfitId,
+      if (clothingItemId != null) 'clothing_item_id': clothingItemId,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OutfitItemsCompanion copyWith({
+    Value<String>? outfitId,
+    Value<String>? clothingItemId,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return OutfitItemsCompanion(
+      outfitId: outfitId ?? this.outfitId,
+      clothingItemId: clothingItemId ?? this.clothingItemId,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (outfitId.present) {
+      map['outfit_id'] = Variable<String>(outfitId.value);
+    }
+    if (clothingItemId.present) {
+      map['clothing_item_id'] = Variable<String>(clothingItemId.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OutfitItemsCompanion(')
+          ..write('outfitId: $outfitId, ')
+          ..write('clothingItemId: $clothingItemId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DayEventsTable extends DayEvents
+    with TableInfo<$DayEventsTable, DayEvent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DayEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<String> day = GeneratedColumn<String>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, day, title, sortOrder];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'day_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DayEvent> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DayEvent map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DayEvent(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $DayEventsTable createAlias(String alias) {
+    return $DayEventsTable(attachedDatabase, alias);
+  }
+}
+
+class DayEvent extends DataClass implements Insertable<DayEvent> {
+  final String id;
+  final String day;
+  final String title;
+  final int sortOrder;
+  const DayEvent({
+    required this.id,
+    required this.day,
+    required this.title,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['day'] = Variable<String>(day);
+    map['title'] = Variable<String>(title);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  DayEventsCompanion toCompanion(bool nullToAbsent) {
+    return DayEventsCompanion(
+      id: Value(id),
+      day: Value(day),
+      title: Value(title),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory DayEvent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DayEvent(
+      id: serializer.fromJson<String>(json['id']),
+      day: serializer.fromJson<String>(json['day']),
+      title: serializer.fromJson<String>(json['title']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'day': serializer.toJson<String>(day),
+      'title': serializer.toJson<String>(title),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  DayEvent copyWith({String? id, String? day, String? title, int? sortOrder}) =>
+      DayEvent(
+        id: id ?? this.id,
+        day: day ?? this.day,
+        title: title ?? this.title,
+        sortOrder: sortOrder ?? this.sortOrder,
+      );
+  DayEvent copyWithCompanion(DayEventsCompanion data) {
+    return DayEvent(
+      id: data.id.present ? data.id.value : this.id,
+      day: data.day.present ? data.day.value : this.day,
+      title: data.title.present ? data.title.value : this.title,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayEvent(')
+          ..write('id: $id, ')
+          ..write('day: $day, ')
+          ..write('title: $title, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, day, title, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DayEvent &&
+          other.id == this.id &&
+          other.day == this.day &&
+          other.title == this.title &&
+          other.sortOrder == this.sortOrder);
+}
+
+class DayEventsCompanion extends UpdateCompanion<DayEvent> {
+  final Value<String> id;
+  final Value<String> day;
+  final Value<String> title;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const DayEventsCompanion({
+    this.id = const Value.absent(),
+    this.day = const Value.absent(),
+    this.title = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DayEventsCompanion.insert({
+    required String id,
+    required String day,
+    required String title,
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       day = Value(day),
+       title = Value(title);
+  static Insertable<DayEvent> custom({
+    Expression<String>? id,
+    Expression<String>? day,
+    Expression<String>? title,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (day != null) 'day': day,
+      if (title != null) 'title': title,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DayEventsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? day,
+    Value<String>? title,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return DayEventsCompanion(
+      id: id ?? this.id,
+      day: day ?? this.day,
+      title: title ?? this.title,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<String>(day.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayEventsCompanion(')
+          ..write('id: $id, ')
+          ..write('day: $day, ')
+          ..write('title: $title, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DayOutfitsTable extends DayOutfits
+    with TableInfo<$DayOutfitsTable, DayOutfit> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DayOutfitsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<String> day = GeneratedColumn<String>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _outfitIdMeta = const VerificationMeta(
+    'outfitId',
+  );
+  @override
+  late final GeneratedColumn<String> outfitId = GeneratedColumn<String>(
+    'outfit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [day, outfitId, sortOrder];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'day_outfits';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DayOutfit> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('outfit_id')) {
+      context.handle(
+        _outfitIdMeta,
+        outfitId.isAcceptableOrUnknown(data['outfit_id']!, _outfitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_outfitIdMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {day, outfitId};
+  @override
+  DayOutfit map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DayOutfit(
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day'],
+      )!,
+      outfitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outfit_id'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $DayOutfitsTable createAlias(String alias) {
+    return $DayOutfitsTable(attachedDatabase, alias);
+  }
+}
+
+class DayOutfit extends DataClass implements Insertable<DayOutfit> {
+  final String day;
+  final String outfitId;
+  final int sortOrder;
+  const DayOutfit({
+    required this.day,
+    required this.outfitId,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['day'] = Variable<String>(day);
+    map['outfit_id'] = Variable<String>(outfitId);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  DayOutfitsCompanion toCompanion(bool nullToAbsent) {
+    return DayOutfitsCompanion(
+      day: Value(day),
+      outfitId: Value(outfitId),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory DayOutfit.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DayOutfit(
+      day: serializer.fromJson<String>(json['day']),
+      outfitId: serializer.fromJson<String>(json['outfitId']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'day': serializer.toJson<String>(day),
+      'outfitId': serializer.toJson<String>(outfitId),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  DayOutfit copyWith({String? day, String? outfitId, int? sortOrder}) =>
+      DayOutfit(
+        day: day ?? this.day,
+        outfitId: outfitId ?? this.outfitId,
+        sortOrder: sortOrder ?? this.sortOrder,
+      );
+  DayOutfit copyWithCompanion(DayOutfitsCompanion data) {
+    return DayOutfit(
+      day: data.day.present ? data.day.value : this.day,
+      outfitId: data.outfitId.present ? data.outfitId.value : this.outfitId,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayOutfit(')
+          ..write('day: $day, ')
+          ..write('outfitId: $outfitId, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(day, outfitId, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DayOutfit &&
+          other.day == this.day &&
+          other.outfitId == this.outfitId &&
+          other.sortOrder == this.sortOrder);
+}
+
+class DayOutfitsCompanion extends UpdateCompanion<DayOutfit> {
+  final Value<String> day;
+  final Value<String> outfitId;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const DayOutfitsCompanion({
+    this.day = const Value.absent(),
+    this.outfitId = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DayOutfitsCompanion.insert({
+    required String day,
+    required String outfitId,
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : day = Value(day),
+       outfitId = Value(outfitId);
+  static Insertable<DayOutfit> custom({
+    Expression<String>? day,
+    Expression<String>? outfitId,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (day != null) 'day': day,
+      if (outfitId != null) 'outfit_id': outfitId,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DayOutfitsCompanion copyWith({
+    Value<String>? day,
+    Value<String>? outfitId,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return DayOutfitsCompanion(
+      day: day ?? this.day,
+      outfitId: outfitId ?? this.outfitId,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (day.present) {
+      map['day'] = Variable<String>(day.value);
+    }
+    if (outfitId.present) {
+      map['outfit_id'] = Variable<String>(outfitId.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayOutfitsCompanion(')
+          ..write('day: $day, ')
+          ..write('outfitId: $outfitId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2830,6 +3826,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CategoriesTable categories = $CategoriesTable(this);
   late final $ClothingItemImagesTable clothingItemImages =
       $ClothingItemImagesTable(this);
+  late final $OutfitItemsTable outfitItems = $OutfitItemsTable(this);
+  late final $DayEventsTable dayEvents = $DayEventsTable(this);
+  late final $DayOutfitsTable dayOutfits = $DayOutfitsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2840,6 +3839,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     categoryCovers,
     categories,
     clothingItemImages,
+    outfitItems,
+    dayEvents,
+    dayOutfits,
   ];
 }
 
@@ -3311,6 +4313,9 @@ typedef $$OutfitsTableCreateCompanionBuilder = OutfitsCompanion Function({
   required String id,
   required String categoryId,
   Value<String?> imagePath,
+  Value<String?> sourceImagePath,
+  Value<String> coverMode,
+  Value<String?> collageLayout,
   Value<String> name,
   Value<String> season,
   Value<String> note,
@@ -3322,6 +4327,9 @@ typedef $$OutfitsTableUpdateCompanionBuilder = OutfitsCompanion Function({
   Value<String> id,
   Value<String> categoryId,
   Value<String?> imagePath,
+  Value<String?> sourceImagePath,
+  Value<String> coverMode,
+  Value<String?> collageLayout,
   Value<String> name,
   Value<String> season,
   Value<String> note,
@@ -3351,6 +4359,21 @@ class $$OutfitsTableFilterComposer
 
   ColumnFilters<String> get imagePath => $composableBuilder(
     column: $table.imagePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceImagePath => $composableBuilder(
+    column: $table.sourceImagePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coverMode => $composableBuilder(
+    column: $table.coverMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get collageLayout => $composableBuilder(
+    column: $table.collageLayout,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3404,6 +4427,21 @@ class $$OutfitsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceImagePath => $composableBuilder(
+    column: $table.sourceImagePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coverMode => $composableBuilder(
+    column: $table.coverMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get collageLayout => $composableBuilder(
+    column: $table.collageLayout,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get name => $composableBuilder(
     column: $table.name,
     builder: (column) => ColumnOrderings(column),
@@ -3449,6 +4487,19 @@ class $$OutfitsTableAnnotationComposer
 
   GeneratedColumn<String> get imagePath =>
       $composableBuilder(column: $table.imagePath, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceImagePath => $composableBuilder(
+    column: $table.sourceImagePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get coverMode =>
+      $composableBuilder(column: $table.coverMode, builder: (column) => column);
+
+  GeneratedColumn<String> get collageLayout => $composableBuilder(
+    column: $table.collageLayout,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
@@ -3497,6 +4548,9 @@ class $$OutfitsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> categoryId = const Value.absent(),
                 Value<String?> imagePath = const Value.absent(),
+                Value<String?> sourceImagePath = const Value.absent(),
+                Value<String> coverMode = const Value.absent(),
+                Value<String?> collageLayout = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> season = const Value.absent(),
                 Value<String> note = const Value.absent(),
@@ -3507,6 +4561,9 @@ class $$OutfitsTableTableManager
                 id: id,
                 categoryId: categoryId,
                 imagePath: imagePath,
+                sourceImagePath: sourceImagePath,
+                coverMode: coverMode,
+                collageLayout: collageLayout,
                 name: name,
                 season: season,
                 note: note,
@@ -3519,6 +4576,9 @@ class $$OutfitsTableTableManager
                 required String id,
                 required String categoryId,
                 Value<String?> imagePath = const Value.absent(),
+                Value<String?> sourceImagePath = const Value.absent(),
+                Value<String> coverMode = const Value.absent(),
+                Value<String?> collageLayout = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> season = const Value.absent(),
                 Value<String> note = const Value.absent(),
@@ -3529,6 +4589,9 @@ class $$OutfitsTableTableManager
                 id: id,
                 categoryId: categoryId,
                 imagePath: imagePath,
+                sourceImagePath: sourceImagePath,
+                coverMode: coverMode,
+                collageLayout: collageLayout,
                 name: name,
                 season: season,
                 note: note,
@@ -4308,6 +5371,527 @@ typedef $$ClothingItemImagesTableProcessedTableManager =
       ClothingItemImage,
       PrefetchHooks Function()
     >;
+typedef $$OutfitItemsTableCreateCompanionBuilder =
+    OutfitItemsCompanion Function({
+      required String outfitId,
+      required String clothingItemId,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+typedef $$OutfitItemsTableUpdateCompanionBuilder =
+    OutfitItemsCompanion Function({
+      Value<String> outfitId,
+      Value<String> clothingItemId,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+class $$OutfitItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $OutfitItemsTable> {
+  $$OutfitItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get outfitId => $composableBuilder(
+    column: $table.outfitId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clothingItemId => $composableBuilder(
+    column: $table.clothingItemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OutfitItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OutfitItemsTable> {
+  $$OutfitItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get outfitId => $composableBuilder(
+    column: $table.outfitId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clothingItemId => $composableBuilder(
+    column: $table.clothingItemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OutfitItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OutfitItemsTable> {
+  $$OutfitItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get outfitId =>
+      $composableBuilder(column: $table.outfitId, builder: (column) => column);
+
+  GeneratedColumn<String> get clothingItemId => $composableBuilder(
+    column: $table.clothingItemId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+}
+
+class $$OutfitItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OutfitItemsTable,
+          OutfitItem,
+          $$OutfitItemsTableFilterComposer,
+          $$OutfitItemsTableOrderingComposer,
+          $$OutfitItemsTableAnnotationComposer,
+          $$OutfitItemsTableCreateCompanionBuilder,
+          $$OutfitItemsTableUpdateCompanionBuilder,
+          (
+            OutfitItem,
+            BaseReferences<_$AppDatabase, $OutfitItemsTable, OutfitItem>,
+          ),
+          OutfitItem,
+          PrefetchHooks Function()
+        > {
+  $$OutfitItemsTableTableManager(_$AppDatabase db, $OutfitItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OutfitItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OutfitItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OutfitItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> outfitId = const Value.absent(),
+                Value<String> clothingItemId = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OutfitItemsCompanion(
+                outfitId: outfitId,
+                clothingItemId: clothingItemId,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String outfitId,
+                required String clothingItemId,
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OutfitItemsCompanion.insert(
+                outfitId: outfitId,
+                clothingItemId: clothingItemId,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$OutfitItemsTable, OutfitItem>(table),
+                  BaseReferences<_$AppDatabase, $OutfitItemsTable, OutfitItem>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OutfitItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OutfitItemsTable,
+      OutfitItem,
+      $$OutfitItemsTableFilterComposer,
+      $$OutfitItemsTableOrderingComposer,
+      $$OutfitItemsTableAnnotationComposer,
+      $$OutfitItemsTableCreateCompanionBuilder,
+      $$OutfitItemsTableUpdateCompanionBuilder,
+      (
+        OutfitItem,
+        BaseReferences<_$AppDatabase, $OutfitItemsTable, OutfitItem>,
+      ),
+      OutfitItem,
+      PrefetchHooks Function()
+    >;
+typedef $$DayEventsTableCreateCompanionBuilder = DayEventsCompanion Function({
+  required String id,
+  required String day,
+  required String title,
+  Value<int> sortOrder,
+  Value<int> rowid,
+});
+typedef $$DayEventsTableUpdateCompanionBuilder = DayEventsCompanion Function({
+  Value<String> id,
+  Value<String> day,
+  Value<String> title,
+  Value<int> sortOrder,
+  Value<int> rowid,
+});
+
+class $$DayEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $DayEventsTable> {
+  $$DayEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DayEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DayEventsTable> {
+  $$DayEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DayEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DayEventsTable> {
+  $$DayEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+}
+
+class $$DayEventsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DayEventsTable,
+          DayEvent,
+          $$DayEventsTableFilterComposer,
+          $$DayEventsTableOrderingComposer,
+          $$DayEventsTableAnnotationComposer,
+          $$DayEventsTableCreateCompanionBuilder,
+          $$DayEventsTableUpdateCompanionBuilder,
+          (DayEvent, BaseReferences<_$AppDatabase, $DayEventsTable, DayEvent>),
+          DayEvent,
+          PrefetchHooks Function()
+        > {
+  $$DayEventsTableTableManager(_$AppDatabase db, $DayEventsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DayEventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DayEventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DayEventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> day = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DayEventsCompanion(
+                id: id,
+                day: day,
+                title: title,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String day,
+                required String title,
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DayEventsCompanion.insert(
+                id: id,
+                day: day,
+                title: title,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DayEventsTable, DayEvent>(table),
+                  BaseReferences<_$AppDatabase, $DayEventsTable, DayEvent>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DayEventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DayEventsTable,
+      DayEvent,
+      $$DayEventsTableFilterComposer,
+      $$DayEventsTableOrderingComposer,
+      $$DayEventsTableAnnotationComposer,
+      $$DayEventsTableCreateCompanionBuilder,
+      $$DayEventsTableUpdateCompanionBuilder,
+      (DayEvent, BaseReferences<_$AppDatabase, $DayEventsTable, DayEvent>),
+      DayEvent,
+      PrefetchHooks Function()
+    >;
+typedef $$DayOutfitsTableCreateCompanionBuilder = DayOutfitsCompanion Function({
+  required String day,
+  required String outfitId,
+  Value<int> sortOrder,
+  Value<int> rowid,
+});
+typedef $$DayOutfitsTableUpdateCompanionBuilder = DayOutfitsCompanion Function({
+  Value<String> day,
+  Value<String> outfitId,
+  Value<int> sortOrder,
+  Value<int> rowid,
+});
+
+class $$DayOutfitsTableFilterComposer
+    extends Composer<_$AppDatabase, $DayOutfitsTable> {
+  $$DayOutfitsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outfitId => $composableBuilder(
+    column: $table.outfitId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DayOutfitsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DayOutfitsTable> {
+  $$DayOutfitsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get outfitId => $composableBuilder(
+    column: $table.outfitId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DayOutfitsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DayOutfitsTable> {
+  $$DayOutfitsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<String> get outfitId =>
+      $composableBuilder(column: $table.outfitId, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+}
+
+class $$DayOutfitsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DayOutfitsTable,
+          DayOutfit,
+          $$DayOutfitsTableFilterComposer,
+          $$DayOutfitsTableOrderingComposer,
+          $$DayOutfitsTableAnnotationComposer,
+          $$DayOutfitsTableCreateCompanionBuilder,
+          $$DayOutfitsTableUpdateCompanionBuilder,
+          (
+            DayOutfit,
+            BaseReferences<_$AppDatabase, $DayOutfitsTable, DayOutfit>,
+          ),
+          DayOutfit,
+          PrefetchHooks Function()
+        > {
+  $$DayOutfitsTableTableManager(_$AppDatabase db, $DayOutfitsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DayOutfitsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DayOutfitsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DayOutfitsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> day = const Value.absent(),
+                Value<String> outfitId = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DayOutfitsCompanion(
+                day: day,
+                outfitId: outfitId,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String day,
+                required String outfitId,
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DayOutfitsCompanion.insert(
+                day: day,
+                outfitId: outfitId,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DayOutfitsTable, DayOutfit>(table),
+                  BaseReferences<_$AppDatabase, $DayOutfitsTable, DayOutfit>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DayOutfitsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DayOutfitsTable,
+      DayOutfit,
+      $$DayOutfitsTableFilterComposer,
+      $$DayOutfitsTableOrderingComposer,
+      $$DayOutfitsTableAnnotationComposer,
+      $$DayOutfitsTableCreateCompanionBuilder,
+      $$DayOutfitsTableUpdateCompanionBuilder,
+      (DayOutfit, BaseReferences<_$AppDatabase, $DayOutfitsTable, DayOutfit>),
+      DayOutfit,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4322,4 +5906,10 @@ class $AppDatabaseManager {
       $$CategoriesTableTableManager(_db, _db.categories);
   $$ClothingItemImagesTableTableManager get clothingItemImages =>
       $$ClothingItemImagesTableTableManager(_db, _db.clothingItemImages);
+  $$OutfitItemsTableTableManager get outfitItems =>
+      $$OutfitItemsTableTableManager(_db, _db.outfitItems);
+  $$DayEventsTableTableManager get dayEvents =>
+      $$DayEventsTableTableManager(_db, _db.dayEvents);
+  $$DayOutfitsTableTableManager get dayOutfits =>
+      $$DayOutfitsTableTableManager(_db, _db.dayOutfits);
 }
