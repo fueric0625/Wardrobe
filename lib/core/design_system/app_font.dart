@@ -65,4 +65,6 @@ class AppFontNotifier extends Notifier<String> {
   }
 }
 
-final appFontProvider = NotifierProvider<AppFontNotifier, String>(AppFontNotifier.new);
+final appFontProvider = NotifierProvider<AppFontNotifier, String>(
+  AppFontNotifier.new,
+);

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:wardrobe/core/sort.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/widgets/zoom_viewport.dart';
 
 class Checkerboard extends StatelessWidget {
@@ -78,17 +78,14 @@ class LocalCover extends StatelessWidget {
       errorBuilder: (_, _, _) =>
           placeholder ??
           const Center(
-            child: Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
+            child: Icon(
+              Icons.broken_image_outlined,
+              color: AppColors.textMuted,
+            ),
           ),
     );
     if (!checkerboard) return image;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const Checkerboard(),
-        image,
-      ],
-    );
+    return Stack(fit: StackFit.expand, children: [const Checkerboard(), image]);
   }
 }
 
@@ -205,16 +202,16 @@ class ItemTile extends StatelessWidget {
                 children: [
                   cover ?? LocalCover(path: coverPath, fit: BoxFit.contain),
                   if (isCover)
-                    const Positioned(
-                      left: 10,
-                      top: 10,
-                      child: _CoverBadge(),
-                    ),
+                    const Positioned(left: 10, top: 10, child: _CoverBadge()),
                   if (selected)
                     const Positioned(
                       right: 10,
                       top: 10,
-                      child: Icon(Icons.check_circle, color: AppColors.primary, size: 28),
+                      child: Icon(
+                        Icons.check_circle,
+                        color: AppColors.primary,
+                        size: 28,
+                      ),
                     ),
                 ],
               ),
@@ -283,7 +280,10 @@ class AppSearchField extends StatelessWidget {
           prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
           filled: true,
           fillColor: AppColors.surface,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 0,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(24),
             borderSide: BorderSide.none,
@@ -392,14 +392,15 @@ class SortButton extends StatelessWidget {
           onSelected: (field) => onChanged(value.withField(field)),
           itemBuilder: (context) => [
             for (final field in fields)
-              PopupMenuItem(
-                value: field,
-                child: Text(field.label),
-              ),
+              PopupMenuItem(value: field, child: Text(field.label)),
           ],
           child: const Padding(
             padding: EdgeInsets.fromLTRB(0, 6, 6, 6),
-            child: Icon(Icons.arrow_drop_down, size: 20, color: AppColors.textMuted),
+            child: Icon(
+              Icons.arrow_drop_down,
+              size: 20,
+              color: AppColors.textMuted,
+            ),
           ),
         ),
       ],
@@ -420,7 +421,10 @@ class ReadOnlyField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        ),
         const SizedBox(height: 6),
         Text(
           empty ? '未填写' : trimmed,
@@ -456,13 +460,18 @@ class DetailHeroImage extends StatelessWidget {
       child: SizedBox(
         height: 380,
         child: ZoomViewport(
-          child: cover ??
+          child:
+              cover ??
               LocalCover(
                 path: path,
                 fit: BoxFit.contain,
                 checkerboard: checkerboard,
                 placeholder: const Center(
-                  child: Icon(Icons.image_outlined, size: 48, color: AppColors.textMuted),
+                  child: Icon(
+                    Icons.image_outlined,
+                    size: 48,
+                    color: AppColors.textMuted,
+                  ),
                 ),
               ),
         ),

@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/widgets/common.dart';
 import 'package:wardrobe/widgets/piece_collage.dart';
 
@@ -69,7 +69,9 @@ class _OutfitCollageBoardState extends State<OutfitCollageBoard> {
 
   void _ensureMasks() {
     for (final path in widget.paths.values) {
-      if (path.isEmpty || _masks.containsKey(path) || _loading.contains(path)) continue;
+      if (path.isEmpty || _masks.containsKey(path) || _loading.contains(path)) {
+        continue;
+      }
       _loading.add(path);
       _loadMask(path);
     }
@@ -123,7 +125,10 @@ class _OutfitCollageBoardState extends State<OutfitCollageBoard> {
   }
 
   void _raise(String id) {
-    final top = _items.fold<int>(0, (maxZ, piece) => piece.z > maxZ ? piece.z : maxZ);
+    final top = _items.fold<int>(
+      0,
+      (maxZ, piece) => piece.z > maxZ ? piece.z : maxZ,
+    );
     final index = _items.indexWhere((piece) => piece.clothingItemId == id);
     if (index < 0 || _items[index].z == top) return;
     _items = [
@@ -169,9 +174,9 @@ class _OutfitCollageBoardState extends State<OutfitCollageBoard> {
     final id = _hit(local);
     if (id == null) return;
     final current = _items.cast<CollagePlacement?>().firstWhere(
-          (piece) => piece!.clothingItemId == id,
-          orElse: () => null,
-        );
+      (piece) => piece!.clothingItemId == id,
+      orElse: () => null,
+    );
     if (current == null) return;
     final factor = math.exp(-deltaY / 700);
     final w = (current.w * factor).clamp(0.08, 1.6).toDouble();
@@ -197,8 +202,8 @@ class _OutfitCollageBoardState extends State<OutfitCollageBoard> {
     final cursor = _dragging
         ? SystemMouseCursors.grabbing
         : _hoverId == null
-            ? MouseCursor.defer
-            : SystemMouseCursors.grab;
+        ? MouseCursor.defer
+        : SystemMouseCursors.grab;
     return ColoredBox(
       color: AppColors.surface,
       child: LayoutBuilder(
@@ -240,9 +245,9 @@ class _OutfitCollageBoardState extends State<OutfitCollageBoard> {
                   final id = _activeId;
                   if (id == null) return;
                   final current = _items.cast<CollagePlacement?>().firstWhere(
-                        (piece) => piece!.clothingItemId == id,
-                        orElse: () => null,
-                      );
+                    (piece) => piece!.clothingItemId == id,
+                    orElse: () => null,
+                  );
                   if (current == null) return;
                   final x = (current.x + details.delta.dx / _width)
                       .clamp(-current.w + 0.12, 1 - 0.12)

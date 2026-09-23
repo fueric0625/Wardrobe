@@ -110,7 +110,9 @@ img.Image emptyMask(int width, int height) {
 }
 
 img.Image maskMatchingOriginal(img.Image original, img.Image? mask) {
-  if (mask != null && mask.width == original.width && mask.height == original.height) {
+  if (mask != null &&
+      mask.width == original.width &&
+      mask.height == original.height) {
     if (mask.numChannels == 3) return img.Image.from(mask);
     return mask.convert(numChannels: 3, alpha: 255);
   }
@@ -137,7 +139,11 @@ class CroppedPair {
   final img.Image mask;
 }
 
-CroppedPair cropToMask(img.Image image, img.Image mask, {double padding = 0.06}) {
+CroppedPair cropToMask(
+  img.Image image,
+  img.Image mask, {
+  double padding = 0.06,
+}) {
   var minX = image.width;
   var minY = image.height;
   var maxX = -1;
@@ -177,14 +183,7 @@ img.Image applyAlpha(img.Image rgb, img.Image mask) {
       final a = x < mask.width && y < mask.height
           ? maskLevel(mask.getPixel(x, y)).clamp(0, 255)
           : 0;
-      out.setPixelRgba(
-        x,
-        y,
-        p.r.toInt(),
-        p.g.toInt(),
-        p.b.toInt(),
-        a.toInt(),
-      );
+      out.setPixelRgba(x, y, p.r.toInt(), p.g.toInt(), p.b.toInt(), a.toInt());
     }
   }
   return out;

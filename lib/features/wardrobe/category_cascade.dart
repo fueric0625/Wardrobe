@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
-import 'package:wardrobe/core/db/app_database.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/database/app_database.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 
 /// Pick a clothing category from the root down, one dropdown per layer.
 class CategoryCascadePicker extends StatelessWidget {
@@ -23,7 +23,10 @@ class CategoryCascadePicker extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('分类', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        const Text(
+          '分类',
+          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+        ),
         const SizedBox(height: 6),
         if (categories.isEmpty)
           const Text('暂无分类', style: TextStyle(color: AppColors.textMuted))
@@ -59,7 +62,8 @@ class CategoryCascadePicker extends StatelessWidget {
       }
 
       final stayOnParent = level > 0 ? parentId : null;
-      final mappedValue = selectedAtLevel ?? (stayOnParent == null ? null : _stay);
+      final mappedValue =
+          selectedAtLevel ?? (stayOnParent == null ? null : _stay);
       final items = <DropdownMenuItem<String>>[
         if (stayOnParent != null)
           const DropdownMenuItem(value: _stay, child: Text('-')),

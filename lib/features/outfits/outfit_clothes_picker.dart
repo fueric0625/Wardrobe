@@ -4,9 +4,9 @@ import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
 import 'package:wardrobe/core/catalog/cover_repository.dart';
 import 'package:wardrobe/core/catalog/providers.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/features/wardrobe/providers.dart';
 import 'package:wardrobe/widgets/common.dart';
 
@@ -52,8 +52,9 @@ class OutfitClothesPicker extends ConsumerWidget {
         }
         final filters = childrenOf(categories, root.id);
         final scope = filterId ?? root.id;
-        final shown = List<ClothingItem>.of(itemsInSubtree(items, categories, scope))
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        final shown = List<ClothingItem>.of(
+          itemsInSubtree(items, categories, scope),
+        )..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -108,16 +109,20 @@ class OutfitClothesPicker extends ConsumerWidget {
             Expanded(
               child: shown.isEmpty
                   ? const Center(
-                      child: Text('这个分类里还没有衣物', style: TextStyle(color: AppColors.textMuted)),
+                      child: Text(
+                        '这个分类里还没有衣物',
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
                     )
                   : GridView.builder(
                       padding: const EdgeInsets.fromLTRB(32, 8, 32, 24),
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 220,
-                        mainAxisSpacing: 22,
-                        crossAxisSpacing: 22,
-                        childAspectRatio: 0.82,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 220,
+                            mainAxisSpacing: 22,
+                            crossAxisSpacing: 22,
+                            childAspectRatio: 0.82,
+                          ),
                       itemCount: shown.length,
                       itemBuilder: (context, index) {
                         final item = shown[index];
@@ -178,7 +183,11 @@ class _RootGrid extends StatelessWidget {
           items: inTree,
           idOf: (item) => item.id,
           createdAt: (item) => item.createdAt,
-          coverItemId: coverItemIdOf(covers, CategoryKind.clothing, category.id),
+          coverItemId: coverItemIdOf(
+            covers,
+            CategoryKind.clothing,
+            category.id,
+          ),
         );
         return CategoryCard(
           label: category.label,

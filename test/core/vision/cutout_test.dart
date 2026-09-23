@@ -109,7 +109,9 @@ void main() {
     final image = img.Image(width: 40, height: 40, numChannels: 3);
     img.fill(image, color: img.ColorRgb8(20, 90, 200));
     final pipeline = GarmentPipeline(_CenterRectSegmenter());
-    final result = await pipeline.ingestBytes(Uint8List.fromList(img.encodePng(image)));
+    final result = await pipeline.ingestBytes(
+      Uint8List.fromList(img.encodePng(image)),
+    );
     expect(result.hasCutout, isFalse);
     expect(result.maskPng, isNull);
     expect(result.originalWidth, 40);
@@ -145,7 +147,11 @@ void main() {
     }
     final patch = img.Image(width: 16, height: 16, numChannels: 3);
     img.fill(patch, color: img.ColorRgb8(200, 200, 200));
-    pasteMask(dest, patch, const PixelRect(x: 20, y: 20, width: 16, height: 16));
+    pasteMask(
+      dest,
+      patch,
+      const PixelRect(x: 20, y: 20, width: 16, height: 16),
+    );
     expect(maskLevel(dest.getPixel(4, 4)), 255);
     expect(maskLevel(dest.getPixel(24, 24)), 200);
     expect(maskLevel(dest.getPixel(38, 8)), 0);
@@ -258,31 +264,34 @@ void main() {
     expect(maskLevel(mask.getPixel(2, 2)), greaterThan(200));
   });
 
-  test('refineBytes drops hanger pixels that do not match the garment palette', () async {
-    final image = img.Image(width: 80, height: 80, numChannels: 3);
-    img.fill(image, color: img.ColorRgb8(18, 28, 48));
-    for (var y = 10; y < 18; y++) {
-      for (var x = 20; x < 60; x++) {
-        image.setPixelRgb(x, y, 210, 198, 176);
+  test(
+    'refineBytes drops hanger pixels that do not match the garment palette',
+    () async {
+      final image = img.Image(width: 80, height: 80, numChannels: 3);
+      img.fill(image, color: img.ColorRgb8(18, 28, 48));
+      for (var y = 10; y < 18; y++) {
+        for (var x = 20; x < 60; x++) {
+          image.setPixelRgb(x, y, 210, 198, 176);
+        }
       }
-    }
-    final existing = img.Image(width: 80, height: 80, numChannels: 3);
-    img.fill(existing, color: img.ColorRgb8(255, 255, 255));
-    final pipeline = GarmentPipeline(_AllForegroundSegmenter());
-    final result = await pipeline.refineBytes(
-      originalBytes: Uint8List.fromList(img.encodePng(image)),
-      maskBytes: Uint8List.fromList(img.encodePng(existing)),
-      region: const PixelRect(x: 16, y: 6, width: 48, height: 24),
-      palette: const [RgbSwatch(18, 28, 48)],
-    );
-    final mask = img.decodeImage(result.maskPng!)!;
-    expect(maskLevel(mask.getPixel(40, 40)), greaterThan(200));
-    expect(maskLevel(mask.getPixel(40, 14)), greaterThan(200));
-    final full = img.decodeImage(result.fullCutoutPng!)!;
-    expect(full.getPixel(40, 14).r.toInt(), lessThan(80));
-    expect(full.getPixel(40, 14).b.toInt(), lessThan(90));
-    expect(result.colors.palette, isNotEmpty);
-  });
+      final existing = img.Image(width: 80, height: 80, numChannels: 3);
+      img.fill(existing, color: img.ColorRgb8(255, 255, 255));
+      final pipeline = GarmentPipeline(_AllForegroundSegmenter());
+      final result = await pipeline.refineBytes(
+        originalBytes: Uint8List.fromList(img.encodePng(image)),
+        maskBytes: Uint8List.fromList(img.encodePng(existing)),
+        region: const PixelRect(x: 16, y: 6, width: 48, height: 24),
+        palette: const [RgbSwatch(18, 28, 48)],
+      );
+      final mask = img.decodeImage(result.maskPng!)!;
+      expect(maskLevel(mask.getPixel(40, 40)), greaterThan(200));
+      expect(maskLevel(mask.getPixel(40, 14)), greaterThan(200));
+      final full = img.decodeImage(result.fullCutoutPng!)!;
+      expect(full.getPixel(40, 14).r.toInt(), lessThan(80));
+      expect(full.getPixel(40, 14).b.toInt(), lessThan(90));
+      expect(result.colors.palette, isNotEmpty);
+    },
+  );
 
   test('refineBytes erase clears the boxed mask', () async {
     final image = img.Image(width: 40, height: 40, numChannels: 3);
@@ -315,26 +324,29 @@ void main() {
     expect(ColorAnalysis.decode('{"colors":[]}').hasPalette, isFalse);
   });
 
-  test('fake SAM keeps a disk around a positive click and replaces the mask', () async {
-    final image = img.Image(width: 40, height: 40, numChannels: 3);
-    img.fill(image, color: img.ColorRgb8(20, 90, 200));
-    final bytes = Uint8List.fromList(img.encodePng(image));
-    final pipeline = GarmentPipeline(
-      _CenterRectSegmenter(),
-      clickSegmenter: FakeClickSegmenter(),
-    );
-    await pipeline.prepareRefine(bytes);
-    final result = await pipeline.refineWithClicks(
-      originalBytes: bytes,
-      points: const [PromptPoint(x: 5, y: 5, positive: true)],
-    );
-    final mask = img.decodeImage(result.maskPng!)!;
-    expect(maskLevel(mask.getPixel(5, 5)), 255);
-    expect(maskLevel(mask.getPixel(20, 20)), 0);
-    expect(result.fullCutoutPng, isNotNull);
-    expect(result.originalWidth, 40);
-    expect(result.originalHeight, 40);
-  });
+  test(
+    'fake SAM keeps a disk around a positive click and replaces the mask',
+    () async {
+      final image = img.Image(width: 40, height: 40, numChannels: 3);
+      img.fill(image, color: img.ColorRgb8(20, 90, 200));
+      final bytes = Uint8List.fromList(img.encodePng(image));
+      final pipeline = GarmentPipeline(
+        _CenterRectSegmenter(),
+        clickSegmenter: FakeClickSegmenter(),
+      );
+      await pipeline.prepareRefine(bytes);
+      final result = await pipeline.refineWithClicks(
+        originalBytes: bytes,
+        points: const [PromptPoint(x: 5, y: 5, positive: true)],
+      );
+      final mask = img.decodeImage(result.maskPng!)!;
+      expect(maskLevel(mask.getPixel(5, 5)), 255);
+      expect(maskLevel(mask.getPixel(20, 20)), 0);
+      expect(result.fullCutoutPng, isNotNull);
+      expect(result.originalWidth, 40);
+      expect(result.originalHeight, 40);
+    },
+  );
 
   test('fake SAM negative click punches a hole in a positive disk', () async {
     final image = img.Image(width: 40, height: 40, numChannels: 3);
@@ -371,9 +383,7 @@ void main() {
     final protected = applyEraseStroke(
       rgb,
       mask,
-      const EraseStroke(
-        stamps: [EraseStamp(x: 8, y: 8, radius: 8)],
-      ),
+      const EraseStroke(stamps: [EraseStamp(x: 8, y: 8, radius: 8)]),
       palette: palette,
     );
     expect(protected, greaterThan(0));
@@ -412,9 +422,7 @@ void main() {
       maskBytes: Uint8List.fromList(img.encodePng(existing)),
       points: const [PromptPoint(x: 20, y: 20, positive: true)],
       strokes: const [
-        EraseStroke(
-          stamps: [EraseStamp(x: 20, y: 9, radius: 5)],
-        ),
+        EraseStroke(stamps: [EraseStamp(x: 20, y: 9, radius: 5)]),
       ],
       palette: const [RgbSwatch(20, 90, 200)],
     );
@@ -498,29 +506,32 @@ void main() {
     expect(maskLevel(mask.getPixel(2, 2)), lessThan(24));
   });
 
-  test('fill overwrites every painted pixel, even outside the click outline', () {
-    final rgb = img.Image(width: 40, height: 40, numChannels: 3);
-    img.fill(rgb, color: img.ColorRgb8(18, 28, 48));
-    final mask = img.Image(width: 40, height: 40, numChannels: 3);
-    img.fill(mask, color: img.ColorRgb8(0, 0, 0));
-    for (var y = 8; y < 32; y++) {
-      for (var x = 8; x < 32; x++) {
-        mask.setPixelRgb(x, y, 255, 255, 255);
+  test(
+    'fill overwrites every painted pixel, even outside the click outline',
+    () {
+      final rgb = img.Image(width: 40, height: 40, numChannels: 3);
+      img.fill(rgb, color: img.ColorRgb8(18, 28, 48));
+      final mask = img.Image(width: 40, height: 40, numChannels: 3);
+      img.fill(mask, color: img.ColorRgb8(0, 0, 0));
+      for (var y = 8; y < 32; y++) {
+        for (var x = 8; x < 32; x++) {
+          mask.setPixelRgb(x, y, 255, 255, 255);
+        }
       }
-    }
-    rgb.setPixelRgb(4, 4, 210, 198, 176);
-    applyFillPatch(
-      rgb,
-      mask,
-      const FillStroke(
-        sample: FillPatch.box(PixelRect(x: 12, y: 12, width: 8, height: 8)),
-        paint: [EraseStamp(x: 4, y: 4, radius: 4)],
-      ),
-    );
-    expect(maskLevel(mask.getPixel(4, 4)), 255);
-    expect(rgb.getPixel(4, 4).r.toInt(), lessThan(80));
-    expect(maskLevel(mask.getPixel(20, 20)), 255);
-  });
+      rgb.setPixelRgb(4, 4, 210, 198, 176);
+      applyFillPatch(
+        rgb,
+        mask,
+        const FillStroke(
+          sample: FillPatch.box(PixelRect(x: 12, y: 12, width: 8, height: 8)),
+          paint: [EraseStamp(x: 4, y: 4, radius: 4)],
+        ),
+      );
+      expect(maskLevel(mask.getPixel(4, 4)), 255);
+      expect(rgb.getPixel(4, 4).r.toInt(), lessThan(80));
+      expect(maskLevel(mask.getPixel(20, 20)), 255);
+    },
+  );
 
   test('refineEdits fill restores a painted hole inside the outline', () async {
     final image = img.Image(width: 40, height: 40, numChannels: 3);
@@ -597,7 +608,12 @@ void main() {
     expect(roundTrip.y, 10);
     expect(roundTrip.width, 30);
     expect(roundTrip.height, 30);
-    final pixel = layout.localToPixel(70, 20, imageWidth: 100, imageHeight: 100);
+    final pixel = layout.localToPixel(
+      70,
+      20,
+      imageWidth: 100,
+      imageHeight: 100,
+    );
     expect(pixel, isNotNull);
     expect(pixel!.x, 20);
     expect(pixel.y, 20);

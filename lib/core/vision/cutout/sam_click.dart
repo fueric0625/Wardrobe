@@ -139,7 +139,11 @@ class SamClickSegmenter implements ClickSegmenter {
       outputCounts: [maskCount],
     );
     final values = out.first.values;
-    final mask = img.Image(width: _origWidth, height: _origHeight, numChannels: 3);
+    final mask = img.Image(
+      width: _origWidth,
+      height: _origHeight,
+      numChannels: 3,
+    );
     img.fill(mask, color: img.ColorRgb8(0, 0, 0));
     final plane = _origWidth * _origHeight;
     final offset = values.length >= plane * 2 ? values.length - plane : 0;
@@ -175,7 +179,11 @@ class FakeClickSegmenter implements ClickSegmenter {
 
   @override
   Future<img.Image> predict(List<PromptPoint> points) async {
-    final mask = img.Image(width: math.max(1, _width), height: math.max(1, _height), numChannels: 3);
+    final mask = img.Image(
+      width: math.max(1, _width),
+      height: math.max(1, _height),
+      numChannels: 3,
+    );
     img.fill(mask, color: img.ColorRgb8(0, 0, 0));
     for (final point in points) {
       final color = point.positive ? 255 : 0;
@@ -183,7 +191,8 @@ class FakeClickSegmenter implements ClickSegmenter {
       for (var y = point.y - radius; y <= point.y + radius; y++) {
         for (var x = point.x - radius; x <= point.x + radius; x++) {
           if (x < 0 || y < 0 || x >= mask.width || y >= mask.height) continue;
-          if ((x - point.x) * (x - point.x) + (y - point.y) * (y - point.y) > radius * radius) {
+          if ((x - point.x) * (x - point.x) + (y - point.y) * (y - point.y) >
+              radius * radius) {
             continue;
           }
           mask.setPixelRgb(x, y, color, color, color);

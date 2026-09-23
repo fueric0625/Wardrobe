@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wardrobe/core/catalog/providers.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
-import 'package:wardrobe/core/db/app_database.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/database/app_database.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/catalog/cover_repository.dart';
 import 'package:wardrobe/widgets/common.dart';
 
@@ -43,7 +43,9 @@ Future<AddSubcategoryResult?> promptAddSubcategory(
         builder: (context, setState) {
           return Dialog(
             backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: items.isEmpty ? 400 : 520,
@@ -68,7 +70,10 @@ Future<AddSubcategoryResult?> promptAddSubcategory(
                     TextField(
                       controller: controller,
                       autofocus: true,
-                      style: const TextStyle(fontSize: 14, color: AppColors.text),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.text,
+                      ),
                       onSubmitted: (value) {
                         final label = value.trim();
                         if (label.isEmpty) return;
@@ -82,18 +87,25 @@ Future<AddSubcategoryResult?> promptAddSubcategory(
                       },
                       decoration: const InputDecoration(
                         hintText: '分类名称',
-                        hintStyle: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                        hintStyle: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textMuted,
+                        ),
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                     if (items.isNotEmpty) ...[
                       const SizedBox(height: 18),
                       Text(
-                        selected.isEmpty
-                            ? pickHint
-                            : '已选 ${selected.length} 件',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                        selected.isEmpty ? pickHint : '已选 ${selected.length} 件',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       ConstrainedBox(
@@ -101,12 +113,13 @@ Future<AddSubcategoryResult?> promptAddSubcategory(
                         child: GridView.builder(
                           shrinkWrap: true,
                           itemCount: items.length,
-                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 92,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            childAspectRatio: 0.82,
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 92,
+                                mainAxisSpacing: 8,
+                                crossAxisSpacing: 8,
+                                childAspectRatio: 0.82,
+                              ),
                           itemBuilder: (context, index) {
                             final item = items[index];
                             final checked = selected.contains(item.id);
@@ -203,13 +216,22 @@ Future<Category?> promptMoveToCategory(
                     final depth = categoryDepth(categories, category);
                     final current = category.id == currentId;
                     return Material(
-                      color: current ? AppColors.primarySoft : AppColors.background,
+                      color: current
+                          ? AppColors.primarySoft
+                          : AppColors.background,
                       borderRadius: BorderRadius.circular(14),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(14),
-                        onTap: current ? null : () => Navigator.pop(context, category),
+                        onTap: current
+                            ? null
+                            : () => Navigator.pop(context, category),
                         child: Padding(
-                          padding: EdgeInsets.fromLTRB(12.0 + depth * 22, 10, 12, 10),
+                          padding: EdgeInsets.fromLTRB(
+                            12.0 + depth * 22,
+                            10,
+                            12,
+                            10,
+                          ),
                           child: Row(
                             children: [
                               Icon(
@@ -288,11 +310,14 @@ class _SelectableItemThumb extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   item.cover ?? LocalCover(path: item.imagePath),
-                  if (selected)
-                    const ColoredBox(color: Color(0x665B6CFF)),
+                  if (selected) const ColoredBox(color: Color(0x665B6CFF)),
                   if (selected)
                     const Align(
-                      child: Icon(Icons.check_circle, color: Colors.white, size: 22),
+                      child: Icon(
+                        Icons.check_circle,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                 ],
               ),
@@ -329,9 +354,15 @@ class CategoryCoverActions extends ConsumerWidget {
     return coverItemIdOf(covers, kind, categoryId) == itemId;
   }
 
-  Future<void> _toggle(BuildContext context, WidgetRef ref, Category category) async {
+  Future<void> _toggle(
+    BuildContext context,
+    WidgetRef ref,
+    Category category,
+  ) async {
     final clearing = _isCoverOf(category.id);
-    await ref.read(categoryCoverRepositoryProvider).setCover(
+    await ref
+        .read(categoryCoverRepositoryProvider)
+        .setCover(
           kind: kind,
           categoryId: category.id,
           itemId: clearing ? null : itemId,

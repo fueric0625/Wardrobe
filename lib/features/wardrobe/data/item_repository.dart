@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/storage/image_store.dart';
+import 'package:wardrobe/features/wardrobe/domain/item_photo_policy.dart';
 import 'package:wardrobe/features/wardrobe/photo_role.dart';
 
 class ItemImageDraft {
@@ -31,7 +32,10 @@ abstract class ItemRepository {
   Stream<List<ClothingItemImage>> watchImages(String itemId);
   Stream<List<ClothingItemImage>> watchAllImages();
   Future<List<ClothingItemImage>> getImages(String itemId);
-  Future<void> upsert(ClothingItemsCompanion item, {List<ItemImageDraft>? images});
+  Future<void> upsert(
+    ClothingItemsCompanion item, {
+    List<ItemImageDraft>? images,
+  });
   Future<void> moveToCategory(Iterable<String> ids, String categoryId);
   Future<void> delete(String id);
 }
@@ -44,24 +48,24 @@ class LocalItemRepository implements ItemRepository {
 
   @override
   Stream<List<ClothingItem>> watchAll() {
-    return (_db.select(_db.clothingItems)
-          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-        .watch();
+    return (_db.select(
+      _db.clothingItems,
+    )..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])).watch();
   }
 
   @override
   Future<ClothingItem?> getById(String id) {
-    return (_db.select(_db.clothingItems)..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    return (_db.select(
+      _db.clothingItems,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
   @override
   Stream<List<ClothingItemImage>> watchAllImages() {
-    return (_db.select(_db.clothingItemImages)
-          ..orderBy([
-            (t) => OrderingTerm.asc(t.itemId),
-            (t) => OrderingTerm.asc(t.sortOrder),
-          ]))
+    return (_db.select(_db.clothingItemImages)..orderBy([
+          (t) => OrderingTerm.asc(t.itemId),
+          (t) => OrderingTerm.asc(t.sortOrder),
+        ]))
         .watch();
   }
 
@@ -86,45 +90,94 @@ class LocalItemRepository implements ItemRepository {
     ClothingItemsCompanion item, {
     List<ItemImageDraft>? images,
   }) async {
-    await _db.transaction(() async {
-      var toWrite = item;
-      if (images != null) {
-        final stored = await _replaceImages(item.id.value, images);
-        ItemImageDraft? primary;
-        for (final image in stored) {
-          if (image.isPrimary) {
-            primary = image;
-            break;
+    final pending = <ImageImport>[];
+    final retired = <String>[];
+    try {
+      await _db.transaction(() async {
+        var toWrite = item;
+        if (images != null) {
+          final stored = await _replaceImages(
+            item.id.value,
+            images,
+            pending,
+            retired,
+          );
+          ItemImageDraft? primary;
+          for (final image in stored) {
+            if (image.isPrimary) {
+              primary = image;
+              break;
+            }
           }
+          primary ??= stored.cast<ItemImageDraft?>().firstWhere(
+            (image) => image?.role == ItemPhotoRole.garment,
+            orElse: () => null,
+          );
+          toWrite = item.copyWith(imagePath: Value(_displayPath(primary)));
         }
-        primary ??= stored.cast<ItemImageDraft?>().firstWhere(
-              (image) => image?.role == ItemPhotoRole.garment,
-              orElse: () => null,
-            );
-        toWrite = item.copyWith(
-          imagePath: Value(_displayPath(primary)),
-        );
+        await _db.into(_db.clothingItems).insertOnConflictUpdate(toWrite);
+      });
+    } catch (error) {
+      for (final op in pending) {
+        await op.rollback();
       }
-      await _db.into(_db.clothingItems).insertOnConflictUpdate(toWrite);
-    });
+      rethrow;
+    }
+    for (final op in pending) {
+      try {
+        await op.commit();
+      } catch (error) {
+        await _retargetPath(op.finalPath, op.tempPath);
+        rethrow;
+      }
+    }
+    for (final path in retired) {
+      await _releaseOwned(path);
+    }
+  }
+
+  Future<String> _stage(String source, List<ImageImport> pending) async {
+    if (_images.isOwned(source) && !_images.isTemporary(source)) return source;
+    final op = _images.isTemporary(source)
+        ? _images.adoptTemporary(source)
+        : await _images.beginImport(source);
+    pending.add(op);
+    return op.finalPath;
+  }
+
+  Future<void> _retargetPath(String from, String to) async {
+    await (_db.update(_db.clothingItemImages)
+          ..where((t) => t.originalPath.equals(from)))
+        .write(ClothingItemImagesCompanion(originalPath: Value(to)));
+    await (_db.update(_db.clothingItemImages)
+          ..where((t) => t.processedPath.equals(from)))
+        .write(ClothingItemImagesCompanion(processedPath: Value(to)));
+    await (_db.update(_db.clothingItemImages)
+          ..where((t) => t.maskPath.equals(from)))
+        .write(ClothingItemImagesCompanion(maskPath: Value(to)));
+    await (_db.update(_db.clothingItems)
+          ..where((t) => t.imagePath.equals(from)))
+        .write(ClothingItemsCompanion(imagePath: Value(to)));
   }
 
   Future<List<ItemImageDraft>> _replaceImages(
     String itemId,
     List<ItemImageDraft> drafts,
+    List<ImageImport> pending,
+    List<String> retired,
   ) async {
     final previous = await getImages(itemId);
     final stored = <ItemImageDraft>[];
     for (var i = 0; i < drafts.length; i++) {
       final draft = drafts[i];
-      final original = await _images.importOrKeep(draft.originalPath);
+      final original = await _stage(draft.originalPath, pending);
       String? processed;
       if (draft.processedPath != null && draft.processedPath!.isNotEmpty) {
-        processed = await _images.importOrKeep(draft.processedPath!);
+        processed = await _stage(draft.processedPath!, pending);
       }
       String? mask;
       if (draft.maskPath != null && draft.maskPath!.isNotEmpty) {
-        mask = await _images.importOrKeep(draft.maskPath!);
+        mask = await _stage(draft.maskPath!, pending);
       }
       stored.add(
         ItemImageDraft(
@@ -133,22 +186,30 @@ class LocalItemRepository implements ItemRepository {
           processedPath: processed,
           maskPath: mask,
           role: draft.role,
-          isPrimary: draft.role == ItemPhotoRole.garment &&
+          isPrimary:
+              draft.role == ItemPhotoRole.garment &&
               (draft.isPrimary ||
-                  (!drafts.any((d) => d.role == ItemPhotoRole.garment && d.isPrimary) &&
-                      i == drafts.indexWhere((d) => d.role == ItemPhotoRole.garment))),
+                  (!drafts.any(
+                        (d) => d.role == ItemPhotoRole.garment && d.isPrimary,
+                      ) &&
+                      i ==
+                          drafts.indexWhere(
+                            (d) => d.role == ItemPhotoRole.garment,
+                          ))),
           colorJson: draft.colorJson,
           ocrJson: draft.ocrJson,
         ),
       );
     }
 
-    await (_db.delete(_db.clothingItemImages)
-          ..where((t) => t.itemId.equals(itemId)))
-        .go();
+    await (_db.delete(
+      _db.clothingItemImages,
+    )..where((t) => t.itemId.equals(itemId))).go();
     for (var i = 0; i < stored.length; i++) {
       final draft = stored[i];
-      await _db.into(_db.clothingItemImages).insert(
+      await _db
+          .into(_db.clothingItemImages)
+          .insert(
             ClothingItemImagesCompanion.insert(
               id: draft.id,
               itemId: itemId,
@@ -173,7 +234,7 @@ class LocalItemRepository implements ItemRepository {
     for (final row in previous) {
       for (final path in [row.originalPath, row.processedPath, row.maskPath]) {
         if (path != null && path.isNotEmpty && !keep.contains(path)) {
-          await _images.deleteIfOwned(path);
+          retired.add(path);
         }
       }
     }
@@ -182,9 +243,10 @@ class LocalItemRepository implements ItemRepository {
 
   String? _displayPath(ItemImageDraft? image) {
     if (image == null) return null;
-    final processed = image.processedPath;
-    if (processed != null && processed.isNotEmpty) return processed;
-    return image.originalPath;
+    return preferredItemDisplayPath(
+      processedPath: image.processedPath,
+      originalPath: image.originalPath,
+    );
   }
 
   @override
@@ -199,15 +261,43 @@ class LocalItemRepository implements ItemRepository {
   Future<void> delete(String id) async {
     final existing = await getById(id);
     final images = await getImages(id);
-    await (_db.delete(_db.clothingItemImages)..where((t) => t.itemId.equals(id))).go();
+    await (_db.delete(
+      _db.clothingItemImages,
+    )..where((t) => t.itemId.equals(id))).go();
     await (_db.delete(_db.clothingItems)..where((t) => t.id.equals(id))).go();
     for (final row in images) {
-      await _images.deleteIfOwned(row.originalPath);
-      await _images.deleteIfOwned(row.processedPath);
-      await _images.deleteIfOwned(row.maskPath);
+      await _releaseOwned(row.originalPath);
+      await _releaseOwned(row.processedPath);
+      await _releaseOwned(row.maskPath);
     }
     if (images.isEmpty) {
-      await _images.deleteIfOwned(existing?.imagePath);
+      await _releaseOwned(existing?.imagePath);
     }
+  }
+
+  Future<bool> _imageReferenced(String path) async {
+    final imageRow =
+        await (_db.select(_db.clothingItemImages)
+              ..where(
+                (t) =>
+                    t.originalPath.equals(path) |
+                    t.processedPath.equals(path) |
+                    t.maskPath.equals(path),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (imageRow != null) return true;
+    final itemRow =
+        await (_db.select(_db.clothingItems)
+              ..where((t) => t.imagePath.equals(path))
+              ..limit(1))
+            .getSingleOrNull();
+    return itemRow != null;
+  }
+
+  Future<void> _releaseOwned(String? path) async {
+    if (path == null || path.isEmpty) return;
+    if (await _imageReferenced(path)) return;
+    await _images.deleteIfOwned(path);
   }
 }

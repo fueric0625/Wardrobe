@@ -67,7 +67,7 @@ class GarmentPipeline {
     final scaled = bakeAndScale(decoded);
     try {
       return _finish(scaled, await _segment(scaled));
-    } catch (_) {
+    } on Object {
       return GarmentProcessResult(
         originalBytes: Uint8List.fromList(img.encodeJpg(scaled, quality: 90)),
         originalExtension: '.jpg',
@@ -121,7 +121,9 @@ class GarmentPipeline {
           throw const FormatException('没有点选精修');
         }
         final predicted = await click.predict(points);
-        mask = predicted.width == original.width && predicted.height == original.height
+        mask =
+            predicted.width == original.width &&
+                predicted.height == original.height
             ? predicted
             : resizeMask(predicted, original.width, original.height);
       } else {
@@ -130,19 +132,16 @@ class GarmentPipeline {
           maskBytes == null ? null : img.decodeImage(maskBytes),
         );
       }
-      final frozen = palette.isNotEmpty ? palette : extractPalette(original, mask);
+      final frozen = palette.isNotEmpty
+          ? palette
+          : extractPalette(original, mask);
       for (final stroke in strokes) {
         applyEraseStroke(original, mask, stroke, palette: frozen);
       }
       final rgb = img.Image.from(original);
       var filledCount = 0;
       for (final stroke in fills) {
-        filledCount += applyFillPatch(
-          rgb,
-          mask,
-          stroke,
-          palette: frozen,
-        );
+        filledCount += applyFillPatch(rgb, mask, stroke, palette: frozen);
       }
       final result = _finish(rgb, mask, palette: frozen);
       if (fills.isEmpty) return result;
@@ -158,7 +157,7 @@ class GarmentPipeline {
         error: result.error,
         filledCount: filledCount,
       );
-    } catch (_) {
+    } on Object {
       return GarmentProcessResult(
         originalBytes: Uint8List.fromList(img.encodeJpg(original, quality: 90)),
         originalExtension: '.jpg',
@@ -185,7 +184,9 @@ class GarmentPipeline {
     final existing = maskBytes == null ? null : img.decodeImage(maskBytes);
     final mask = maskMatchingOriginal(original, existing);
     final box = clampPixelRect(region, original.width, original.height);
-    final frozen = palette.isNotEmpty ? palette : extractPalette(original, mask);
+    final frozen = palette.isNotEmpty
+        ? palette
+        : extractPalette(original, mask);
     try {
       switch (op) {
         case RefineOp.erase:
@@ -196,7 +197,7 @@ class GarmentPipeline {
           final filled = fillRefineGaps(original, mask, box, frozen);
           return _finish(filled, mask, palette: frozen);
       }
-    } catch (_) {
+    } on Object {
       return GarmentProcessResult(
         originalBytes: Uint8List.fromList(img.encodeJpg(original, quality: 90)),
         originalExtension: '.jpg',

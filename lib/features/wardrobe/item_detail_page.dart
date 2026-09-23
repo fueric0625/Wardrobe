@@ -6,8 +6,8 @@ import 'package:wardrobe/core/catalog/providers.dart';
 import 'package:wardrobe/features/wardrobe/providers.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
-import 'package:wardrobe/core/db/app_database.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/database/app_database.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/vision/ocr/tag_ocr.dart';
 import 'package:wardrobe/features/wardrobe/photo_role.dart';
 import 'package:wardrobe/core/catalog/category_item_dialogs.dart';
@@ -42,7 +42,10 @@ class ItemDetailPage extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('找不到这件衣物', style: TextStyle(color: AppColors.textMuted)),
+                  const Text(
+                    '找不到这件衣物',
+                    style: TextStyle(color: AppColors.textMuted),
+                  ),
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () => _back(context),
@@ -58,11 +61,17 @@ class ItemDetailPage extends ConsumerWidget {
         final category = categoryById(categories, item.categoryId);
         final title = item.type.trim().isEmpty ? '单品详情' : item.type.trim();
         final measures = decodeMeasurements(item.measurements);
-        final sizeFields =
-            category == null ? <String>[] : inheritedSizeFields(categories, category);
+        final sizeFields = category == null
+            ? <String>[]
+            : inheritedSizeFields(categories, category);
         final path = categoryPath(categories, item.categoryId);
-        final coverTargets = coverCategoriesForItem(categories, item.categoryId);
-        final images = ref.watch(itemImagesProvider(item.id)).maybeWhen(
+        final coverTargets = coverCategoriesForItem(
+          categories,
+          item.categoryId,
+        );
+        final images = ref
+            .watch(itemImagesProvider(item.id))
+            .maybeWhen(
               data: (rows) => rows,
               orElse: () => const <ClothingItemImage>[],
             );
@@ -88,7 +97,10 @@ class ItemDetailPage extends ConsumerWidget {
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     CategoryCoverActions(
@@ -108,7 +120,8 @@ class ItemDetailPage extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
-                      onPressed: () => context.push('/wardrobe/item/${item.id}/edit'),
+                      onPressed: () =>
+                          context.push('/wardrobe/item/${item.id}/edit'),
                       child: const Text('修改'),
                     ),
                   ],
@@ -141,15 +154,24 @@ class ItemDetailPage extends ConsumerWidget {
                                 ReadOnlyField(label: '颜色', value: item.color),
                               ),
                               _split(
-                                ReadOnlyField(label: '季节', value: _joinTokens(item.season)),
+                                ReadOnlyField(
+                                  label: '季节',
+                                  value: _joinTokens(item.season),
+                                ),
                                 ReadOnlyField(label: '面料', value: item.fabric),
                               ),
                               _split(
                                 ReadOnlyField(label: '品牌', value: item.brand),
-                                ReadOnlyField(label: '价格', value: _priceText(item.price)),
+                                ReadOnlyField(
+                                  label: '价格',
+                                  value: _priceText(item.price),
+                                ),
                               ),
                               if (sizeFields.isNotEmpty) ...[
-                                const Text('尺码测量', style: TextStyle(fontWeight: FontWeight.w700)),
+                                const Text(
+                                  '尺码测量',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
                                 Wrap(
                                   spacing: 24,
                                   runSpacing: 12,
@@ -169,14 +191,24 @@ class ItemDetailPage extends ConsumerWidget {
                                 label: '购入时间',
                                 value: item.purchasedAt == null
                                     ? null
-                                    : DateFormat('yyyy-MM-dd').format(item.purchasedAt!),
+                                    : DateFormat('yyyy-MM-dd')
+                                          .format(item.purchasedAt!),
                               ),
-                              ReadOnlyField(label: '购买信息', value: item.purchaseInfo),
-                              ReadOnlyField(label: '存放位置', value: item.location),
+                              ReadOnlyField(
+                                label: '购买信息',
+                                value: item.purchaseInfo,
+                              ),
+                              ReadOnlyField(
+                                label: '存放位置',
+                                value: item.location,
+                              ),
                               ReadOnlyField(label: '标签', value: item.tags),
                               ReadOnlyField(label: '备注', value: item.note),
                               if (tagOcr.isNotEmpty || tagPaths.isNotEmpty)
-                                HangtagOcrBlock(text: tagOcr, imagePaths: tagPaths),
+                                HangtagOcrBlock(
+                                  text: tagOcr,
+                                  imagePaths: tagPaths,
+                                ),
                             ],
                           ),
                         ),
@@ -258,6 +290,7 @@ String _tagOcrText(List<ClothingItemImage> images) {
 List<String> _tagImagePaths(List<ClothingItemImage> images) {
   return [
     for (final image in images)
-      if (ItemPhotoRole.parse(image.role) == ItemPhotoRole.tag) itemImagePreviewPath(image),
+      if (ItemPhotoRole.parse(image.role) == ItemPhotoRole.tag)
+        itemImagePreviewPath(image),
   ];
 }

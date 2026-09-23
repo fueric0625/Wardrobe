@@ -1,13 +1,17 @@
-import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
+import 'package:wardrobe/core/vision/coordinates/image_coordinate_mapper.dart';
+import 'package:wardrobe/features/outfits/domain/collage_placement.dart';
 import 'package:wardrobe/widgets/common.dart';
 
-const outfitCoverPhoto = 'photo';
-const outfitCoverCollage = 'collage';
+export 'package:wardrobe/core/serialization/collage_layout_codec.dart'
+    show decodeCollageLayout, encodeCollageLayout;
+export 'package:wardrobe/features/outfits/domain/collage_placement.dart';
+export 'package:wardrobe/features/outfits/domain/outfit_cover_policy.dart'
+    show outfitCoverPhoto, outfitCoverCollage, outfitUsesCollage;
 
 /// Saved when the user removes the collage. Distinct from a missing layout.
 const collageRemovedLayout = '';
@@ -44,86 +48,11 @@ class CollageCoverBox extends StatelessWidget {
   }
 }
 
-class CollagePlacement {
-  const CollagePlacement({
-    required this.clothingItemId,
-    required this.x,
-    required this.y,
-    required this.w,
-    required this.h,
-    required this.z,
-  });
-
-  final String clothingItemId;
-  final double x;
-  final double y;
-  final double w;
-  final double h;
-  final int z;
-
-  CollagePlacement copyWith({double? x, double? y, double? w, double? h, int? z}) {
-    return CollagePlacement(
-      clothingItemId: clothingItemId,
-      x: x ?? this.x,
-      y: y ?? this.y,
-      w: w ?? this.w,
-      h: h ?? this.h,
-      z: z ?? this.z,
-    );
-  }
-
-  Map<String, Object> toJson() => {
-        'id': clothingItemId,
-        'x': x,
-        'y': y,
-        'w': w,
-        'h': h,
-        'z': z,
-      };
-}
-
 class CollagePiece {
   const CollagePiece({required this.path, required this.placement});
 
   final String path;
   final CollagePlacement placement;
-}
-
-List<CollagePlacement> decodeCollageLayout(String? raw) {
-  if (raw == null || raw.trim().isEmpty) return const [];
-  try {
-    final decoded = jsonDecode(raw);
-    if (decoded is! List) return const [];
-    final placements = <CollagePlacement>[];
-    for (final entry in decoded) {
-      if (entry is! Map) continue;
-      final id = entry['id'];
-      if (id is! String || id.isEmpty) continue;
-      placements.add(
-        CollagePlacement(
-          clothingItemId: id,
-          x: _num(entry['x']),
-          y: _num(entry['y']),
-          w: _num(entry['w'], fallback: 0.4).clamp(0.12, 1),
-          h: _num(entry['h'], fallback: 0.4).clamp(0.12, 1),
-          z: (entry['z'] as num?)?.round() ?? placements.length,
-        ),
-      );
-    }
-    return placements;
-  } catch (_) {
-    return const [];
-  }
-}
-
-String? encodeCollageLayout(List<CollagePlacement> placements) {
-  if (placements.isEmpty) return null;
-  return jsonEncode([for (final placement in placements) placement.toJson()]);
-}
-
-double _num(Object? value, {double fallback = 0}) {
-  if (value is num) return value.toDouble();
-  return fallback;
 }
 
 /// Starting grid. Two columns until the fifth piece, then three.
@@ -157,7 +86,10 @@ List<CollagePlacement> mergeCollageLayout(
   ];
   if (kept.isEmpty) return autoPlacements(ids);
   final have = {for (final placement in kept) placement.clothingItemId};
-  final missing = [for (final id in ids) if (!have.contains(id)) id];
+  final missing = [
+    for (final id in ids)
+      if (!have.contains(id)) id,
+  ];
   var z = kept.fold<int>(0, (maxZ, placement) => math.max(maxZ, placement.z));
   return [
     ...kept,
@@ -176,7 +108,8 @@ List<CollagePlacement> mergeCollageLayout(
 /// Click-cutout when one exists, otherwise the item's cover image.
 String? preferCutoutPath({
   required String? imagePath,
-  required Iterable<({String role, bool isPrimary, String? processedPath})> images,
+  required Iterable<({String role, bool isPrimary, String? processedPath})>
+  images,
 }) {
   String? fallback;
   for (final image in images) {
@@ -207,36 +140,24 @@ bool cutoutPixelHit({
   if (boxWidth <= 0 || boxHeight <= 0 || imageWidth <= 0 || imageHeight <= 0) {
     return false;
   }
-  final scale = math.min(boxWidth / imageWidth, boxHeight / imageHeight);
-  final drawWidth = imageWidth * scale;
-  final drawHeight = imageHeight * scale;
-  final left = (boxWidth - drawWidth) / 2;
-  final top = (boxHeight - drawHeight) / 2;
-  if (x < left || y < top || x > left + drawWidth || y > top + drawHeight) {
-    return false;
-  }
+  final mapper = ImageCoordinateMapper(
+    imageWidth: imageWidth,
+    imageHeight: imageHeight,
+    viewportWidth: boxWidth,
+    viewportHeight: boxHeight,
+  );
+  final pixel = mapper.toImageFloored(ViewportPoint(x, y));
+  if (pixel == null) return false;
   if (alpha == null) return true;
-  final px = ((x - left) / drawWidth * imageWidth).floor().clamp(0, imageWidth - 1);
-  final py = ((y - top) / drawHeight * imageHeight).floor().clamp(0, imageHeight - 1);
+  final px = pixel.x.toInt();
+  final py = pixel.y.toInt();
   final index = py * imageWidth + px;
   if (index < 0 || index >= alpha.length) return false;
   return alpha[index] > alphaThreshold;
 }
 
-bool outfitUsesCollage({
-  required String? imagePath,
-  required String coverMode,
-  required bool hasPieces,
-}) {
-  final hasPhoto = imagePath != null && imagePath.isNotEmpty;
-  return hasPieces && (coverMode == outfitCoverCollage || !hasPhoto);
-}
-
 class OutfitCoverModel {
-  const OutfitCoverModel({
-    required this.usesCollage,
-    required this.pieces,
-  });
+  const OutfitCoverModel({required this.usesCollage, required this.pieces});
 
   final bool usesCollage;
   final List<CollagePiece> pieces;
@@ -267,7 +188,10 @@ class LabeledCoverCard extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+              child: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
             if (onDelete != null)
               IconButton(
@@ -304,23 +228,23 @@ class OutfitPieceCollage extends StatelessWidget {
       color: AppColors.surface,
       child: CollageCoverBox(
         child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final height = constraints.maxHeight;
-          return Stack(
-            children: [
-              for (final piece in ordered)
-                Positioned(
-                  left: piece.placement.x * width,
-                  top: piece.placement.y * height,
-                  width: piece.placement.w * width,
-                  height: piece.placement.h * height,
-                  child: LocalCover(path: piece.path, fit: BoxFit.contain),
-                ),
-            ],
-          );
-        },
-      ),
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final height = constraints.maxHeight;
+            return Stack(
+              children: [
+                for (final piece in ordered)
+                  Positioned(
+                    left: piece.placement.x * width,
+                    top: piece.placement.y * height,
+                    width: piece.placement.w * width,
+                    height: piece.placement.h * height,
+                    child: LocalCover(path: piece.path, fit: BoxFit.contain),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

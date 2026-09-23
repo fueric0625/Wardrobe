@@ -39,8 +39,10 @@ class Outfits extends Table {
   TextColumn get categoryId => text()();
   TextColumn get imagePath => text().nullable()();
   TextColumn get sourceImagePath => text().nullable()();
+
   /// `photo` uses the full-body image. `collage` uses the arranged clothes.
   TextColumn get coverMode => text().withDefault(const Constant('photo'))();
+
   /// JSON placements for a manual collage. Empty means an automatic layout.
   TextColumn get collageLayout => text().nullable()();
   TextColumn get name => text().withDefault(const Constant(''))();
@@ -135,52 +137,89 @@ class DayOutfits extends Table {
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
-  AppDatabase.forTesting(super.e);
+  AppDatabase.forTesting(QueryExecutor executor) : this(executor);
+
+  /// Snapshots in `drift_schemas/app_database/` start at this version.
+  /// Versions below it keep the idempotent upgrades already shipped.
+  /// Bump [schemaVersion] on the next change; leave this baseline at 9.
+  static const schemaSnapshotBaseline = 9;
 
   @override
   int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
-          await m.createAll();
-          await seedClothingCategories();
-          await seedOutfitCategories();
-        },
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.createTable(categoryCovers);
-          }
-          if (from < 3) {
-            await m.createTable(categories);
-            await seedClothingCategories();
-          }
-          if (from < 4) {
-            await seedOutfitCategories();
-          }
-          if (from < 5) {
-            await m.createTable(clothingItemImages);
-            await _backfillItemImages();
-          }
-          if (from < 6) {
-            await m.addColumn(clothingItemImages, clothingItemImages.ocrJson);
-          }
-          if (from < 7) {
-            await m.addColumn(outfits, outfits.sourceImagePath);
-            await m.createTable(outfitItems);
-          }
-          if (from < 8) {
-            await m.createTable(dayEvents);
-            await m.createTable(dayOutfits);
-          }
-          if (from < 9) {
-            await m.addColumn(outfits, outfits.coverMode);
-            await m.addColumn(outfits, outfits.collageLayout);
-          }
-        },
+    onCreate: (m) async {
+      await m.createAll();
+      await seedClothingCategories();
+      await seedOutfitCategories();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < schemaSnapshotBaseline) {
+        await _upgradeThroughSchema9(m, from);
+      }
+      if (to > schemaSnapshotBaseline) {
+        await _upgradeFromSchemaSnapshots(
+          m,
+          from < schemaSnapshotBaseline ? schemaSnapshotBaseline : from,
+          to,
+        );
+      }
+    },
+  );
+
+  /// Hand-written upgrades for databases created before schema snapshots.
+  /// Do not rewrite these into generated steps: `createTable` would use today's
+  /// columns and repeat an `addColumn` that those databases already applied.
+  Future<void> _upgradeThroughSchema9(Migrator m, int from) async {
+    if (from < 2) {
+      await _createTableIfMissing(m, categoryCovers);
+    }
+    if (from < 3) {
+      await _createTableIfMissing(m, categories);
+      await seedClothingCategories();
+    }
+    if (from < 4) {
+      await seedOutfitCategories();
+    }
+    if (from < 5) {
+      final created = await _createTableIfMissing(m, clothingItemImages);
+      if (created) await _backfillItemImages();
+    }
+    // createTable above uses the current table, which already has ocr_json.
+    if (from < 6) {
+      await _addColumnIfMissing(
+        m,
+        clothingItemImages,
+        clothingItemImages.ocrJson,
       );
+    }
+    if (from < 7) {
+      await _addColumnIfMissing(m, outfits, outfits.sourceImagePath);
+      await _createTableIfMissing(m, outfitItems);
+    }
+    if (from < 8) {
+      await _createTableIfMissing(m, dayEvents);
+      await _createTableIfMissing(m, dayOutfits);
+    }
+    if (from < 9) {
+      await _addColumnIfMissing(m, outfits, outfits.coverMode);
+      await _addColumnIfMissing(m, outfits, outfits.collageLayout);
+    }
+  }
+
+  /// Filled after the next schema bump. `dart run drift_dev make-migrations`
+  /// writes `app_database.steps.dart`; implement only the newest callback,
+  /// for example `from9To10`, and call `stepByStep(...)(m, from, to)` here.
+  Future<void> _upgradeFromSchemaSnapshots(Migrator m, int from, int to) {
+    throw StateError(
+      'Schema $to has no step-by-step migration from $from '
+      '(${m.database.schemaVersion}). '
+      'Run `dart run drift_dev make-migrations` and fill the newest step.',
+    );
+  }
 
   Future<void> seedClothingCategories() {
     return _seedKind(CategoryKind.clothing, clothingCategorySeeds);
@@ -189,6 +228,38 @@ class AppDatabase extends _$AppDatabase {
   Future<void> seedOutfitCategories() {
     return _seedKind(CategoryKind.outfit, outfitCategorySeeds);
   }
+
+  /// Returns whether the table was created on this call.
+  Future<bool> _createTableIfMissing(Migrator m, TableInfo table) async {
+    if (await _tableExists(table.actualTableName)) return false;
+    await m.createTable(table);
+    return true;
+  }
+
+  Future<void> _addColumnIfMissing(
+    Migrator m,
+    TableInfo table,
+    GeneratedColumn column,
+  ) async {
+    if (await _columnExists(table.actualTableName, column.name)) return;
+    await m.addColumn(table, column);
+  }
+
+  Future<bool> _tableExists(String table) async {
+    final rows = await customSelect(
+      "SELECT 1 AS ok FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
+      variables: [Variable<String>(table)],
+    ).get();
+    return rows.isNotEmpty;
+  }
+
+  Future<bool> _columnExists(String table, String column) async {
+    final rows = await customSelect('PRAGMA table_info(${_sqlQuote(table)})')
+        .get();
+    return rows.any((row) => row.read<String>('name') == column);
+  }
+
+  String _sqlQuote(String name) => "'${name.replaceAll("'", "''")}'";
 
   Future<void> _backfillItemImages() async {
     final rows = await select(clothingItems).get();
@@ -211,9 +282,9 @@ class AppDatabase extends _$AppDatabase {
     CategoryKind kind,
     List<ClothingCategorySeed> seeds,
   ) async {
-    final existing = await (select(categories)
-          ..where((t) => t.kind.equals(kind.name)))
-        .get();
+    final existing = await (select(
+      categories,
+    )..where((t) => t.kind.equals(kind.name))).get();
     if (existing.isNotEmpty) return;
     for (final seed in seeds) {
       await into(categories).insert(

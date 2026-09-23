@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 
 enum SortField {
   createdAt,
@@ -8,11 +8,11 @@ enum SortField {
   price;
 
   String get label => switch (this) {
-        createdAt => '添加时间',
-        purchasedAt => '购买时间',
-        updatedAt => '修改时间',
-        price => '价格',
-      };
+    createdAt => '添加时间',
+    purchasedAt => '购买时间',
+    updatedAt => '修改时间',
+    price => '价格',
+  };
 }
 
 enum SortDirection { desc, asc }
@@ -38,10 +38,7 @@ class ListSort {
     SortField.price,
   ];
 
-  static const outfitFields = [
-    SortField.createdAt,
-    SortField.updatedAt,
-  ];
+  static const outfitFields = [SortField.createdAt, SortField.updatedAt];
 
   final SortField field;
   final SortDirection direction;
@@ -53,11 +50,11 @@ class ListSort {
       : (direction == SortDirection.desc ? '新→旧' : '旧→新');
 
   ListSort get toggled => ListSort(
-        field: field,
-        direction: direction == SortDirection.desc
-            ? SortDirection.asc
-            : SortDirection.desc,
-      );
+    field: field,
+    direction: direction == SortDirection.desc
+        ? SortDirection.asc
+        : SortDirection.desc,
+  );
 
   ListSort withField(SortField next) =>
       ListSort(field: next, direction: direction);
@@ -90,10 +87,21 @@ class SortKey {
 int compareSortKeys(SortKey a, SortKey b, ListSort sort) {
   final descending = sort.direction == SortDirection.desc;
   final cmp = switch (sort.field) {
-    SortField.createdAt => _compareNonNull(a.createdAt, b.createdAt, descending),
-    SortField.updatedAt => _compareNonNull(a.updatedAt, b.updatedAt, descending),
-    SortField.purchasedAt =>
-      _compareNullable(a.purchasedAt, b.purchasedAt, descending),
+    SortField.createdAt => _compareNonNull(
+      a.createdAt,
+      b.createdAt,
+      descending,
+    ),
+    SortField.updatedAt => _compareNonNull(
+      a.updatedAt,
+      b.updatedAt,
+      descending,
+    ),
+    SortField.purchasedAt => _compareNullable(
+      a.purchasedAt,
+      b.purchasedAt,
+      descending,
+    ),
     SortField.price => _compareNullable(a.price, b.price, descending),
   };
   if (cmp != 0) return cmp;
@@ -123,7 +131,10 @@ List<T> sortByKeys<T>(
   return copy;
 }
 
-List<ClothingItem> sortClothingItems(Iterable<ClothingItem> items, ListSort sort) {
+List<ClothingItem> sortClothingItems(
+  Iterable<ClothingItem> items,
+  ListSort sort,
+) {
   return sortByKeys(
     items,
     sort,

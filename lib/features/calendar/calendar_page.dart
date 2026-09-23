@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lunar/lunar.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/features/calendar/day_plan_panel.dart';
 import 'package:wardrobe/features/calendar/providers.dart';
 import 'package:wardrobe/features/calendar/virtual_weather.dart';
@@ -46,7 +46,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final first = DateTime(_visibleMonth.year, _visibleMonth.month, 1);
     final leading = first.weekday % 7;
     final start = first.subtract(Duration(days: leading));
-    return List.generate(42, (i) => DateTime(start.year, start.month, start.day + i));
+    return List.generate(
+      42,
+      (i) => DateTime(start.year, start.month, start.day + i),
+    );
   }
 
   String _lunarLabel(DateTime date) {
@@ -64,11 +67,15 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   Widget build(BuildContext context) {
     final today = DateTime.now();
     final days = _daysInGrid();
-    final eventDays = ref.watch(dayEventsProvider).maybeWhen(
+    final eventDays = ref
+        .watch(dayEventsProvider)
+        .maybeWhen(
           data: (rows) => rows.map((row) => row.day).toSet(),
           orElse: () => const <String>{},
         );
-    final outfitDays = ref.watch(dayOutfitLinksProvider).maybeWhen(
+    final outfitDays = ref
+        .watch(dayOutfitLinksProvider)
+        .maybeWhen(
           data: (rows) => rows.map((row) => row.day).toSet(),
           orElse: () => const <String>{},
         );
@@ -89,19 +96,26 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     IconButton(
                       onPressed: () => _shiftMonth(-1),
                       icon: const Icon(Icons.chevron_left),
-                      style: IconButton.styleFrom(backgroundColor: AppColors.primarySoft),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.primarySoft,
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 18),
                       child: Text(
                         DateFormat('yyyy-MM').format(_visibleMonth),
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     IconButton(
                       onPressed: () => _shiftMonth(1),
                       icon: const Icon(Icons.chevron_right),
-                      style: IconButton.styleFrom(backgroundColor: AppColors.primarySoft),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.primarySoft,
+                      ),
                     ),
                     const Spacer(),
                   ],
@@ -136,25 +150,39 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                 for (var weekday = 0; weekday < 7; weekday++)
                                   Expanded(
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                      ),
                                       child: _DayCell(
                                         date: days[week * 7 + weekday],
-                                        lunar: _lunarLabel(days[week * 7 + weekday]),
-                                        inMonth: days[week * 7 + weekday].month ==
+                                        lunar: _lunarLabel(
+                                          days[week * 7 + weekday],
+                                        ),
+                                        inMonth:
+                                            days[week * 7 + weekday].month ==
                                             _visibleMonth.month,
                                         selected: _sameDay(
                                           days[week * 7 + weekday],
                                           _selected,
                                         ),
-                                        isToday: _sameDay(days[week * 7 + weekday], today),
-                                        marked: eventDays.contains(
-                                              calendarDayKey(days[week * 7 + weekday]),
+                                        isToday: _sameDay(
+                                          days[week * 7 + weekday],
+                                          today,
+                                        ),
+                                        marked:
+                                            eventDays.contains(
+                                              calendarDayKey(
+                                                days[week * 7 + weekday],
+                                              ),
                                             ) ||
                                             outfitDays.contains(
-                                              calendarDayKey(days[week * 7 + weekday]),
+                                              calendarDayKey(
+                                                days[week * 7 + weekday],
+                                              ),
                                             ),
                                         onTap: () => setState(
-                                          () => _selected = days[week * 7 + weekday],
+                                          () => _selected =
+                                              days[week * 7 + weekday],
                                         ),
                                       ),
                                     ),
@@ -170,10 +198,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             ),
           ),
           const SizedBox(width: 20),
-          SizedBox(
-            width: 360,
-            child: DayPlanPanel(date: _selected),
-          ),
+          SizedBox(width: 360, child: DayPlanPanel(date: _selected)),
         ],
       ),
     );
@@ -200,7 +225,10 @@ class _CircleButton extends StatelessWidget {
           child: Center(
             child: Text(
               label,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),
@@ -250,7 +278,10 @@ class _DayCell extends StatelessWidget {
                 height: 28,
                 alignment: Alignment.center,
                 decoration: isToday
-                    ? const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)
+                    ? const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      )
                     : null,
                 child: Text(
                   date.day.toString().padLeft(2, '0'),
@@ -265,7 +296,9 @@ class _DayCell extends StatelessWidget {
                 lunar,
                 style: TextStyle(
                   fontSize: 11,
-                  color: inMonth ? AppColors.textMuted : AppColors.textMuted.withValues(alpha: 0.4),
+                  color: inMonth
+                      ? AppColors.textMuted
+                      : AppColors.textMuted.withValues(alpha: 0.4),
                 ),
               ),
               const SizedBox(height: 4),

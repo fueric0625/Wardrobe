@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 
 class ZoomViewport extends StatefulWidget {
   const ZoomViewport({
@@ -71,8 +71,9 @@ class _ZoomViewportState extends State<ZoomViewport> {
     return widget.panWithSecondary && (buttons & kSecondaryMouseButton) != 0;
   }
 
-  bool get _spaceHeld =>
-      HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.space);
+  bool get _spaceHeld => HardwareKeyboard.instance.logicalKeysPressed.contains(
+    LogicalKeyboardKey.space,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -121,56 +122,56 @@ class _ZoomViewportState extends State<ZoomViewport> {
               top: 10,
               child: ExcludeSemantics(
                 child: Material(
-                color: const Color(0xEEFFFFFF),
-                borderRadius: BorderRadius.circular(12),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      tooltip: '缩小',
-                      onPressed: _scale <= _min
-                          ? null
-                          : () => _zoomAt(
+                  color: const Color(0xEEFFFFFF),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        tooltip: '缩小',
+                        onPressed: _scale <= _min
+                            ? null
+                            : () => _zoomAt(
                                 Offset(size.width / 2, size.height / 2),
                                 _scale / 1.25,
                                 size,
                               ),
-                      icon: const Icon(Icons.remove, size: 18),
-                    ),
-                    Text(
-                      '${(_scale * 100).round()}%',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
+                        icon: const Icon(Icons.remove, size: 18),
                       ),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      tooltip: '放大',
-                      onPressed: _scale >= _max
-                          ? null
-                          : () => _zoomAt(
+                      Text(
+                        '${(_scale * 100).round()}%',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        tooltip: '放大',
+                        onPressed: _scale >= _max
+                            ? null
+                            : () => _zoomAt(
                                 Offset(size.width / 2, size.height / 2),
                                 _scale * 1.25,
                                 size,
                               ),
-                      icon: const Icon(Icons.add, size: 18),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      tooltip: '适配',
-                      onPressed: _scale == 1
-                          ? null
-                          : () => setState(() {
+                        icon: const Icon(Icons.add, size: 18),
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        tooltip: '适配',
+                        onPressed: _scale == 1
+                            ? null
+                            : () => setState(() {
                                 _scale = 1;
                                 _offset = Offset.zero;
                               }),
-                      icon: const Icon(Icons.fit_screen, size: 18),
-                    ),
-                  ],
+                        icon: const Icon(Icons.fit_screen, size: 18),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               ),
             ),
           ],

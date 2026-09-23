@@ -47,7 +47,7 @@ D:\Environment\flutter\bin\flutter.bat run -d windows
 
 ## 数据目录
 
-本地库和图片在 `%APPDATA%\wardrobe\`。v2.2 的库是 schema 6，改过表结构后必须完全关掉窗口再开，热重载不够。抠图、精修和吊牌 OCR 模型会拷到 `%APPDATA%\wardrobe\models\`。
+本地库和图片在 `%APPDATA%\wardrobe\`。当前库是 schema 9，改过表结构后必须完全关掉窗口再开，热重载不够。抠图、精修和吊牌 OCR 模型会拷到 `%APPDATA%\wardrobe\models\`。
 
 ## 发给另一台电脑
 

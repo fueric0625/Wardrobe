@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wardrobe/core/db/app_database.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/database/app_database.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/features/calendar/providers.dart';
 import 'package:wardrobe/features/calendar/virtual_weather.dart';
 import 'package:wardrobe/features/outfits/providers.dart';
@@ -37,14 +37,14 @@ class _DayPlanPanelState extends ConsumerState<DayPlanPanel> {
   }
 
   Future<void> _pickOutfits(List<String> current) async {
-    final outfits = ref.read(outfitsProvider).maybeWhen(
-          data: (rows) => rows,
-          orElse: () => const <Outfit>[],
-        );
+    final outfits = ref
+        .read(outfitsProvider)
+        .maybeWhen(data: (rows) => rows, orElse: () => const <Outfit>[]);
     if (!mounted) return;
     final picked = await showDialog<List<String>>(
       context: context,
-      builder: (context) => _OutfitPickDialog(outfits: outfits, selected: current),
+      builder: (context) =>
+          _OutfitPickDialog(outfits: outfits, selected: current),
     );
     if (picked == null || !mounted) return;
     await ref.read(calendarRepositoryProvider).setOutfits(_day, picked);
@@ -52,18 +52,21 @@ class _DayPlanPanelState extends ConsumerState<DayPlanPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final events = ref.watch(dayEventsProvider).maybeWhen(
+    final events = ref
+        .watch(dayEventsProvider)
+        .maybeWhen(
           data: (rows) => rows.where((row) => row.day == _day).toList(),
           orElse: () => const <DayEvent>[],
         );
-    final links = ref.watch(dayOutfitLinksProvider).maybeWhen(
+    final links = ref
+        .watch(dayOutfitLinksProvider)
+        .maybeWhen(
           data: (rows) => rows.where((row) => row.day == _day).toList(),
           orElse: () => const <DayOutfit>[],
         );
-    final outfits = ref.watch(outfitsProvider).maybeWhen(
-          data: (rows) => rows,
-          orElse: () => const <Outfit>[],
-        );
+    final outfits = ref
+        .watch(outfitsProvider)
+        .maybeWhen(data: (rows) => rows, orElse: () => const <Outfit>[]);
     final coversById = ref.watch(outfitCoversProvider);
     final byId = {for (final outfit in outfits) outfit.id: outfit};
     final linked = [
@@ -89,13 +92,22 @@ class _DayPlanPanelState extends ConsumerState<DayPlanPanel> {
             children: [
               Icon(weather.icon, color: AppColors.primary, size: 22),
               const SizedBox(width: 8),
-              Text(weather.label, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                weather.label,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               const SizedBox(width: 8),
-              const Text('虚拟', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              const Text(
+                '虚拟',
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+              ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(weather.hint, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          Text(
+            weather.hint,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          ),
           const SizedBox(height: 4),
           const Text(
             '天气以后接入实况',
@@ -105,7 +117,10 @@ class _DayPlanPanelState extends ConsumerState<DayPlanPanel> {
           Row(
             children: [
               const Expanded(
-                child: Text('日程', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: Text(
+                  '日程',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
               IconButton(
                 tooltip: '添加日程',
@@ -124,8 +139,12 @@ class _DayPlanPanelState extends ConsumerState<DayPlanPanel> {
                     label: Text(event.title),
                     backgroundColor: AppColors.primarySoft,
                     side: const BorderSide(color: AppColors.border),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    onDeleted: () => ref.read(calendarRepositoryProvider).deleteEvent(event.id),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    onDeleted: () => ref
+                        .read(calendarRepositoryProvider)
+                        .deleteEvent(event.id),
                   ),
               ],
             ),
@@ -133,16 +152,23 @@ class _DayPlanPanelState extends ConsumerState<DayPlanPanel> {
           Row(
             children: [
               const Expanded(
-                child: Text('穿搭', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: Text(
+                  '穿搭',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
               TextButton(
-                onPressed: () => _pickOutfits([for (final outfit in linked) outfit.id]),
+                onPressed: () =>
+                    _pickOutfits([for (final outfit in linked) outfit.id]),
                 child: const Text('选择穿搭'),
               ),
             ],
           ),
           if (linked.isEmpty)
-            const Text('这一天还没有穿搭，可以选多套', style: TextStyle(color: AppColors.textMuted))
+            const Text(
+              '这一天还没有穿搭，可以选多套',
+              style: TextStyle(color: AppColors.textMuted),
+            )
           else
             SizedBox(
               height: 180,
@@ -152,7 +178,9 @@ class _DayPlanPanelState extends ConsumerState<DayPlanPanel> {
                 separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
                   final outfit = linked[index];
-                  final title = outfit.name.trim().isEmpty ? '未命名穿搭' : outfit.name.trim();
+                  final title = outfit.name.trim().isEmpty
+                      ? '未命名穿搭'
+                      : outfit.name.trim();
                   return SizedBox(
                     width: 120,
                     child: ItemTile(
@@ -226,8 +254,14 @@ class _AddScheduleDialogState extends State<_AddScheduleDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
-        FilledButton(onPressed: () => _submit(_controller.text), child: const Text('添加')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: () => _submit(_controller.text),
+          child: const Text('添加'),
+        ),
       ],
     );
   }
@@ -260,7 +294,11 @@ class _OutfitPickDialogState extends State<_OutfitPickDialog> {
                   for (final outfit in widget.outfits)
                     CheckboxListTile(
                       value: _ids.contains(outfit.id),
-                      title: Text(outfit.name.trim().isEmpty ? '未命名穿搭' : outfit.name.trim()),
+                      title: Text(
+                        outfit.name.trim().isEmpty
+                            ? '未命名穿搭'
+                            : outfit.name.trim(),
+                      ),
                       onChanged: (on) {
                         setState(() {
                           if (on == true) {
@@ -275,9 +313,14 @@ class _OutfitPickDialogState extends State<_OutfitPickDialog> {
               ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
         FilledButton(
-          onPressed: widget.outfits.isEmpty ? null : () => Navigator.pop(context, _ids),
+          onPressed: widget.outfits.isEmpty
+              ? null
+              : () => Navigator.pop(context, _ids),
           child: const Text('确定'),
         ),
       ],

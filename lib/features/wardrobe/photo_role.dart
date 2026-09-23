@@ -4,6 +4,8 @@ enum ItemPhotoRole {
   tag;
 
   static ItemPhotoRole parse(String raw) {
-    return raw == ItemPhotoRole.tag.name ? ItemPhotoRole.tag : ItemPhotoRole.garment;
+    return raw == ItemPhotoRole.tag.name
+        ? ItemPhotoRole.tag
+        : ItemPhotoRole.garment;
   }
 }

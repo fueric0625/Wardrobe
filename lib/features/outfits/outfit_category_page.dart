@@ -5,9 +5,9 @@ import 'package:wardrobe/core/catalog/providers.dart';
 import 'package:wardrobe/features/outfits/providers.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/catalog/cover_repository.dart';
 import 'package:wardrobe/features/outfits/outfits_page.dart';
 import 'package:wardrobe/core/catalog/category_item_dialogs.dart';
@@ -34,7 +34,9 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
   }
 
   Future<void> _resetCover() {
-    return ref.read(categoryCoverRepositoryProvider).setCover(
+    return ref
+        .read(categoryCoverRepositoryProvider)
+        .setCover(
           kind: CategoryKind.outfit,
           categoryId: widget.categoryId,
           itemId: null,
@@ -57,13 +59,17 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
     );
     if (result == null || !mounted) return;
     try {
-      final id = await ref.read(categoryRepositoryProvider).add(
+      final id = await ref
+          .read(categoryRepositoryProvider)
+          .add(
             kind: CategoryKind.outfit,
             parentId: widget.categoryId,
             label: result.label,
           );
       if (result.itemIds.isNotEmpty) {
-        await ref.read(outfitRepositoryProvider).moveToCategory(result.itemIds, id);
+        await ref
+            .read(outfitRepositoryProvider)
+            .moveToCategory(result.itemIds, id);
       }
       if (!mounted) return;
       final moved = result.itemIds.length;
@@ -81,9 +87,10 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
       final message = e is StateError
           ? e.message
           : e is ArgumentError
-              ? (e.message?.toString() ?? '$e')
-              : '$e';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+          ? (e.message?.toString() ?? '$e')
+          : '$e';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -125,13 +132,19 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
           final sort = ref.watch(outfitSortProvider);
           final q = _query.trim().toLowerCase();
           final children = childrenOf(categories, widget.categoryId)
-              .where((child) => q.isEmpty || child.label.toLowerCase().contains(q))
+              .where(
+                (child) => q.isEmpty || child.label.toLowerCase().contains(q),
+              )
               .toList();
           final directItems = outfitsDirectlyIn(all, widget.categoryId);
           final items = sortOutfits(
             directItems.where((item) {
               if (q.isEmpty) return true;
-              final hay = [item.name, item.note, item.season].join(' ').toLowerCase();
+              final hay = [
+                item.name,
+                item.note,
+                item.season,
+              ].join(' ').toLowerCase();
               return hay.contains(q);
             }),
             sort,
@@ -166,7 +179,10 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
                     if (canAddChild(categories, category))
                       TextButton.icon(
                         onPressed: () => _addChild(directItems),
-                        icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                        icon: const Icon(
+                          Icons.create_new_folder_outlined,
+                          size: 18,
+                        ),
                         label: const Text('添加子分类'),
                       ),
                     if (customCoverId != null)
@@ -217,17 +233,20 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
                         padding: const EdgeInsets.fromLTRB(32, 8, 32, 88),
                         gridDelegate:
                             const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 220,
-                          mainAxisSpacing: 22,
-                          crossAxisSpacing: 22,
-                          childAspectRatio: 0.82,
-                        ),
+                              maxCrossAxisExtent: 220,
+                              mainAxisSpacing: 22,
+                              crossAxisSpacing: 22,
+                              childAspectRatio: 0.82,
+                            ),
                         itemCount: children.length + items.length,
                         itemBuilder: (context, index) {
                           if (index < children.length) {
                             final child = children[index];
-                            final inTree =
-                                outfitsInSubtree(all, categories, child.id);
+                            final inTree = outfitsInSubtree(
+                              all,
+                              categories,
+                              child.id,
+                            );
                             final cover = pickCoverItem(
                               items: inTree,
                               idOf: (i) => i.id,
@@ -242,8 +261,11 @@ class _OutfitCategoryPageState extends ConsumerState<OutfitCategoryPage> {
                               label: child.label,
                               count: inTree.length,
                               coverPath: cover?.imagePath,
-                              cover: outfitCoverArt(cover == null ? null : coversById[cover.id]),
-                              onTap: () => openOutfitCategory(context, child.id),
+                              cover: outfitCoverArt(
+                                cover == null ? null : coversById[cover.id],
+                              ),
+                              onTap: () =>
+                                  openOutfitCategory(context, child.id),
                             );
                           }
                           final item = items[index - children.length];

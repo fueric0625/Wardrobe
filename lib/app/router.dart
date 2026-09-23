@@ -20,15 +20,13 @@ final appRouter = GoRouter(
       routes: [
         GoRoute(
           path: '/wardrobe',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: WardrobePage(),
-          ),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: WardrobePage()),
         ),
         GoRoute(
           path: '/wardrobe/categories',
-          builder: (context, state) => const CategoryManagePage(
-            kind: CategoryKind.clothing,
-          ),
+          builder: (context, state) =>
+              const CategoryManagePage(kind: CategoryKind.clothing),
         ),
         GoRoute(
           path: '/wardrobe/c/:categoryId',
@@ -38,33 +36,28 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/wardrobe/item/new',
-          builder: (context, state) => ItemEditPage(
-            categoryId: state.uri.queryParameters['category'],
-          ),
+          builder: (context, state) =>
+              ItemEditPage(categoryId: state.uri.queryParameters['category']),
         ),
         GoRoute(
           path: '/wardrobe/item/:id/edit',
-          builder: (context, state) => ItemEditPage(
-            itemId: state.pathParameters['id'],
-          ),
+          builder: (context, state) =>
+              ItemEditPage(itemId: state.pathParameters['id']),
         ),
         GoRoute(
           path: '/wardrobe/item/:id',
-          builder: (context, state) => ItemDetailPage(
-            itemId: state.pathParameters['id']!,
-          ),
+          builder: (context, state) =>
+              ItemDetailPage(itemId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/outfits',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: OutfitsPage(),
-          ),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: OutfitsPage()),
         ),
         GoRoute(
           path: '/outfits/categories',
-          builder: (context, state) => const CategoryManagePage(
-            kind: CategoryKind.outfit,
-          ),
+          builder: (context, state) =>
+              const CategoryManagePage(kind: CategoryKind.outfit),
         ),
         GoRoute(
           path: '/outfits/c/:categoryId',
@@ -74,27 +67,23 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/outfits/item/new',
-          builder: (context, state) => OutfitEditPage(
-            categoryId: state.uri.queryParameters['category'],
-          ),
+          builder: (context, state) =>
+              OutfitEditPage(categoryId: state.uri.queryParameters['category']),
         ),
         GoRoute(
           path: '/outfits/item/:id/edit',
-          builder: (context, state) => OutfitEditPage(
-            outfitId: state.pathParameters['id'],
-          ),
+          builder: (context, state) =>
+              OutfitEditPage(outfitId: state.pathParameters['id']),
         ),
         GoRoute(
           path: '/outfits/item/:id',
-          builder: (context, state) => OutfitDetailPage(
-            outfitId: state.pathParameters['id']!,
-          ),
+          builder: (context, state) =>
+              OutfitDetailPage(outfitId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/calendar',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: CalendarPage(),
-          ),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: CalendarPage()),
         ),
       ],
     ),

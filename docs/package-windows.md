@@ -7,7 +7,7 @@
 本机已打好：
 
 - 目录：`E:\wardrobe\dist\wardrobe-windows\`
-- 压缩包：`E:\wardrobe\dist\wardrobe-windows.zip`（约 13 MB）
+- 压缩包：`E:\wardrobe\dist\wardrobe-windows.zip`（约 71 MB，解压后约 106 MB）
 
 把 **整个文件夹** 或 zip 解压后的全部内容拷到 U 盘 / 网盘，发到另一台电脑。双击 `wardrobe.exe`。
 

@@ -5,9 +5,9 @@ import 'package:wardrobe/core/catalog/providers.dart';
 import 'package:wardrobe/features/wardrobe/providers.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/catalog/cover_repository.dart';
 import 'package:wardrobe/widgets/common.dart';
 
@@ -135,7 +135,11 @@ class _CategoryGrid extends StatelessWidget {
           items: inTree,
           idOf: (i) => i.id,
           createdAt: (i) => i.createdAt,
-          coverItemId: coverItemIdOf(covers, CategoryKind.clothing, category.id),
+          coverItemId: coverItemIdOf(
+            covers,
+            CategoryKind.clothing,
+            category.id,
+          ),
         );
         return CategoryCard(
           label: category.label,

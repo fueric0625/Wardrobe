@@ -1,4 +1,6 @@
-import 'dart:convert';
+export 'package:wardrobe/core/serialization/category_size_fields_codec.dart';
+export 'package:wardrobe/core/serialization/measurement_codec.dart'
+    show decodeMeasurements, encodeMeasurements;
 
 enum CategoryKind { clothing, outfit }
 
@@ -37,11 +39,7 @@ const maxCategoryDepth = 2;
 
 const clothingSizeTemplates = <SizeTemplate>[
   SizeTemplate(id: 'none', label: '无尺码', fields: []),
-  SizeTemplate(
-    id: 'tops',
-    label: '上装 / 内衣',
-    fields: ['衣长', '胸围', '肩宽', '下摆围'],
-  ),
+  SizeTemplate(id: 'tops', label: '上装 / 内衣', fields: ['衣长', '胸围', '肩宽', '下摆围']),
   SizeTemplate(
     id: 'bottoms',
     label: '下装',
@@ -112,21 +110,6 @@ const clothingCategorySeeds = <ClothingCategorySeed>[
 
 const seasons = ['春', '夏', '秋', '冬'];
 
-String encodeSizeFields(List<String> fields) => jsonEncode(fields);
-
-List<String> decodeSizeFields(String raw) {
-  try {
-    final decoded = jsonDecode(raw);
-    if (decoded is List) {
-      return decoded
-          .map((e) => _normalizeSizeFieldName('$e'))
-          .where((s) => s.isNotEmpty)
-          .toList();
-    }
-  } catch (_) {}
-  return [];
-}
-
 List<String> allSizeFieldNames() {
   final names = <String>{};
   for (final template in clothingSizeTemplates) {
@@ -136,20 +119,4 @@ List<String> allSizeFieldNames() {
     names.addAll(seed.sizeFields);
   }
   return names.toList();
-}
-
-String _normalizeSizeFieldName(String name) {
-  return name == '物件' ? '尺寸' : name;
-}
-
-Map<String, String> decodeMeasurements(String raw) {
-  try {
-    final decoded = jsonDecode(raw);
-    if (decoded is Map) {
-      return decoded.map(
-        (k, v) => MapEntry(_normalizeSizeFieldName('$k'), '$v'),
-      );
-    }
-  } catch (_) {}
-  return {};
 }

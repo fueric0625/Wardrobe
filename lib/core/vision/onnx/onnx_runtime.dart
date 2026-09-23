@@ -6,8 +6,14 @@ import 'package:path/path.dart' as p;
 
 typedef _LoadNative = Int32 Function(Pointer<Utf16> modelPath);
 typedef _LoadDart = int Function(Pointer<Utf16> modelPath);
-typedef _LoadNamedNative = Int32 Function(Pointer<Utf8> name, Pointer<Utf16> modelPath);
-typedef _LoadNamedDart = int Function(Pointer<Utf8> name, Pointer<Utf16> modelPath);
+typedef _LoadNamedNative = Int32 Function(
+  Pointer<Utf8> name,
+  Pointer<Utf16> modelPath,
+);
+typedef _LoadNamedDart = int Function(
+  Pointer<Utf8> name,
+  Pointer<Utf16> modelPath,
+);
 typedef _RunNative = Int32 Function(
   Pointer<Float> input,
   Int32 inputCount,
@@ -52,10 +58,26 @@ typedef _VoidNative = Void Function();
 typedef _VoidDart = void Function();
 typedef _CloseNamedNative = Void Function(Pointer<Utf8> name);
 typedef _CloseNamedDart = void Function(Pointer<Utf8> name);
-typedef _IoCountNative = Int32 Function(Pointer<Utf8> name, Pointer<Int32> nIn, Pointer<Int32> nOut);
-typedef _IoCountDart = int Function(Pointer<Utf8> name, Pointer<Int32> nIn, Pointer<Int32> nOut);
-typedef _IoNameNative = Pointer<Utf8> Function(Pointer<Utf8> name, Int32 output, Int32 index);
-typedef _IoNameDart = Pointer<Utf8> Function(Pointer<Utf8> name, int output, int index);
+typedef _IoCountNative = Int32 Function(
+  Pointer<Utf8> name,
+  Pointer<Int32> nIn,
+  Pointer<Int32> nOut,
+);
+typedef _IoCountDart = int Function(
+  Pointer<Utf8> name,
+  Pointer<Int32> nIn,
+  Pointer<Int32> nOut,
+);
+typedef _IoNameNative = Pointer<Utf8> Function(
+  Pointer<Utf8> name,
+  Int32 output,
+  Int32 index,
+);
+typedef _IoNameDart = Pointer<Utf8> Function(
+  Pointer<Utf8> name,
+  int output,
+  int index,
+);
 typedef _ErrNative = Pointer<Utf8> Function();
 typedef _ErrDart = Pointer<Utf8> Function();
 
@@ -112,7 +134,9 @@ class OnnxRuntime {
     _closeNamed = lib.lookupFunction<_CloseNamedNative, _CloseNamedDart>(
       'garment_onnx_session_close',
     );
-    _lastError = lib.lookupFunction<_ErrNative, _ErrDart>('garment_onnx_last_error');
+    _lastError = lib.lookupFunction<_ErrNative, _ErrDart>(
+      'garment_onnx_last_error',
+    );
     _ioCount = lib.lookupFunction<_IoCountNative, _IoCountDart>(
       'garment_onnx_session_io_count',
     );
@@ -183,7 +207,9 @@ class OnnxRuntime {
     required List<int> outputCounts,
   }) {
     _ensure();
-    if (inputs.isEmpty || outputNames.isEmpty || outputNames.length != outputCounts.length) {
+    if (inputs.isEmpty ||
+        outputNames.isEmpty ||
+        outputNames.length != outputCounts.length) {
       throw OnnxUnavailableException('invalid session tensors');
     }
     final namePtr = name.toNativeUtf8();
@@ -254,11 +280,9 @@ class OnnxRuntime {
       }
       return [
         for (var i = 0; i < nOut; i++)
-          OnnxTensor(
-            outputNames[i],
-            const [],
-            [for (var k = 0; k < outWritten[i]; k++) outBufs[i][k].toDouble()],
-          ),
+          OnnxTensor(outputNames[i], const [], [
+            for (var k = 0; k < outWritten[i]; k++) outBufs[i][k].toDouble(),
+          ]),
       ];
     } finally {
       malloc.free(namePtr);

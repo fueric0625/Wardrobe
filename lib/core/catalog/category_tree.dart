@@ -1,15 +1,12 @@
 import 'package:wardrobe/core/catalog/catalogs.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/catalog/domain/category_policy.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 
 List<Category> clothingRoots(List<Category> all) => childrenOf(all, null);
 
 List<Category> childrenOf(List<Category> all, String? parentId) {
   final children = all.where((c) => c.parentId == parentId).toList()
-    ..sort((a, b) {
-      final byOrder = a.sortOrder.compareTo(b.sortOrder);
-      if (byOrder != 0) return byOrder;
-      return a.id.compareTo(b.id);
-    });
+    ..sort(compareCategorySiblings);
   return children;
 }
 
@@ -150,7 +147,10 @@ List<Outfit> outfitsDirectlyIn(List<Outfit> items, String id) {
 
 /// Categories this item may cover: itself and every ancestor.
 /// A 卫衣 item can be 上装's cover, but never 衬衫's.
-List<Category> coverCategoriesForItem(List<Category> all, String itemCategoryId) {
+List<Category> coverCategoriesForItem(
+  List<Category> all,
+  String itemCategoryId,
+) {
   final node = categoryById(all, itemCategoryId);
   if (node == null) return const [];
   return ancestorsAndSelf(all, node);

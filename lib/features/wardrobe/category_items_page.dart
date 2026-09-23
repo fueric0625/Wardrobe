@@ -5,9 +5,9 @@ import 'package:wardrobe/core/catalog/providers.dart';
 import 'package:wardrobe/features/wardrobe/providers.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/catalog/cover_repository.dart';
 import 'package:wardrobe/core/catalog/category_item_dialogs.dart';
 import 'package:wardrobe/features/wardrobe/wardrobe_page.dart';
@@ -33,7 +33,9 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
   }
 
   Future<void> _resetCover() {
-    return ref.read(categoryCoverRepositoryProvider).setCover(
+    return ref
+        .read(categoryCoverRepositoryProvider)
+        .setCover(
           kind: CategoryKind.clothing,
           categoryId: widget.categoryId,
           itemId: null,
@@ -54,13 +56,17 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
     );
     if (result == null || !mounted) return;
     try {
-      final id = await ref.read(categoryRepositoryProvider).add(
+      final id = await ref
+          .read(categoryRepositoryProvider)
+          .add(
             kind: CategoryKind.clothing,
             parentId: widget.categoryId,
             label: result.label,
           );
       if (result.itemIds.isNotEmpty) {
-        await ref.read(itemRepositoryProvider).moveToCategory(result.itemIds, id);
+        await ref
+            .read(itemRepositoryProvider)
+            .moveToCategory(result.itemIds, id);
       }
       if (!mounted) return;
       final moved = result.itemIds.length;
@@ -78,9 +84,10 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
       final message = e is StateError
           ? e.message
           : e is ArgumentError
-              ? (e.message?.toString() ?? '$e')
-              : '$e';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+          ? (e.message?.toString() ?? '$e')
+          : '$e';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -121,15 +128,21 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
           final sort = ref.watch(clothingSortProvider);
           final q = _query.trim().toLowerCase();
           final children = childrenOf(categories, widget.categoryId)
-              .where((child) => q.isEmpty || child.label.toLowerCase().contains(q))
+              .where(
+                (child) => q.isEmpty || child.label.toLowerCase().contains(q),
+              )
               .toList();
           final directItems = itemsDirectlyIn(all, widget.categoryId);
           final items = sortClothingItems(
             directItems.where((item) {
               if (q.isEmpty) return true;
-              final hay = [item.type, item.style, item.brand, item.note, item.tags]
-                  .join(' ')
-                  .toLowerCase();
+              final hay = [
+                item.type,
+                item.style,
+                item.brand,
+                item.note,
+                item.tags,
+              ].join(' ').toLowerCase();
               return hay.contains(q);
             }),
             sort,
@@ -164,7 +177,10 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
                     if (canAddChild(categories, category))
                       TextButton.icon(
                         onPressed: () => _addChild(directItems),
-                        icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                        icon: const Icon(
+                          Icons.create_new_folder_outlined,
+                          size: 18,
+                        ),
                         label: const Text('添加子分类'),
                       ),
                     if (customCoverId != null)
@@ -215,17 +231,20 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
                         padding: const EdgeInsets.fromLTRB(32, 8, 32, 88),
                         gridDelegate:
                             const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 220,
-                          mainAxisSpacing: 22,
-                          crossAxisSpacing: 22,
-                          childAspectRatio: 0.82,
-                        ),
+                              maxCrossAxisExtent: 220,
+                              mainAxisSpacing: 22,
+                              crossAxisSpacing: 22,
+                              childAspectRatio: 0.82,
+                            ),
                         itemCount: children.length + items.length,
                         itemBuilder: (context, index) {
                           if (index < children.length) {
                             final child = children[index];
-                            final inTree =
-                                itemsInSubtree(all, categories, child.id);
+                            final inTree = itemsInSubtree(
+                              all,
+                              categories,
+                              child.id,
+                            );
                             final cover = pickCoverItem(
                               items: inTree,
                               idOf: (i) => i.id,

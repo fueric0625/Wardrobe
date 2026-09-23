@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart' hide Column;
 import 'package:wardrobe/core/storage/image_picker.dart';
 import 'package:wardrobe/core/storage/image_store.dart';
 import 'package:flutter/material.dart';
@@ -16,8 +14,11 @@ import 'package:wardrobe/core/vision/providers.dart';
 import 'package:wardrobe/features/wardrobe/providers.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
-import 'package:wardrobe/core/db/app_database.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/database/app_database.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
+import 'package:wardrobe/core/vision/coordinates/image_edit_session.dart';
+import 'package:wardrobe/features/wardrobe/domain/item_photo_policy.dart';
+import 'package:wardrobe/features/wardrobe/item_edit_controller.dart';
 import 'package:wardrobe/core/vision/cutout/color_extract.dart';
 import 'package:wardrobe/core/vision/cutout/erase_brush.dart';
 import 'package:wardrobe/core/vision/cutout/fill_patch.dart';
@@ -66,10 +67,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   var _eraseRadius = 16;
   var _fillSampling = true;
   FillPatch? _fillSample;
-  final _refinePoints = <PromptPoint>[];
-  final _eraseStrokes = <EraseStroke>[];
-  final _fillStrokes = <FillStroke>[];
-  final _refineOps = <_RefineOpKind>[];
+  final _session = ImageEditSession();
   List<RgbSwatch> _refinePalette = const [];
   _RefineSnapshot? _refineBase;
   final _photos = <EditableItemPhoto>[];
@@ -154,7 +152,9 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       );
     final measures = decodeMeasurements(item.measurements);
     for (final entry in measures.entries) {
-      _measureControllers.putIfAbsent(entry.key, TextEditingController.new).text =
+      _measureControllers
+              .putIfAbsent(entry.key, TextEditingController.new)
+              .text =
           entry.value;
     }
     final images = await ref.read(itemRepositoryProvider).getImages(item.id);
@@ -188,7 +188,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     if (mounted) await _startRefine();
   }
 
-  Future<void> _ingest(String path, {required bool keepBusy, bool tag = false}) async {
+  Future<void> _ingest(
+    String path, {
+    required bool keepBusy,
+    bool tag = false,
+  }) async {
     final hasGarment = _photos.any((p) => !p.isTag);
     final photo = EditableItemPhoto(
       id: const Uuid().v4(),
@@ -205,7 +209,12 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     try {
       final bytes = await File(path).readAsBytes();
       final result = await ref.read(garmentPipelineProvider).ingestBytes(bytes);
-      await _applyResult(photo, result, replaceOriginal: true, keepBusy: keepBusy);
+      await _applyResult(
+        photo,
+        result,
+        replaceOriginal: true,
+        keepBusy: keepBusy,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -229,12 +238,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     try {
       final source = readFrom ?? photo.originalPath;
       final bytes = await File(source).readAsBytes();
-      final result = await ref.read(garmentPipelineProvider).processBytes(bytes);
-      _refinePoints.clear();
-      _eraseStrokes.clear();
-      _fillStrokes.clear();
+      final result = await ref
+          .read(garmentPipelineProvider)
+          .processBytes(bytes);
+      _session.clear();
       _fillSample = null;
-      _refineOps.clear();
       _refineBase = null;
       _refinePalette = const [];
       await _applyResult(photo, result, replaceOriginal: replaceOriginal);
@@ -275,7 +283,10 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       _sessionFiles.add(mask);
     }
     if (result.fullCutoutPng != null) {
-      final preview = await _imageStore.writeBytes(result.fullCutoutPng!, '.png');
+      final preview = await _imageStore.writeBytes(
+        result.fullCutoutPng!,
+        '.png',
+      );
       _sessionFiles.add(preview);
       photo.refinePreviewPath = preview;
     }
@@ -295,20 +306,20 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   }
 
   void _maybeFillColor(EditableItemPhoto photo) {
-    if (photo.isTag || !photo.isPrimary) return;
-    if (_color.text.trim().isNotEmpty) return;
-    if (photo.colors.isEmpty) return;
-    _color.text = photo.colors.label;
+    if (!photoCanBeCover(photo.role) || !photo.isPrimary) return;
+    final next = fillEmptyField(_color.text, photo.colors.label);
+    if (next == _color.text) return;
+    _color.text = next;
   }
 
   void _applyDetectedColor() {
     if (_photos.isEmpty) return;
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
     final colors = photo.colors.isEmpty
-        ? _photos.where((p) => p.isPrimary).map((p) => p.colors).firstWhere(
-              (c) => !c.isEmpty,
-              orElse: () => photo.colors,
-            )
+        ? _photos
+              .where((p) => p.isPrimary)
+              .map((p) => p.colors)
+              .firstWhere((c) => !c.isEmpty, orElse: () => photo.colors)
         : photo.colors;
     if (colors.isEmpty) return;
     setState(() => _color.text = colors.label);
@@ -320,9 +331,9 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     final photo = _photos.removeAt(index);
     if (photo.isPrimary && _photos.isNotEmpty) {
       final next = _photos.cast<EditableItemPhoto?>().firstWhere(
-            (p) => p != null && !p.isTag,
-            orElse: () => null,
-          );
+        (p) => p != null && !p.isTag,
+        orElse: () => null,
+      );
       if (next != null) next.isPrimary = true;
     }
     _selectedPhoto = _photos.isEmpty ? 0 : index.clamp(0, _photos.length - 1);
@@ -333,7 +344,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   void _setPrimary() {
     if (_photos.isEmpty) return;
     final index = _selectedPhoto.clamp(0, _photos.length - 1);
-    if (_photos[index].isTag) return;
+    if (!photoCanBeCover(_photos[index].role)) return;
     for (var i = 0; i < _photos.length; i++) {
       _photos[i].isPrimary = i == index;
     }
@@ -347,10 +358,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     _eraseProtect = true;
     _fillSampling = true;
     _fillSample = null;
-    _refinePoints.clear();
-    _eraseStrokes.clear();
-    _fillStrokes.clear();
-    _refineOps.clear();
+    _session.clear();
     _refinePalette = const [];
     _refineBase = null;
   }
@@ -362,9 +370,8 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     await _ensureOriginalSize(photo);
     if (!mounted) return;
     if (photo.originalWidth == null || photo.originalHeight == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('无法读取原图尺寸')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('无法读取原图尺寸')));
       return;
     }
     setState(() {
@@ -378,7 +385,9 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       if (photo.maskPath != null) {
         maskBytes = await File(photo.maskPath!).readAsBytes();
       }
-      final preview = ref.read(garmentPipelineProvider).refinePreviewPng(
+      final preview = ref
+          .read(garmentPipelineProvider)
+          .refinePreviewPng(
             originalBytes,
             maskBytes,
             palette: photo.colors.palette,
@@ -398,11 +407,8 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
         photo.busyHint = null;
         photo.showProcessed = true;
         photo.error = null;
-        _refinePoints.clear();
-        _eraseStrokes.clear();
-        _fillStrokes.clear();
+        _session.clear();
         _fillSample = null;
-        _refineOps.clear();
         _refineTool = RefineTool.click;
         _eraseProtect = true;
         _fillSampling = true;
@@ -421,21 +427,22 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
         photo.busy = false;
         photo.busyHint = null;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('无法分析这张图，可稍后重试')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('无法分析这张图，可稍后重试')));
     }
   }
 
   Future<void> _ensureOriginalSize(EditableItemPhoto photo) async {
     if (photo.originalWidth != null && photo.originalHeight != null) return;
-    final decoded = img.decodeImage(await File(photo.originalPath).readAsBytes());
+    final decoded = img.decodeImage(
+      await File(photo.originalPath).readAsBytes(),
+    );
     if (decoded == null) return;
     photo.originalWidth = decoded.width;
     photo.originalHeight = decoded.height;
   }
 
-  bool get _hasClickOutline => _refinePoints.any((point) => point.positive);
+  bool get _hasClickOutline => _session.points.any((point) => point.positive);
 
   void _setRefineTool(RefineTool tool) {
     if (tool == RefineTool.fill &&
@@ -444,12 +451,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       return;
     }
     if (tool != RefineTool.click && !_hasClickOutline) {
-      final isTag = _photos.isNotEmpty &&
+      final isTag =
+          _photos.isNotEmpty &&
           _photos[_selectedPhoto.clamp(0, _photos.length - 1)].isTag;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isTag ? '先点选吊牌轮廓，再擦除' : '先点选衣服轮廓，再擦除或填补'),
-        ),
+        SnackBar(content: Text(isTag ? '先点选吊牌轮廓，再擦除' : '先点选衣服轮廓，再擦除或填补')),
       );
       return;
     }
@@ -460,8 +466,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     if (!_refining || _photos.isEmpty) return;
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
     if (photo.busy) return;
-    _refinePoints.add(point);
-    _refineOps.add(_RefineOpKind.click);
+    _session.addClick(point);
     _rebuildRefine();
   }
 
@@ -470,8 +475,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     if (!_hasClickOutline) return;
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
     if (photo.busy) return;
-    _eraseStrokes.add(EraseStroke(stamps: stamps, protectColor: _eraseProtect));
-    _refineOps.add(_RefineOpKind.erase);
+    _session.addErase(EraseStroke(stamps: stamps, protectColor: _eraseProtect));
     _rebuildRefine();
   }
 
@@ -493,22 +497,22 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     if (_photos[_selectedPhoto.clamp(0, _photos.length - 1)].isTag) return;
     final sample = _fillSample;
     if (sample == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('先涂一块花纹取样')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('先涂一块花纹取样')));
       return;
     }
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
     if (photo.busy) return;
-    _fillStrokes.add(FillStroke(sample: sample, paint: stamps));
-    _refineOps.add(_RefineOpKind.fill);
+    _session.addFill(FillStroke(sample: sample, paint: stamps));
     _rebuildRefine();
   }
 
   Future<void> _rebuildRefine() async {
     if (_photos.isEmpty) return;
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
-    if (_refinePoints.isEmpty && _eraseStrokes.isEmpty && _fillStrokes.isEmpty) {
+    if (_session.points.isEmpty &&
+        _session.eraseStrokes.isEmpty &&
+        _session.fillStrokes.isEmpty) {
       _restoreRefineBase(photo);
       return;
     }
@@ -524,12 +528,16 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       if (baseMask != null) {
         maskBytes = await File(baseMask).readAsBytes();
       }
-      final result = await ref.read(garmentPipelineProvider).refineEdits(
+      final result = await ref
+          .read(garmentPipelineProvider)
+          .refineEdits(
             originalBytes: originalBytes,
             maskBytes: maskBytes,
-            points: List<PromptPoint>.of(_refinePoints),
-            strokes: List<EraseStroke>.of(_eraseStrokes),
-            fills: photo.isTag ? const [] : List<FillStroke>.of(_fillStrokes),
+            points: List<PromptPoint>.of(_session.points),
+            strokes: List<EraseStroke>.of(_session.eraseStrokes),
+            fills: photo.isTag
+                ? const []
+                : List<FillStroke>.of(_session.fillStrokes),
             palette: _refinePalette,
           );
       await _applyResult(photo, result, replaceOriginal: false);
@@ -538,10 +546,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
         await _runTagOcr(photo);
       }
       if (!mounted) return;
-      if (!photo.isTag && _fillStrokes.isNotEmpty && result.filledCount == 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('没有补上。先取样，再涂要改的位置')),
-        );
+      if (!photo.isTag &&
+          _session.fillStrokes.isNotEmpty &&
+          result.filledCount == 0) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('没有补上。先取样，再涂要改的位置')));
       }
       setState(() => _refining = true);
     } catch (_) {
@@ -643,12 +652,10 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   void _maybeFillTagFields() {
     final ocr = _mergedTagOcr;
     if (ocr.isEmpty) return;
-    if (_fabric.text.trim().isEmpty && ocr.fabric != null && ocr.fabric!.isNotEmpty) {
-      _fabric.text = ocr.fabric!;
-    }
-    if (_brand.text.trim().isEmpty && ocr.brand != null && ocr.brand!.isNotEmpty) {
-      _brand.text = ocr.brand!;
-    }
+    final fabric = fillEmptyField(_fabric.text, ocr.fabric);
+    if (fabric != _fabric.text) _fabric.text = fabric;
+    final brand = fillEmptyField(_brand.text, ocr.brand);
+    if (brand != _brand.text) _brand.text = brand;
     _applySizeOcr(allSizeFieldNames());
   }
 
@@ -661,17 +668,10 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   }
 
   void _undoRefine() {
-    if (!_refining || _photos.isEmpty || _refineOps.isEmpty) return;
+    if (!_refining || _photos.isEmpty || _session.isEmpty) return;
     final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
     if (photo.busy) return;
-    switch (_refineOps.removeLast()) {
-      case _RefineOpKind.click:
-        if (_refinePoints.isNotEmpty) _refinePoints.removeLast();
-      case _RefineOpKind.erase:
-        if (_eraseStrokes.isNotEmpty) _eraseStrokes.removeLast();
-      case _RefineOpKind.fill:
-        if (_fillStrokes.isNotEmpty) _fillStrokes.removeLast();
-    }
+    _session.undo();
     _rebuildRefine();
   }
 
@@ -690,18 +690,19 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   Future<void> _save() async {
     if (_saving) return;
     if (_photos.any((p) => p.busy)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('图片还在处理，请稍候再保存')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('图片还在处理，请稍候再保存')));
       return;
     }
     setState(() => _saving = true);
     try {
       final categories = ref.read(clothingCategoryRowsProvider);
-      final selectedId = categoryById(categories, _categoryId)?.id ??
-          uncategorizedClothingId;
+      final selectedId =
+          categoryById(categories, _categoryId)?.id ?? uncategorizedClothingId;
       final node = categoryById(categories, selectedId);
-      final fields = node == null ? <String>[] : inheritedSizeFields(categories, node);
+      final fields = node == null
+          ? <String>[]
+          : inheritedSizeFields(categories, node);
       final measures = <String, String>{};
       for (final field in fields) {
         final value = _measureControllers[field]?.text.trim() ?? '';
@@ -710,27 +711,29 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
 
       final now = DateTime.now();
       final id = widget.itemId ?? const Uuid().v4();
-      final priceText = _price.text.trim();
-      await ref.read(itemRepositoryProvider).upsert(
-            ClothingItemsCompanion(
-              id: Value(id),
-              categoryId: Value(selectedId),
-              type: Value(_type.text.trim()),
-              style: Value(_style.text.trim()),
-              color: Value(_color.text.trim()),
-              season: Value(_seasons.join(',')),
-              fabric: Value(_fabric.text.trim()),
-              brand: Value(_brand.text.trim()),
-              price: Value(priceText.isEmpty ? null : double.tryParse(priceText)),
-              measurements: Value(jsonEncode(measures)),
-              purchasedAt: Value(_purchasedAt),
-              purchaseInfo: Value(_purchaseInfo.text.trim()),
-              location: Value(_location.text.trim()),
-              tags: Value(_tags.text.trim()),
-              note: Value(_note.text.trim()),
-              createdAt: Value(_createdAt ?? now),
-              updatedAt: Value(now),
-            ),
+      final draft = ItemEditDraft(
+        id: id,
+        categoryId: selectedId,
+        type: _type.text,
+        style: _style.text,
+        color: _color.text,
+        season: _seasons.join(','),
+        fabric: _fabric.text,
+        brand: _brand.text,
+        priceText: _price.text,
+        measurements: measures,
+        purchasedAt: _purchasedAt,
+        purchaseInfo: _purchaseInfo.text,
+        location: _location.text,
+        tags: _tags.text,
+        note: _note.text,
+        createdAt: _createdAt,
+        now: now,
+      );
+      await ref
+          .read(itemRepositoryProvider)
+          .upsert(
+            draft.toCompanion(),
             images: [for (final photo in _photos) photo.toDraft()],
           );
       _saved = true;
@@ -747,8 +750,14 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
         title: const Text('删除这件衣物？'),
         content: const Text('删除后无法恢复。'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('删除')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
         ],
       ),
     );
@@ -832,7 +841,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                 photos: _photos,
                 selectedIndex: _selectedPhoto,
                 refining: _refining,
-                refinePoints: _refinePoints,
+                refinePoints: _session.points,
                 onSelect: (i) {
                   setState(() {
                     _selectedPhoto = i;
@@ -852,12 +861,14 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                 onSetPrimary: _setPrimary,
                 onToggleProcessed: () {
                   if (_photos.isEmpty) return;
-                  final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+                  final photo =
+                      _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
                   setState(() => photo.showProcessed = !photo.showProcessed);
                 },
                 onReprocess: () {
                   if (_photos.isEmpty) return;
-                  final photo = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
+                  final photo =
+                      _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
                   _process(
                     photo,
                     readFrom: photo.originalPath,
@@ -867,11 +878,13 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                 onStartRefine: _startRefine,
                 onRecognize: () {
                   if (_photos.isEmpty) return;
-                  _runTagOcr(_photos[_selectedPhoto.clamp(0, _photos.length - 1)]);
+                  _runTagOcr(
+                    _photos[_selectedPhoto.clamp(0, _photos.length - 1)],
+                  );
                 },
                 onCancelRefine: _cancelRefine,
                 onUndoRefine: _undoRefine,
-                canUndo: _refineOps.isNotEmpty,
+                canUndo: !_session.isEmpty,
                 hasClickOutline: _hasClickOutline,
                 onAddPoint: _addRefinePoint,
                 onEraseStroke: _addEraseStroke,
@@ -897,10 +910,13 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   Widget _buildForm() {
     final categories = ref.watch(clothingCategoryRowsProvider);
     _ensureMeasureControllers(categories);
-    final selectedId = categoryById(categories, _categoryId)?.id ??
+    final selectedId =
+        categoryById(categories, _categoryId)?.id ??
         (categories.isEmpty ? _categoryId : uncategorizedClothingId);
     final node = categoryById(categories, selectedId);
-    final sizeFields = node == null ? <String>[] : inheritedSizeFields(categories, node);
+    final sizeFields = node == null
+        ? <String>[]
+        : inheritedSizeFields(categories, node);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -931,7 +947,10 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                 if (_isEditing)
                   TextButton(
                     onPressed: _delete,
-                    child: const Text('删除', style: TextStyle(color: Colors.redAccent)),
+                    child: const Text(
+                      '删除',
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
                   ),
                 const SizedBox(width: 8),
                 FilledButton(
@@ -961,14 +980,26 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                       onChanged: (v) => setState(() => _categoryId = v),
                     ),
                     _split(
-                      _LabeledField(label: '类别', hint: '如衬衫、长裤', controller: _type),
-                      _LabeledField(label: '款式', hint: '如阔腿裤、直筒裤', controller: _style),
+                      _LabeledField(
+                        label: '类别',
+                        hint: '如衬衫、长裤',
+                        controller: _type,
+                      ),
+                      _LabeledField(
+                        label: '款式',
+                        hint: '如阔腿裤、直筒裤',
+                        controller: _style,
+                      ),
                     ),
                     _split(
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _LabeledField(label: '颜色', hint: '手填或用识别结果', controller: _color),
+                          _LabeledField(
+                            label: '颜色',
+                            hint: '手填或用识别结果',
+                            controller: _color,
+                          ),
                           if (_detectedColorHint != null) ...[
                             const SizedBox(height: 6),
                             Wrap(
@@ -1004,20 +1035,32 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _LabeledField(label: '面料', hint: '手填面料', controller: _fabric),
+                          _LabeledField(
+                            label: '面料',
+                            hint: '手填面料',
+                            controller: _fabric,
+                          ),
                           _ocrFillHint(
                             value: _mergedTagOcr.fabric,
-                            onApply: () => setState(() => _fabric.text = _mergedTagOcr.fabric ?? ''),
+                            onApply: () => setState(
+                              () => _fabric.text = _mergedTagOcr.fabric ?? '',
+                            ),
                           ),
                         ],
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _LabeledField(label: '品牌', hint: '手填品牌', controller: _brand),
+                          _LabeledField(
+                            label: '品牌',
+                            hint: '手填品牌',
+                            controller: _brand,
+                          ),
                           _ocrFillHint(
                             value: _mergedTagOcr.brand,
-                            onApply: () => setState(() => _brand.text = _mergedTagOcr.brand ?? ''),
+                            onApply: () => setState(
+                              () => _brand.text = _mergedTagOcr.brand ?? '',
+                            ),
                           ),
                         ],
                       ),
@@ -1027,7 +1070,9 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                         label: '价格',
                         hint: '元',
                         controller: _price,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                         ],
@@ -1042,7 +1087,10 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                     if (sizeFields.isNotEmpty) ...[
                       const Padding(
                         padding: EdgeInsets.only(top: 8, bottom: 4),
-                        child: Text('尺码', style: TextStyle(fontWeight: FontWeight.w700)),
+                        child: Text(
+                          '尺码',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
                       ),
                       Wrap(
                         spacing: 12,
@@ -1085,7 +1133,8 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                       controller: _note,
                       maxLines: 4,
                     ),
-                    if (_mergedTagOcr.text.isNotEmpty || _tagPreviewPaths.isNotEmpty)
+                    if (_mergedTagOcr.text.isNotEmpty ||
+                        _tagPreviewPaths.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: HangtagOcrBlock(
@@ -1104,14 +1153,16 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   }
 
   List<String> get _tagPreviewPaths => [
-        for (final photo in _photos)
-          if (photo.isTag) photo.processedPath ?? photo.previewPath,
-      ];
+    for (final photo in _photos)
+      if (photo.isTag) photo.processedPath ?? photo.previewPath,
+  ];
 
   String? get _detectedColorHint {
     if (_photos.isEmpty) return null;
     final selected = _photos[_selectedPhoto.clamp(0, _photos.length - 1)];
-    if (!selected.isTag && !selected.colors.isEmpty) return selected.colors.detail;
+    if (!selected.isTag && !selected.colors.isEmpty) {
+      return selected.colors.detail;
+    }
     for (final photo in _photos) {
       if (photo.isPrimary && !photo.colors.isEmpty) return photo.colors.detail;
     }
@@ -1123,7 +1174,8 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     final parts = <String>[
       if (ocr.sizeLabel != null && ocr.sizeLabel!.isNotEmpty) ocr.sizeLabel!,
       for (final field in sizeFields)
-        if (ocr.measurements[field] != null) '$field ${ocr.measurements[field]}',
+        if (ocr.measurements[field] != null)
+          '$field ${ocr.measurements[field]}',
     ];
     if (parts.isEmpty) return null;
     return parts.join(' · ');
@@ -1152,10 +1204,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     });
   }
 
-  Widget _ocrFillHint({
-    required String? value,
-    required VoidCallback onApply,
-  }) {
+  Widget _ocrFillHint({required String? value, required VoidCallback onApply}) {
     final text = value?.trim() ?? '';
     if (text.isEmpty) return const SizedBox.shrink();
     return Padding(
@@ -1187,8 +1236,6 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
 }
 
 enum _EditStage { photos, form }
-
-enum _RefineOpKind { click, erase, fill }
 
 class _RefineSnapshot {
   const _RefineSnapshot({
@@ -1252,7 +1299,10 @@ class _LabeledField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
@@ -1277,7 +1327,10 @@ class _SeasonPicker extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('季节', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        const Text(
+          '季节',
+          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+        ),
         const SizedBox(height: 6),
         Wrap(
           spacing: 8,
@@ -1323,7 +1376,10 @@ class _DateRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        ),
         const SizedBox(height: 6),
         InkWell(
           onTap: onTap,
@@ -1334,9 +1390,13 @@ class _DateRow extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    value == null ? '选择日期' : DateFormat('yyyy-MM-dd').format(value!),
+                    value == null
+                        ? '选择日期'
+                        : DateFormat('yyyy-MM-dd').format(value!),
                     style: TextStyle(
-                      color: value == null ? AppColors.textMuted : AppColors.text,
+                      color: value == null
+                          ? AppColors.textMuted
+                          : AppColors.text,
                     ),
                   ),
                 ),

@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
+import 'package:wardrobe/core/vision/coordinates/image_coordinate_mapper.dart';
 import 'package:wardrobe/core/vision/cutout/contain_map.dart';
 import 'package:wardrobe/core/vision/cutout/sam_click.dart';
 
@@ -28,8 +29,9 @@ class _ClickPromptOverlayState extends State<ClickPromptOverlay> {
   Offset? _down;
   int _button = 0;
 
-  bool get _spaceHeld =>
-      HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.space);
+  bool get _spaceHeld => HardwareKeyboard.instance.logicalKeysPressed.contains(
+    LogicalKeyboardKey.space,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -43,57 +45,62 @@ class _ClickPromptOverlayState extends State<ClickPromptOverlay> {
         );
         return ExcludeSemantics(
           child: GestureDetector(
-          onSecondaryTap: () {},
-          behavior: HitTestBehavior.translucent,
-          child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: (event) {
-            if (_spaceHeld) return;
-            if (event.kind == PointerDeviceKind.mouse &&
-                event.buttons != kPrimaryMouseButton &&
-                event.buttons != kSecondaryMouseButton) {
-              return;
-            }
-            _down = event.localPosition;
-            _button = event.buttons;
-          },
-          onPointerUp: (event) {
-            final from = _down;
-            _down = null;
-            if (from == null || _spaceHeld) return;
-            if ((event.localPosition - from).distance > 8) return;
-            if (!layout.contains(event.localPosition.dx, event.localPosition.dy)) {
-              return;
-            }
-            final pixel = layout.localToPixel(
-              event.localPosition.dx,
-              event.localPosition.dy,
-              imageWidth: widget.imageWidth,
-              imageHeight: widget.imageHeight,
-            );
-            if (pixel == null) return;
-            final maxX = widget.imageWidth <= 0 ? 0 : widget.imageWidth - 1;
-            final maxY = widget.imageHeight <= 0 ? 0 : widget.imageHeight - 1;
-            widget.onAdd(
-              PromptPoint(
-                x: pixel.x.clamp(0, maxX),
-                y: pixel.y.clamp(0, maxY),
-                positive: _button != kSecondaryMouseButton,
+            onSecondaryTap: () {},
+            behavior: HitTestBehavior.translucent,
+            child: Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (event) {
+                if (_spaceHeld) return;
+                if (event.kind == PointerDeviceKind.mouse &&
+                    event.buttons != kPrimaryMouseButton &&
+                    event.buttons != kSecondaryMouseButton) {
+                  return;
+                }
+                _down = event.localPosition;
+                _button = event.buttons;
+              },
+              onPointerUp: (event) {
+                final from = _down;
+                _down = null;
+                if (from == null || _spaceHeld) return;
+                if ((event.localPosition - from).distance > 8) return;
+                if (!layout.contains(
+                  event.localPosition.dx,
+                  event.localPosition.dy,
+                )) {
+                  return;
+                }
+                final pixel = layout.localToPixel(
+                  event.localPosition.dx,
+                  event.localPosition.dy,
+                  imageWidth: widget.imageWidth,
+                  imageHeight: widget.imageHeight,
+                );
+                if (pixel == null) return;
+                final maxX = widget.imageWidth <= 0 ? 0 : widget.imageWidth - 1;
+                final maxY = widget.imageHeight <= 0
+                    ? 0
+                    : widget.imageHeight - 1;
+                widget.onAdd(
+                  PromptPoint(
+                    x: pixel.x.clamp(0, maxX),
+                    y: pixel.y.clamp(0, maxY),
+                    positive: _button != kSecondaryMouseButton,
+                  ),
+                );
+              },
+              onPointerCancel: (_) => _down = null,
+              child: CustomPaint(
+                size: Size(constraints.maxWidth, constraints.maxHeight),
+                painter: _ClickPromptPainter(
+                  layout: layout,
+                  imageWidth: widget.imageWidth,
+                  imageHeight: widget.imageHeight,
+                  points: List<PromptPoint>.of(widget.points),
+                ),
               ),
-            );
-          },
-          onPointerCancel: (_) => _down = null,
-          child: CustomPaint(
-            size: Size(constraints.maxWidth, constraints.maxHeight),
-            painter: _ClickPromptPainter(
-              layout: layout,
-              imageWidth: widget.imageWidth,
-              imageHeight: widget.imageHeight,
-              points: List<PromptPoint>.of(widget.points),
             ),
           ),
-        ),
-        ),
         );
       },
     );
@@ -115,7 +122,10 @@ class _ClickPromptPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (layout.drawWidth <= 0 || layout.drawHeight <= 0 || imageWidth <= 0 || imageHeight <= 0) {
+    if (layout.drawWidth <= 0 ||
+        layout.drawHeight <= 0 ||
+        imageWidth <= 0 ||
+        imageHeight <= 0) {
       return;
     }
     final imageRect = Rect.fromLTWH(
@@ -129,12 +139,18 @@ class _ClickPromptPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     canvas.drawRect(imageRect.deflate(0.5), hint);
+    final mapper = ImageCoordinateMapper.fromLayout(
+      imageWidth: imageWidth,
+      imageHeight: imageHeight,
+      layout: layout,
+    );
     for (final point in points) {
-      final local = Offset(
-        layout.offsetX + point.x / imageWidth * layout.drawWidth,
-        layout.offsetY + point.y / imageHeight * layout.drawHeight,
-      );
-      final color = point.positive ? AppColors.primary : const Color(0xFFE25555);
+      final local = mapper
+          .toViewport(ImagePixelPoint(point.x.toDouble(), point.y.toDouble()))
+          .toOffset();
+      final color = point.positive
+          ? AppColors.primary
+          : const Color(0xFFE25555);
       canvas.drawCircle(local, 7, Paint()..color = color);
       canvas.drawCircle(
         local,
@@ -152,8 +168,16 @@ class _ClickPromptPainter extends CustomPainter {
         canvas.drawLine(local.translate(0, -4), local.translate(0, 4), tick);
         canvas.drawLine(local.translate(-4, 0), local.translate(4, 0), tick);
       } else {
-        canvas.drawLine(local.translate(-3.5, -3.5), local.translate(3.5, 3.5), tick);
-        canvas.drawLine(local.translate(3.5, -3.5), local.translate(-3.5, 3.5), tick);
+        canvas.drawLine(
+          local.translate(-3.5, -3.5),
+          local.translate(3.5, 3.5),
+          tick,
+        );
+        canvas.drawLine(
+          local.translate(3.5, -3.5),
+          local.translate(-3.5, 3.5),
+          tick,
+        );
       }
     }
   }

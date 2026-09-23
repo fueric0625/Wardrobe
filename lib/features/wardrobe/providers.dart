@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wardrobe/app/providers.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/features/wardrobe/data/item_repository.dart';
 
@@ -17,10 +17,12 @@ final clothingItemsProvider = StreamProvider<List<ClothingItem>>((ref) {
 
 final itemImagesProvider =
     StreamProvider.family<List<ClothingItemImage>, String>((ref, itemId) {
-  return ref.watch(itemRepositoryProvider).watchImages(itemId);
-});
+      return ref.watch(itemRepositoryProvider).watchImages(itemId);
+    });
 
-final clothingImageRowsProvider = StreamProvider<List<ClothingItemImage>>((ref) {
+final clothingImageRowsProvider = StreamProvider<List<ClothingItemImage>>((
+  ref,
+) {
   return ref.watch(itemRepositoryProvider).watchAllImages();
 });
 
@@ -31,5 +33,6 @@ class ClothingSortNotifier extends Notifier<ListSort> {
   void set(ListSort next) => state = next;
 }
 
-final clothingSortProvider =
-    NotifierProvider<ClothingSortNotifier, ListSort>(ClothingSortNotifier.new);
+final clothingSortProvider = NotifierProvider<ClothingSortNotifier, ListSort>(
+  ClothingSortNotifier.new,
+);

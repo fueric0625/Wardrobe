@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 
 Category cat({
   required String id,
@@ -24,7 +24,12 @@ Category cat({
 void main() {
   final tops = cat(id: 'tops', label: '上装', sizeFields: ['衣长', '胸围']);
   final hoodie = cat(id: 'hoodie', label: '卫衣', parentId: 'tops', sortOrder: 0);
-  final hooded = cat(id: 'hooded', label: '兜帽卫衣', parentId: 'hoodie', sortOrder: 0);
+  final hooded = cat(
+    id: 'hooded',
+    label: '兜帽卫衣',
+    parentId: 'hoodie',
+    sortOrder: 0,
+  );
   final shirt = cat(id: 'shirt', label: '衬衫', parentId: 'tops', sortOrder: 1);
   final all = [tops, hoodie, hooded, shirt];
 
@@ -44,7 +49,10 @@ void main() {
 
   test('subtree includes descendants and children stay ordered', () {
     expect(subtreeIds(all, 'tops'), {'tops', 'hoodie', 'hooded', 'shirt'});
-    expect(childrenOf(all, 'tops').map((c) => c.id).toList(), ['hoodie', 'shirt']);
+    expect(childrenOf(all, 'tops').map((c) => c.id).toList(), [
+      'hoodie',
+      'shirt',
+    ]);
   });
 
   test('deleting a child category returns items to its parent', () {
@@ -54,15 +62,18 @@ void main() {
   });
 
   test('an item can cover its own category and ancestors, not siblings', () {
-    expect(
-      coverCategoriesForItem(all, 'hooded').map((c) => c.id).toList(),
-      ['tops', 'hoodie', 'hooded'],
-    );
-    expect(
-      coverCategoriesForItem(all, 'hoodie').map((c) => c.id).toList(),
-      ['tops', 'hoodie'],
-    );
-    expect(coverCategoriesForItem(all, 'tops').map((c) => c.id).toList(), ['tops']);
+    expect(coverCategoriesForItem(all, 'hooded').map((c) => c.id).toList(), [
+      'tops',
+      'hoodie',
+      'hooded',
+    ]);
+    expect(coverCategoriesForItem(all, 'hoodie').map((c) => c.id).toList(), [
+      'tops',
+      'hoodie',
+    ]);
+    expect(coverCategoriesForItem(all, 'tops').map((c) => c.id).toList(), [
+      'tops',
+    ]);
     expect(subtreeIds(all, 'hoodie').contains('hooded'), isTrue);
     expect(subtreeIds(all, 'shirt').contains('hooded'), isFalse);
   });
@@ -105,10 +116,11 @@ void main() {
       piece('hooded-item', 'hooded'),
       piece('shirt-item', 'shirt'),
     ];
-    expect(
-      itemsInSubtree(items, all, 'tops').map((item) => item.id).toSet(),
-      {'hoodie-item', 'hooded-item', 'shirt-item'},
-    );
+    expect(itemsInSubtree(items, all, 'tops').map((item) => item.id).toSet(), {
+      'hoodie-item',
+      'hooded-item',
+      'shirt-item',
+    });
     expect(
       itemsInSubtree(items, all, 'hoodie').map((item) => item.id).toList(),
       ['hoodie-item', 'hooded-item'],

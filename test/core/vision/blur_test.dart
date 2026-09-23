@@ -25,7 +25,10 @@ void main() {
     expect(kept.b.toInt(), 0);
 
     final changed = out.getPixel(16, 10);
-    final sameBlue = changed.r.toInt() == 0 && changed.g.toInt() == 0 && changed.b.toInt() == 255;
+    final sameBlue =
+        changed.r.toInt() == 0 &&
+        changed.g.toInt() == 0 &&
+        changed.b.toInt() == 255;
     expect(sameBlue, isFalse);
   });
 }

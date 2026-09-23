@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
 class VirtualWeather {
-  const VirtualWeather({required this.label, required this.icon, required this.hint});
+  const VirtualWeather({
+    required this.label,
+    required this.icon,
+    required this.hint,
+  });
 
   final String label;
   final IconData icon;

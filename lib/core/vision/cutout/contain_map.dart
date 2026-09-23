@@ -23,7 +23,10 @@ class ContainLayout {
     required int imageWidth,
     required int imageHeight,
   }) {
-    if (boxWidth <= 0 || boxHeight <= 0 || imageWidth <= 0 || imageHeight <= 0) {
+    if (boxWidth <= 0 ||
+        boxHeight <= 0 ||
+        imageWidth <= 0 ||
+        imageHeight <= 0) {
       return const ContainLayout(
         offsetX: 0,
         offsetY: 0,
@@ -87,8 +90,14 @@ class ContainLayout {
     required int imageHeight,
   }) {
     if (drawWidth <= 0 || drawHeight <= 0) return null;
-    final px = ((x - offsetX) / drawWidth * imageWidth).round().clamp(0, imageWidth);
-    final py = ((y - offsetY) / drawHeight * imageHeight).round().clamp(0, imageHeight);
+    final px = ((x - offsetX) / drawWidth * imageWidth).round().clamp(
+      0,
+      imageWidth,
+    );
+    final py = ((y - offsetY) / drawHeight * imageHeight).round().clamp(
+      0,
+      imageHeight,
+    );
     return (x: px, y: py);
   }
 
@@ -97,7 +106,10 @@ class ContainLayout {
     required int imageWidth,
     required int imageHeight,
   }) {
-    if (drawWidth <= 0 || drawHeight <= 0 || imageWidth <= 0 || imageHeight <= 0) {
+    if (drawWidth <= 0 ||
+        drawHeight <= 0 ||
+        imageWidth <= 0 ||
+        imageHeight <= 0) {
       return Rect.zero;
     }
     final left = offsetX + rect.x / imageWidth * drawWidth;

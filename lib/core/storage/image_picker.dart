@@ -12,12 +12,16 @@ Future<String?> pickImagePath() async {
 Future<List<String>> pickImagePaths({bool allowMultiple = true}) async {
   const nMaxFile = 32768;
   final fileBuffer = wsalloc(nMaxFile);
-  final filter = _doubleNullTerminated(['图片', '*.jpg;*.jpeg;*.png;*.webp;*.gif;*.bmp']);
+  final filter = _doubleNullTerminated([
+    '图片',
+    '*.jpg;*.jpeg;*.png;*.webp;*.gif;*.bmp',
+  ]);
   final title = wsalloc(32)..setString(allowMultiple ? '选择图片（可多选）' : '选择图片');
   final ofn = calloc<OPENFILENAME>();
 
   try {
-    var flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER | OFN_HIDEREADONLY;
+    var flags =
+        OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER | OFN_HIDEREADONLY;
     if (allowMultiple) {
       flags |= OFN_ALLOWMULTISELECT;
     }
@@ -34,7 +38,9 @@ Future<List<String>> pickImagePaths({bool allowMultiple = true}) async {
     if (!GetOpenFileName(ofn)) {
       return const [];
     }
-    return parseWindowsMultiSelect(fileBuffer.cast<Uint16>().asTypedList(nMaxFile));
+    return parseWindowsMultiSelect(
+      fileBuffer.cast<Uint16>().asTypedList(nMaxFile),
+    );
   } finally {
     calloc.free(ofn);
     free(fileBuffer);

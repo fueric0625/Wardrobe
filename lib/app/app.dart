@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wardrobe/app/router.dart';
-import 'package:wardrobe/core/app_font.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/app_font.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 
 class WardrobeApp extends ConsumerWidget {
   const WardrobeApp({super.key});

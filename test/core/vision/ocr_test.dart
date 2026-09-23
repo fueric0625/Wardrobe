@@ -39,8 +39,8 @@ void main() {
   test('ocrCtcDecode skips blanks, repeats, and can emit space', () {
     const keys = ['A', 'B', 'C'];
     List<double> step(int best) => [
-          for (var c = 0; c < 5; c++) c == best ? 8.0 : 0.0,
-        ];
+      for (var c = 0; c < 5; c++) c == best ? 8.0 : 0.0,
+    ];
     final logits = [
       ...step(1),
       ...step(1),
@@ -55,8 +55,8 @@ void main() {
   test('ocrCtcDecode drops low-confidence noise', () {
     const keys = ['A', 'B', 'C'];
     List<double> step(int best, double v) => [
-          for (var c = 0; c < 5; c++) c == best ? v : 0.0,
-        ];
+      for (var c = 0; c < 5; c++) c == best ? v : 0.0,
+    ];
     final logits = [...step(1, 0.12), ...step(2, 0.11), ...step(3, 0.10)];
     expect(ocrCtcDecode(logits, keys), 'ABC');
     expect(ocrCtcDecode(logits, keys, minConfidence: 0.45), '');

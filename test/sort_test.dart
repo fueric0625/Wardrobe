@@ -33,13 +33,17 @@ void main() {
 
   test('price direction labels are 高→低 / 低→高', () {
     expect(
-      const ListSort(field: SortField.price, direction: SortDirection.desc)
-          .directionLabel,
+      const ListSort(
+        field: SortField.price,
+        direction: SortDirection.desc,
+      ).directionLabel,
       '高→低',
     );
     expect(
-      const ListSort(field: SortField.price, direction: SortDirection.asc)
-          .directionLabel,
+      const ListSort(
+        field: SortField.price,
+        direction: SortDirection.asc,
+      ).directionLabel,
       '低→高',
     );
   });
@@ -57,22 +61,31 @@ void main() {
     expect(sorted.map((k) => k.id).toList(), ['new', 'old']);
   });
 
-  test('purchasedAt keeps missing dates after filled ones in both directions', () {
-    final withDate = key(id: 'dated', created: older, purchased: newer);
-    final missing = key(id: 'missing', created: newer);
-    final desc = sortByKeys(
-      [missing, withDate],
-      const ListSort(field: SortField.purchasedAt, direction: SortDirection.desc),
-      (k) => k,
-    );
-    final asc = sortByKeys(
-      [missing, withDate],
-      const ListSort(field: SortField.purchasedAt, direction: SortDirection.asc),
-      (k) => k,
-    );
-    expect(desc.map((k) => k.id).toList(), ['dated', 'missing']);
-    expect(asc.map((k) => k.id).toList(), ['dated', 'missing']);
-  });
+  test(
+    'purchasedAt keeps missing dates after filled ones in both directions',
+    () {
+      final withDate = key(id: 'dated', created: older, purchased: newer);
+      final missing = key(id: 'missing', created: newer);
+      final desc = sortByKeys(
+        [missing, withDate],
+        const ListSort(
+          field: SortField.purchasedAt,
+          direction: SortDirection.desc,
+        ),
+        (k) => k,
+      );
+      final asc = sortByKeys(
+        [missing, withDate],
+        const ListSort(
+          field: SortField.purchasedAt,
+          direction: SortDirection.asc,
+        ),
+        (k) => k,
+      );
+      expect(desc.map((k) => k.id).toList(), ['dated', 'missing']);
+      expect(asc.map((k) => k.id).toList(), ['dated', 'missing']);
+    },
+  );
 
   test('price keeps missing values after priced items', () {
     final cheap = key(id: 'cheap', created: older, price: 10);

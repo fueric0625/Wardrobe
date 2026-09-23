@@ -1,7 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
+import 'package:wardrobe/core/vision/coordinates/image_coordinate_mapper.dart';
 import 'package:wardrobe/core/vision/cutout/contain_map.dart';
 import 'package:wardrobe/core/vision/cutout/image_ops.dart';
 
@@ -25,8 +26,9 @@ class _FillBoxOverlayState extends State<FillBoxOverlay> {
   Offset? _from;
   Offset? _to;
 
-  bool get _spaceHeld =>
-      HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.space);
+  bool get _spaceHeld => HardwareKeyboard.instance.logicalKeysPressed.contains(
+    LogicalKeyboardKey.space,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -63,11 +65,7 @@ class _FillBoxOverlayState extends State<FillBoxOverlay> {
             }),
             child: CustomPaint(
               size: Size(constraints.maxWidth, constraints.maxHeight),
-              painter: _FillBoxPainter(
-                layout: layout,
-                from: _from,
-                to: _to,
-              ),
+              painter: _FillBoxPainter(layout: layout, from: _from, to: _to),
             ),
           ),
         );
@@ -88,16 +86,17 @@ class _FillBoxOverlayState extends State<FillBoxOverlay> {
   }
 
   PixelRect? _pixelBox(ContainLayout layout, Offset a, Offset b) {
-    final dragged = layout.boxToPixelRect(
-      x0: a.dx,
-      y0: a.dy,
-      x1: b.dx,
-      y1: b.dy,
+    final mapper = ImageCoordinateMapper.fromLayout(
       imageWidth: widget.imageWidth,
       imageHeight: widget.imageHeight,
+      layout: layout,
+    );
+    final dragged = mapper.toImageRect(
+      ViewportPoint.fromOffset(a),
+      ViewportPoint.fromOffset(b),
     );
     if (dragged != null && dragged.width >= 2 && dragged.height >= 2) {
-      return dragged;
+      return dragged.toPixelRect();
     }
     final mid = Offset((a.dx + b.dx) / 2, (a.dy + b.dy) / 2);
     final pixel = layout.localToPixel(
@@ -117,11 +116,7 @@ class _FillBoxOverlayState extends State<FillBoxOverlay> {
 }
 
 class _FillBoxPainter extends CustomPainter {
-  _FillBoxPainter({
-    required this.layout,
-    required this.from,
-    required this.to,
-  });
+  _FillBoxPainter({required this.layout, required this.from, required this.to});
 
   final ContainLayout layout;
   final Offset? from;

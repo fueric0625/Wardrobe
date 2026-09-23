@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 
 abstract class CategoryCoverRepository {
   Stream<List<CategoryCover>> watchAll();
@@ -41,14 +41,15 @@ class LocalCategoryCoverRepository implements CategoryCoverRepository {
     String? itemId,
   }) async {
     if (itemId == null) {
-      await (_db.delete(_db.categoryCovers)
-            ..where(
-              (t) => t.kind.equals(kind.name) & t.categoryId.equals(categoryId),
-            ))
+      await (_db.delete(_db.categoryCovers)..where(
+            (t) => t.kind.equals(kind.name) & t.categoryId.equals(categoryId),
+          ))
           .go();
       return;
     }
-    await _db.into(_db.categoryCovers).insertOnConflictUpdate(
+    await _db
+        .into(_db.categoryCovers)
+        .insertOnConflictUpdate(
           CategoryCoversCompanion(
             kind: Value(kind.name),
             categoryId: Value(categoryId),

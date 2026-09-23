@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wardrobe/core/app_font.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/design_system/app_font.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child});
@@ -167,7 +167,11 @@ class _FontButton extends ConsumerWidget {
                 SizedBox(
                   width: 24,
                   child: current == choice.family
-                      ? const Icon(Icons.check, size: 18, color: AppColors.primary)
+                      ? const Icon(
+                          Icons.check,
+                          size: 18,
+                          color: AppColors.primary,
+                        )
                       : null,
                 ),
                 Text(
@@ -194,4 +198,3 @@ class _FontButton extends ConsumerWidget {
     );
   }
 }
-

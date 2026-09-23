@@ -62,7 +62,9 @@ int eraseDarkerShadows(
   final w = math.min(rgb.width, math.min(mask.width, beforeErase.width));
   final h = math.min(rgb.height, math.min(mask.height, beforeErase.height));
   if (w <= 0 || h <= 0) return 0;
-  final labs = [for (final swatch in palette) rgbToLab(swatch.r, swatch.g, swatch.b)];
+  final labs = [
+    for (final swatch in palette) rgbToLab(swatch.r, swatch.g, swatch.b),
+  ];
   var meanY = 0.0;
   var meanR = 0.0;
   var meanG = 0.0;

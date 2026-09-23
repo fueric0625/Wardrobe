@@ -12,10 +12,7 @@ class EraseStamp {
 }
 
 class EraseStroke {
-  const EraseStroke({
-    required this.stamps,
-    this.protectColor = true,
-  });
+  const EraseStroke({required this.stamps, this.protectColor = true});
 
   final List<EraseStamp> stamps;
   final bool protectColor;
@@ -53,7 +50,8 @@ int applyEraseStroke(
         if (maskLevel(mask.getPixel(x, y)) < 24) continue;
         if (labs.isNotEmpty && x < rgb.width && y < rgb.height) {
           final p = rgb.getPixel(x, y);
-          if (minDeltaE(p.r.toInt(), p.g.toInt(), p.b.toInt(), labs) <= maxDeltaE) {
+          if (minDeltaE(p.r.toInt(), p.g.toInt(), p.b.toInt(), labs) <=
+              maxDeltaE) {
             continue;
           }
         }

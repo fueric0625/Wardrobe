@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:image/image.dart' as img;
+import 'package:wardrobe/core/serialization/color_analysis_codec.dart';
 import 'package:wardrobe/core/vision/cutout/image_ops.dart';
 
 class ColorShare {
@@ -52,36 +52,12 @@ class ColorAnalysis {
 
   String get label => colors.map((c) => c.name).join('、');
 
-  String get detail => colors
-      .map((c) => '${c.name} ${(c.ratio * 100).round()}%')
-      .join(' · ');
+  String get detail =>
+      colors.map((c) => '${c.name} ${(c.ratio * 100).round()}%').join(' · ');
 
-  String toJson() => jsonEncode({
-        'colors': colors.map((c) => c.toJson()).toList(),
-        if (palette.isNotEmpty)
-          'palette': palette.map((c) => c.toJson()).toList(),
-      });
+  String toJson() => encodeColorAnalysis(this);
 
-  factory ColorAnalysis.decode(String raw) {
-    if (raw.trim().isEmpty) return empty;
-    try {
-      final map = jsonDecode(raw) as Map<String, dynamic>;
-      final list = map['colors'] as List<dynamic>? ?? const [];
-      final pal = map['palette'] as List<dynamic>? ?? const [];
-      return ColorAnalysis(
-        [
-          for (final item in list)
-            if (item is Map<String, dynamic>) ColorShare.fromJson(item),
-        ],
-        palette: [
-          for (final item in pal)
-            if (item is Map<String, dynamic>) RgbSwatch.fromJson(item),
-        ],
-      );
-    } catch (_) {
-      return empty;
-    }
-  }
+  factory ColorAnalysis.decode(String raw) => decodeColorAnalysis(raw);
 }
 
 /// Names a single sRGB pixel. Exposed for tests.
@@ -110,7 +86,11 @@ String colorNameFromRgb(int r, int g, int b) {
   return '粉';
 }
 
-ColorAnalysis extractColors(img.Image image, {img.Image? mask, double minRatio = 0.08}) {
+ColorAnalysis extractColors(
+  img.Image image, {
+  img.Image? mask,
+  double minRatio = 0.08,
+}) {
   final counts = <String, int>{};
   var total = 0;
   final pixels = image.width * image.height;

@@ -391,7 +391,9 @@ double minDeltaE(int r, int g, int b, List<List<double>> paletteLab) {
 List<double> rgbToLab(int r, int g, int b) {
   double lin(int c) {
     final n = c / 255.0;
-    return n > 0.04045 ? math.pow((n + 0.055) / 1.055, 2.4).toDouble() : n / 12.92;
+    return n > 0.04045
+        ? math.pow((n + 0.055) / 1.055, 2.4).toDouble()
+        : n / 12.92;
   }
 
   final rl = lin(r);
@@ -423,7 +425,9 @@ List<int> labToRgb(List<double> lab) {
   final y = inv(fy);
   final z = inv(fz) * 1.08883;
   double comp(double v) {
-    final n = v <= 0.0031308 ? 12.92 * v : 1.055 * math.pow(v.clamp(0.0, 1.0), 1 / 2.4) - 0.055;
+    final n = v <= 0.0031308
+        ? 12.92 * v
+        : 1.055 * math.pow(v.clamp(0.0, 1.0), 1 / 2.4) - 0.055;
     return (n * 255).clamp(0, 255);
   }
 
@@ -492,7 +496,9 @@ List<int> _fgDistance(img.Image mask) {
       if (dist[i] == 0) continue;
       if (x + 1 < w) dist[i] = math.min(dist[i], dist[i + 1] + 1);
       if (y + 1 < h) dist[i] = math.min(dist[i], dist[i + w] + 1);
-      if (x + 1 < w && y + 1 < h) dist[i] = math.min(dist[i], dist[i + w + 1] + 1);
+      if (x + 1 < w && y + 1 < h) {
+        dist[i] = math.min(dist[i], dist[i + w + 1] + 1);
+      }
       if (x > 0 && y + 1 < h) dist[i] = math.min(dist[i], dist[i + w - 1] + 1);
     }
   }

@@ -17,11 +17,21 @@ void main() {
 
   test('merge keeps a saved spot and adds a new piece', () {
     final saved = [
-      const CollagePlacement(clothingItemId: 'a', x: 0.2, y: 0.3, w: 0.4, h: 0.5, z: 1),
+      const CollagePlacement(
+        clothingItemId: 'a',
+        x: 0.2,
+        y: 0.3,
+        w: 0.4,
+        h: 0.5,
+        z: 1,
+      ),
     ];
     final merged = mergeCollageLayout(saved, const ['a', 'b']);
     expect(merged.first.x, 0.2);
-    expect(merged.map((piece) => piece.clothingItemId), containsAll(['a', 'b']));
+    expect(
+      merged.map((piece) => piece.clothingItemId),
+      containsAll(['a', 'b']),
+    );
     expect(mergeCollageLayout(saved, const ['b']).single.clothingItemId, 'b');
   });
 
@@ -30,6 +40,23 @@ void main() {
     final back = decodeCollageLayout(raw);
     expect(back.map((piece) => piece.clothingItemId), ['shirt', 'pants']);
     expect(decodeCollageLayout('not json'), isEmpty);
+  });
+
+  test('placements outside the canvas reload unchanged', () {
+    const piece = CollagePlacement(
+      clothingItemId: 'shirt',
+      x: -0.25,
+      y: 1.1,
+      w: 1.4,
+      h: 0.08,
+      z: 4,
+    );
+    final back = decodeCollageLayout(encodeCollageLayout(const [piece])).single;
+    expect(back.x, piece.x);
+    expect(back.y, piece.y);
+    expect(back.w, piece.w);
+    expect(back.h, piece.h);
+    expect(back.z, piece.z);
   });
 
   test('collage prefers the click cutout over the original photo', () {
@@ -93,19 +120,35 @@ void main() {
 
   test('cover choice can prefer the collage over a full-body photo', () {
     expect(
-      outfitUsesCollage(imagePath: 'look.jpg', coverMode: outfitCoverPhoto, hasPieces: true),
+      outfitUsesCollage(
+        imagePath: 'look.jpg',
+        coverMode: outfitCoverPhoto,
+        hasPieces: true,
+      ),
       isFalse,
     );
     expect(
-      outfitUsesCollage(imagePath: 'look.jpg', coverMode: outfitCoverCollage, hasPieces: true),
+      outfitUsesCollage(
+        imagePath: 'look.jpg',
+        coverMode: outfitCoverCollage,
+        hasPieces: true,
+      ),
       isTrue,
     );
     expect(
-      outfitUsesCollage(imagePath: null, coverMode: outfitCoverPhoto, hasPieces: true),
+      outfitUsesCollage(
+        imagePath: null,
+        coverMode: outfitCoverPhoto,
+        hasPieces: true,
+      ),
       isTrue,
     );
     expect(
-      outfitUsesCollage(imagePath: null, coverMode: outfitCoverCollage, hasPieces: false),
+      outfitUsesCollage(
+        imagePath: null,
+        coverMode: outfitCoverCollage,
+        hasPieces: false,
+      ),
       isFalse,
     );
   });

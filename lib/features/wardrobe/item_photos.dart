@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:wardrobe/core/db/app_database.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/database/app_database.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/vision/cutout/color_extract.dart';
 import 'package:wardrobe/core/vision/cutout/erase_brush.dart';
 import 'package:wardrobe/core/vision/cutout/sam_click.dart';
@@ -251,7 +251,10 @@ class ItemPhotoStrip extends StatelessWidget {
                 const SizedBox(
                   width: 56,
                   height: 56,
-                  child: Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
+                  child: Icon(
+                    Icons.add_photo_alternate_outlined,
+                    color: AppColors.primary,
+                  ),
                 )
               else
                 Flexible(
@@ -281,7 +284,9 @@ class ItemPhotoStrip extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  photos.isEmpty ? '还没有图片，点这里添加' : '已选 ${photos.length} 张 · 点这里改图或点选',
+                  photos.isEmpty
+                      ? '还没有图片，点这里添加'
+                      : '已选 ${photos.length} 张 · 点这里改图或点选',
                   style: const TextStyle(color: AppColors.textMuted),
                 ),
               ),
@@ -295,11 +300,7 @@ class ItemPhotoStrip extends StatelessWidget {
 }
 
 class ItemPhotoViewer extends StatefulWidget {
-  const ItemPhotoViewer({
-    super.key,
-    required this.images,
-    this.fallbackPath,
-  });
+  const ItemPhotoViewer({super.key, required this.images, this.fallbackPath});
 
   final List<ClothingItemImage> images;
   final String? fallbackPath;
@@ -419,11 +420,21 @@ class _EmptyAdd extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add_photo_alternate_outlined, size: 56, color: AppColors.primary),
+            const Icon(
+              Icons.add_photo_alternate_outlined,
+              size: 56,
+              color: AppColors.primary,
+            ),
             const SizedBox(height: 12),
-            const Text('添加衣物图，可多选', style: TextStyle(color: AppColors.textMuted)),
+            const Text(
+              '添加衣物图，可多选',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
             const SizedBox(height: 4),
-            const Text('添加后直接点衣服和衣架；吊牌可另加', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            const Text(
+              '添加后直接点衣服和衣架；吊牌可另加',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+            ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 12,
@@ -498,32 +509,40 @@ class _PreviewCard extends StatelessWidget {
                   fit: BoxFit.contain,
                   checkerboard: true,
                   placeholder: const Center(
-                    child: Icon(Icons.image_outlined, size: 48, color: AppColors.textMuted),
+                    child: Icon(
+                      Icons.image_outlined,
+                      size: 48,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ),
-                if (refining && width != null && height != null && width > 0 && height > 0)
+                if (refining &&
+                    width != null &&
+                    height != null &&
+                    width > 0 &&
+                    height > 0)
                   switch (tool) {
                     RefineTool.erase => EraseBrushOverlay(
-                        imageWidth: width,
-                        imageHeight: height,
-                        radius: eraseRadius,
-                        onStroke: onEraseStroke,
-                      ),
+                      imageWidth: width,
+                      imageHeight: height,
+                      radius: eraseRadius,
+                      onStroke: onEraseStroke,
+                    ),
                     RefineTool.fill => EraseBrushOverlay(
-                        imageWidth: width,
-                        imageHeight: height,
-                        radius: eraseRadius,
-                        accent: fillSampling
-                            ? AppColors.primary
-                            : const Color(0xFF3D8B6E),
-                        onStroke: fillSampling ? onFillSample : onFillPaint,
-                      ),
+                      imageWidth: width,
+                      imageHeight: height,
+                      radius: eraseRadius,
+                      accent: fillSampling
+                          ? AppColors.primary
+                          : const Color(0xFF3D8B6E),
+                      onStroke: fillSampling ? onFillSample : onFillPaint,
+                    ),
                     RefineTool.click => ClickPromptOverlay(
-                        imageWidth: width,
-                        imageHeight: height,
-                        points: points,
-                        onAdd: onAddPoint,
-                      ),
+                      imageWidth: width,
+                      imageHeight: height,
+                      points: points,
+                      onAdd: onAddPoint,
+                    ),
                   },
               ],
             ),
@@ -531,18 +550,20 @@ class _PreviewCard extends StatelessWidget {
           if (photo.busy)
             ExcludeSemantics(
               child: ColoredBox(
-              color: const Color(0x88FFFFFF),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 12),
-                    Text(photo.busyHint ?? (refining ? '正在更新抠图…' : '正在处理图片…')),
-                  ],
+                color: const Color(0x88FFFFFF),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 12),
+                      Text(
+                        photo.busyHint ?? (refining ? '正在更新抠图…' : '正在处理图片…'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
             ),
           if (photo.isPrimary && !refining)
             const Positioned(
@@ -577,7 +598,10 @@ class _PreviewCard extends StatelessWidget {
                   child: Text(
                     photo.error!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ),
@@ -687,85 +711,94 @@ class _RefineActions extends StatelessWidget {
     final filling = tool == RefineTool.fill;
     return ExcludeSemantics(
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            FilterChip(
-              label: const Text('点选'),
-              selected: tool == RefineTool.click,
-              onSelected: busy ? null : (_) => onTool(RefineTool.click),
-            ),
-            FilterChip(
-              label: const Text('擦除'),
-              selected: tool == RefineTool.erase,
-              onSelected: busy || !hasClickOutline ? null : (_) => onTool(RefineTool.erase),
-            ),
-            if (allowFill)
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
               FilterChip(
-                label: const Text('填补'),
-                selected: tool == RefineTool.fill,
-                onSelected: busy || !hasClickOutline ? null : (_) => onTool(RefineTool.fill),
-              ),
-            if (erasing)
-              FilterChip(
-                label: const Text('保护衣服色'),
-                selected: eraseProtect,
-                onSelected: busy ? null : onProtect,
-              ),
-            if (filling) ...[
-              FilterChip(
-                label: const Text('取样'),
-                selected: fillSampling,
-                onSelected: busy ? null : (_) => onFillSampling(true),
+                label: const Text('点选'),
+                selected: tool == RefineTool.click,
+                onSelected: busy ? null : (_) => onTool(RefineTool.click),
               ),
               FilterChip(
-                label: Text(hasFillSample ? '涂抹' : '涂抹（先取样）'),
-                selected: !fillSampling,
-                onSelected: busy || !hasFillSample ? null : (_) => onFillSampling(false),
+                label: const Text('擦除'),
+                selected: tool == RefineTool.erase,
+                onSelected: busy || !hasClickOutline
+                    ? null
+                    : (_) => onTool(RefineTool.erase),
+              ),
+              if (allowFill)
+                FilterChip(
+                  label: const Text('填补'),
+                  selected: tool == RefineTool.fill,
+                  onSelected: busy || !hasClickOutline
+                      ? null
+                      : (_) => onTool(RefineTool.fill),
+                ),
+              if (erasing)
+                FilterChip(
+                  label: const Text('保护衣服色'),
+                  selected: eraseProtect,
+                  onSelected: busy ? null : onProtect,
+                ),
+              if (filling) ...[
+                FilterChip(
+                  label: const Text('取样'),
+                  selected: fillSampling,
+                  onSelected: busy ? null : (_) => onFillSampling(true),
+                ),
+                FilterChip(
+                  label: Text(hasFillSample ? '涂抹' : '涂抹（先取样）'),
+                  selected: !fillSampling,
+                  onSelected: busy || !hasFillSample
+                      ? null
+                      : (_) => onFillSampling(false),
+                ),
+              ],
+              if (erasing || filling)
+                SizedBox(
+                  width: 140,
+                  child: Slider(
+                    min: 6,
+                    max: 36,
+                    divisions: 15,
+                    value: eraseRadius.toDouble().clamp(6, 36),
+                    label: '$eraseRadius',
+                    onChanged: busy ? null : (v) => onRadius(v.round()),
+                  ),
+                ),
+              TextButton(
+                onPressed: busy || !canUndo ? null : onUndo,
+                child: const Text('撤回'),
+              ),
+              TextButton(
+                onPressed: busy ? null : onCancel,
+                child: const Text('完成精修'),
               ),
             ],
-            if (erasing || filling)
-              SizedBox(
-                width: 140,
-                child: Slider(
-                  min: 6,
-                  max: 36,
-                  divisions: 15,
-                  value: eraseRadius.toDouble().clamp(6, 36),
-                  label: '$eraseRadius',
-                  onChanged: busy ? null : (v) => onRadius(v.round()),
-                ),
-              ),
-            TextButton(
-              onPressed: busy || !canUndo ? null : onUndo,
-              child: const Text('撤回'),
-            ),
-            TextButton(onPressed: busy ? null : onCancel, child: const Text('完成精修')),
-          ],
-        ),
-        Text(
-          filling
-              ? (fillSampling
-                  ? '先涂一块带花纹的布取样，再点「涂抹」画要补的位置。笔触盖住的像素都会改掉。滚轮放大，中键或空格拖动'
-                  : '在要补的位置涂抹，按刚才取的纹理填上。滚轮放大，中键或空格拖动')
-              : erasing
-                  ? (allowFill
+          ),
+          Text(
+            filling
+                ? (fillSampling
+                      ? '先涂一块带花纹的布取样，再点「涂抹」画要补的位置。笔触盖住的像素都会改掉。滚轮放大，中键或空格拖动'
+                      : '在要补的位置涂抹，按刚才取的纹理填上。滚轮放大，中键或空格拖动')
+                : erasing
+                ? (allowFill
                       ? '拖动擦除杂色；默认跳过衣服色，可关掉保护后硬擦。滚轮放大，中键或空格拖动'
                       : '拖动擦掉吊牌外的杂物。滚轮放大，中键或空格拖动')
-                  : hasClickOutline
-                      ? (allowFill
-                          ? '左键点衣服，右键点衣架；点好轮廓后再擦除或填补。滚轮放大，中键或空格拖动'
-                          : '左键点吊牌，右键点背景；点好后再识别文字。滚轮放大，中键或空格拖动')
-                      : (allowFill
-                          ? '左键点衣服，右键点衣架，先选出大体轮廓。滚轮放大，中键或空格拖动'
-                          : '左键点吊牌，右键点背景，先抠掉不是吊牌的部分。滚轮放大，中键或空格拖动'),
-          style: const TextStyle(color: AppColors.textMuted),
-        ),
-      ],
+                : hasClickOutline
+                ? (allowFill
+                      ? '左键点衣服，右键点衣架；点好轮廓后再擦除或填补。滚轮放大，中键或空格拖动'
+                      : '左键点吊牌，右键点背景；点好后再识别文字。滚轮放大，中键或空格拖动')
+                : (allowFill
+                      ? '左键点衣服，右键点衣架，先选出大体轮廓。滚轮放大，中键或空格拖动'
+                      : '左键点吊牌，右键点背景，先抠掉不是吊牌的部分。滚轮放大，中键或空格拖动'),
+            style: const TextStyle(color: AppColors.textMuted),
+          ),
+        ],
       ),
     );
   }
@@ -817,7 +850,9 @@ class _ThumbStrip extends StatelessWidget {
                 onPressed: null,
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(72, 72),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Icon(Icons.add, color: AppColors.primary),
               ),
@@ -852,7 +887,11 @@ class _ThumbStrip extends StatelessWidget {
                       alignment: Alignment.bottomCenter,
                       child: ColoredBox(
                         color: Color(0xAAFFFFFF),
-                        child: Text('吊牌', textAlign: TextAlign.center, style: TextStyle(fontSize: 10)),
+                        child: Text(
+                          '吊牌',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 10),
+                        ),
                       ),
                     ),
                   if (photo.busy)
@@ -893,7 +932,10 @@ class HangtagOcrBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('吊牌识别原文', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        const Text(
+          '吊牌识别原文',
+          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+        ),
         const SizedBox(height: 8),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -908,7 +950,10 @@ class HangtagOcrBlock extends StatelessWidget {
                         itemCount: imagePaths.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 8),
                         itemBuilder: (context, i) {
-                          return SizedBox(height: 120, child: _thumb(imagePaths[i]));
+                          return SizedBox(
+                            height: 120,
+                            child: _thumb(imagePaths[i]),
+                          );
                         },
                       ),
               ),

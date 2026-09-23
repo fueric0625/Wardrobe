@@ -85,7 +85,9 @@ int applyFillPatch(
   if (w <= 0 || h <= 0 || stroke.paint.isEmpty) return 0;
   final sample = stroke.sample;
   final area = sample.bounds(w, h);
-  final labs = [for (final swatch in palette) rgbToLab(swatch.r, swatch.g, swatch.b)];
+  final labs = [
+    for (final swatch in palette) rgbToLab(swatch.r, swatch.g, swatch.b),
+  ];
 
   var meanR = 0.0;
   var meanG = 0.0;

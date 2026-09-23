@@ -1,8 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:image/image.dart' as img;
+import 'package:wardrobe/core/serialization/tag_ocr_codec.dart';
+import 'package:wardrobe/core/vision/model/onnx_session.dart';
 import 'package:wardrobe/core/vision/onnx/onnx_runtime.dart';
 import 'package:wardrobe/core/vision/cutout/image_ops.dart';
 import 'package:wardrobe/core/vision/onnx/model_assets.dart';
@@ -22,7 +23,8 @@ class TagOcrResult {
   final String? sizeLabel;
   final Map<String, String> measurements;
 
-  String get text => lines.map((l) => l.trim()).where((l) => l.isNotEmpty).join('\n');
+  String get text =>
+      lines.map((l) => l.trim()).where((l) => l.isNotEmpty).join('\n');
 
   bool get isEmpty =>
       text.isEmpty &&
@@ -32,12 +34,12 @@ class TagOcrResult {
       measurements.isEmpty;
 
   Map<String, Object?> toJson() => {
-        'lines': lines,
-        if (brand != null && brand!.isNotEmpty) 'brand': brand,
-        if (fabric != null && fabric!.isNotEmpty) 'fabric': fabric,
-        if (sizeLabel != null && sizeLabel!.isNotEmpty) 'sizeLabel': sizeLabel,
-        if (measurements.isNotEmpty) 'measurements': measurements,
-      };
+    'lines': lines,
+    if (brand != null && brand!.isNotEmpty) 'brand': brand,
+    if (fabric != null && fabric!.isNotEmpty) 'fabric': fabric,
+    if (sizeLabel != null && sizeLabel!.isNotEmpty) 'sizeLabel': sizeLabel,
+    if (measurements.isNotEmpty) 'measurements': measurements,
+  };
 
   factory TagOcrResult.fromJson(Map<String, dynamic> json) {
     final rawLines = json['lines'];
@@ -60,33 +62,37 @@ class TagOcrResult {
     );
   }
 
-  factory TagOcrResult.decode(String raw) {
-    if (raw.trim().isEmpty) return const TagOcrResult();
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) {
-        return TagOcrResult.fromJson(decoded);
-      }
-      if (decoded is Map) {
-        return TagOcrResult.fromJson(decoded.cast<String, dynamic>());
-      }
-    } catch (_) {}
-    return TagOcrResult(lines: raw.split('\n'));
-  }
+  factory TagOcrResult.decode(String raw) => decodeTagOcr(raw);
 
-  String encode() => jsonEncode(toJson());
+  String encode() => encodeTagOcr(this);
 }
 
 final _labeled = RegExp(r'(品牌|牌名|BRAND)\s*[:：]\s*(.+)');
-final _fabricLabeled = RegExp(r'(成分|面料|材质|纖維|纤维|FABRIC|MATERIAL)\s*[:：]\s*(.+)');
+final _fabricLabeled = RegExp(
+  r'(成分|面料|材质|纖維|纤维|FABRIC|MATERIAL)\s*[:：]\s*(.+)',
+);
 final _sizeLabeled = RegExp(r'(尺码|號型|号型|SIZE|Size)\s*[:：]?\s*([A-Za-z0-9/]+)');
-final _letterSize = RegExp(r'\b(XXXL|XXL|XL|XXS|XS|S|M|L|均码)\b', caseSensitive: false);
+final _letterSize = RegExp(
+  r'\b(XXXL|XXL|XL|XXS|XS|S|M|L|均码)\b',
+  caseSensitive: false,
+);
 final _codeSize = RegExp(r'\b(\d{2,3}\s*/\s*\d{2,3}[A-Fa-f]?)\b');
-final _measure = RegExp(r'(衣长|裤长|裙长|胸围|腰围|臀围|肩宽|下摆围|大腿围|裤脚围|鞋码|尺寸)\s*[:：]?\s*(\d+(?:\.\d+)?)');
+final _measure = RegExp(
+  r'(衣长|裤长|裙长|胸围|腰围|臀围|肩宽|下摆围|大腿围|裤脚围|鞋码|尺寸)\s*[:：]?\s*(\d+(?:\.\d+)?)',
+);
 final _fiber = RegExp(
   r'((?:棉|聚酯纤维|聚酯纖維|涤纶|滌綸|氨纶|氨綸|羊毛|尼龙|尼龍|腈纶|腈綸|粘胶|黏膠|莫代尔|莫代爾|桑蚕丝|桑蠶絲|亚麻|亞麻|锦纶|錦綸)[^，,;；]{0,12})',
 );
-final _skipBrand = {'SIZE', 'MADE', 'IN', 'THE', 'COTTON', 'POLYESTER', 'CARE', 'WASH'};
+final _skipBrand = {
+  'SIZE',
+  'MADE',
+  'IN',
+  'THE',
+  'COTTON',
+  'POLYESTER',
+  'CARE',
+  'WASH',
+};
 
 /// Pull brand / fabric / size out of OCR lines. No model.
 TagOcrResult parseTagText(String raw) {
@@ -118,7 +124,8 @@ TagOcrResult parseTagText(String raw) {
   }
 
   fabric ??= _joinFibers(lines);
-  sizeLabel ??= _firstMatch(lines, _codeSize) ?? _firstMatch(lines, _letterSize);
+  sizeLabel ??=
+      _firstMatch(lines, _codeSize) ?? _firstMatch(lines, _letterSize);
   brand ??= _guessBrand(lines);
 
   return TagOcrResult(
@@ -234,6 +241,8 @@ class TagOcr {
   static const recAsset = 'assets/models/ppocr_v4_rec.onnx';
   static const keysAsset = 'assets/models/ppocr_keys_v1.txt';
 
+  final _det = OnnxSession('ocr_det');
+  final _rec = OnnxSession('ocr_rec');
   bool _loaded = false;
   List<String> _keys = const [];
   String _detIn = 'x';
@@ -265,10 +274,10 @@ class TagOcr {
       for (final line in await keysFile.readAsLines())
         if (line.isNotEmpty) line,
     ];
-    OnnxRuntime.loadSession('ocr_det', det.path);
-    OnnxRuntime.loadSession('ocr_rec', rec.path);
-    final detIo = OnnxRuntime.sessionIo('ocr_det');
-    final recIo = OnnxRuntime.sessionIo('ocr_rec');
+    _det.load(det.path);
+    _rec.load(rec.path);
+    final detIo = _det.io;
+    final recIo = _rec.io;
     if (detIo.inputs.isNotEmpty) _detIn = detIo.inputs.first;
     if (detIo.outputs.isNotEmpty) _detOut = detIo.outputs.first;
     if (recIo.inputs.isNotEmpty) _recIn = recIo.inputs.first;
@@ -278,8 +287,8 @@ class TagOcr {
 
   void dispose() {
     if (!_loaded) return;
-    OnnxRuntime.closeSession('ocr_det');
-    OnnxRuntime.closeSession('ocr_rec');
+    _det.close();
+    _rec.close();
     _loaded = false;
   }
 
@@ -335,9 +344,10 @@ class TagOcr {
       std: const [0.5, 0.5, 0.5],
       bgr: true,
     );
-    final out = OnnxRuntime.runSession(
-      name: 'ocr_det',
-      inputs: [OnnxTensor(_detIn, [1, 3, dh, dw], values)],
+    final out = _det.run(
+      inputs: [
+        OnnxTensor(_detIn, [1, 3, dh, dw], values),
+      ],
       outputNames: [_detOut],
       outputCounts: [dw * dh * 2],
     );
@@ -385,9 +395,10 @@ class TagOcr {
     );
     final classes = _keys.length + 2;
     final maxT = math.max(160, (width ~/ 8) + 16);
-    final out = OnnxRuntime.runSession(
-      name: 'ocr_rec',
-      inputs: [OnnxTensor(_recIn, [1, 3, recH, width], values)],
+    final out = _rec.run(
+      inputs: [
+        OnnxTensor(_recIn, [1, 3, recH, width], values),
+      ],
       outputNames: [_recOut],
       outputCounts: [maxT * math.max(classes, 8)],
     );
@@ -398,7 +409,11 @@ class TagOcr {
 
 img.Image _opaqueRgb(img.Image source) {
   if (source.numChannels == 3) return source;
-  final out = img.Image(width: source.width, height: source.height, numChannels: 3);
+  final out = img.Image(
+    width: source.width,
+    height: source.height,
+    numChannels: 3,
+  );
   img.fill(out, color: img.ColorRgb8(255, 255, 255));
   img.compositeImage(out, source);
   return out;
@@ -443,7 +458,13 @@ img.Image _crop(img.Image rgb, PixelRect box) {
   final y = box.y.clamp(0, rgb.height - 1);
   final w = math.min(box.width, rgb.width - x);
   final h = math.min(box.height, rgb.height - y);
-  return img.copyCrop(rgb, x: x, y: y, width: math.max(1, w), height: math.max(1, h));
+  return img.copyCrop(
+    rgb,
+    x: x,
+    y: y,
+    width: math.max(1, w),
+    height: math.max(1, h),
+  );
 }
 
 List<PixelRect> _boxesFromMap(

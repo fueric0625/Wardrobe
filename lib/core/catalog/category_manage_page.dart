@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:wardrobe/core/catalog/providers.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
-import 'package:wardrobe/core/db/app_database.dart';
-import 'package:wardrobe/core/theme.dart';
+import 'package:wardrobe/core/database/app_database.dart';
+import 'package:wardrobe/core/design_system/theme.dart';
 
 class CategoryManagePage extends ConsumerWidget {
   const CategoryManagePage({super.key, required this.kind});
@@ -40,7 +40,10 @@ class CategoryManagePage extends ConsumerWidget {
                       child: Text(
                         '分类管理',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     FilledButton.icon(
@@ -60,13 +63,15 @@ class CategoryManagePage extends ConsumerWidget {
                     final category = rows[index];
                     final depth = categoryDepth(categories, category);
                     final siblings = childrenOf(categories, category.parentId);
-                    final siblingIndex =
-                        siblings.indexWhere((c) => c.id == category.id);
+                    final siblingIndex = siblings.indexWhere(
+                      (c) => c.id == category.id,
+                    );
                     return _CategoryRow(
                       category: category,
                       depth: depth,
                       canMoveUp: siblingIndex > 0,
-                      canMoveDown: siblingIndex >= 0 &&
+                      canMoveDown:
+                          siblingIndex >= 0 &&
                           siblingIndex < siblings.length - 1,
                       canAddChild: canAddChild(categories, category),
                       onRename: () => _rename(context, ref, kind, category),
@@ -152,7 +157,10 @@ class _CategoryRow extends StatelessWidget {
           if (!category.isSystem)
             TextButton(
               onPressed: onDelete,
-              child: const Text('删除', style: TextStyle(color: Colors.redAccent)),
+              child: const Text(
+                '删除',
+                style: TextStyle(color: Colors.redAccent),
+              ),
             ),
         ],
       ),
@@ -172,11 +180,9 @@ Future<void> _addRoot(
   if (result == null) return;
   if (!context.mounted) return;
   await _run(context, () {
-    return ref.read(categoryRepositoryProvider).add(
-          kind: kind,
-          label: result.label,
-          sizeFields: result.fields,
-        );
+    return ref
+        .read(categoryRepositoryProvider)
+        .add(kind: kind, label: result.label, sizeFields: result.fields);
   });
 }
 
@@ -190,11 +196,9 @@ Future<void> _addChild(
   if (label == null) return;
   if (!context.mounted) return;
   await _run(context, () {
-    return ref.read(categoryRepositoryProvider).add(
-          kind: kind,
-          parentId: parent.id,
-          label: label,
-        );
+    return ref
+        .read(categoryRepositoryProvider)
+        .add(kind: kind, parentId: parent.id, label: label);
   });
 }
 
@@ -212,7 +216,9 @@ Future<void> _rename(
   if (label == null) return;
   if (!context.mounted) return;
   await _run(context, () {
-    return ref.read(categoryRepositoryProvider).rename(kind, category.id, label);
+    return ref
+        .read(categoryRepositoryProvider)
+        .rename(kind, category.id, label);
   });
 }
 
@@ -221,9 +227,8 @@ Future<void> _run(BuildContext context, Future<void> Function() action) async {
     await action();
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_errorText(e))),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(_errorText(e))));
   }
 }
 
@@ -241,19 +246,28 @@ Future<void> _delete(
   Category category,
 ) async {
   final fallbackId = itemsFallbackAfterDelete(categories, category);
-  final fallbackLabel =
-      categoryById(categories, fallbackId)?.label ?? '无分类';
+  final fallbackLabel = categoryById(categories, fallbackId)?.label ?? '无分类';
   final ok = await showDialog<bool>(
     context: context,
     builder: (context) => _AppDialog(
       title: '删除「${category.label}」？',
       body: Text(
         '子分类会一起删除，里面的${_itemNoun(kind)}会回到「$fallbackLabel」。',
-        style: const TextStyle(fontSize: 14, height: 1.5, color: AppColors.text),
+        style: const TextStyle(
+          fontSize: 14,
+          height: 1.5,
+          color: AppColors.text,
+        ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-        FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('删除')),
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('删除'),
+        ),
       ],
     ),
   );
@@ -262,9 +276,8 @@ Future<void> _delete(
     await ref.read(categoryRepositoryProvider).deleteSubtree(kind, category.id);
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_errorText(e))),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(_errorText(e))));
   }
 }
 
@@ -285,7 +298,10 @@ Future<String?> _promptName(
         onSubmitted: (value) => Navigator.pop(context, value.trim()),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
         FilledButton(
           onPressed: () => Navigator.pop(context, controller.text.trim()),
           child: const Text('确定'),
@@ -341,7 +357,10 @@ Future<_NewRootResult?> _promptNewRoot(
                     borderRadius: BorderRadius.circular(14),
                     decoration: const InputDecoration(
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                     ),
                     items: [
                       for (final template in clothingSizeTemplates)
@@ -349,7 +368,10 @@ Future<_NewRootResult?> _promptNewRoot(
                           value: template.id,
                           child: Text(
                             template.label,
-                            style: const TextStyle(fontSize: 14, color: AppColors.text),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.text,
+                            ),
                           ),
                         ),
                     ],
@@ -361,17 +383,23 @@ Future<_NewRootResult?> _promptNewRoot(
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
               FilledButton(
                 onPressed: () {
                   final label = controller.text.trim();
                   if (label.isEmpty) return;
                   final fields = showTemplate
                       ? clothingSizeTemplates
-                          .firstWhere((t) => t.id == templateId)
-                          .fields
+                            .firstWhere((t) => t.id == templateId)
+                            .fields
                       : const <String>[];
-                  Navigator.pop(context, _NewRootResult(label: label, fields: fields));
+                  Navigator.pop(
+                    context,
+                    _NewRootResult(label: label, fields: fields),
+                  );
                 },
                 child: const Text('确定'),
               ),
@@ -421,10 +449,7 @@ class _AppDialog extends StatelessWidget {
               const SizedBox(height: 18),
               body,
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: actions,
-              ),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
             ],
           ),
         ),
@@ -457,7 +482,10 @@ class _DialogField extends StatelessWidget {
         hintText: hint,
         hintStyle: const TextStyle(fontSize: 14, color: AppColors.textMuted),
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
       ),
     );
   }

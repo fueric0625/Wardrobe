@@ -1,8 +1,9 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
+import 'package:wardrobe/core/catalog/domain/category_policy.dart';
 import 'package:wardrobe/core/catalog/category_tree.dart';
-import 'package:wardrobe/core/db/app_database.dart';
+import 'package:wardrobe/core/database/app_database.dart';
 
 abstract class CategoryRepository {
   Stream<List<Category>> watch(CategoryKind kind);
@@ -28,14 +29,16 @@ class LocalCategoryRepository implements CategoryRepository {
 
   @override
   Stream<List<Category>> watch(CategoryKind kind) {
-    return (_db.select(_db.categories)..where((t) => t.kind.equals(kind.name)))
-        .watch();
+    return (_db.select(
+      _db.categories,
+    )..where((t) => t.kind.equals(kind.name))).watch();
   }
 
   @override
   Future<List<Category>> get(CategoryKind kind) {
-    return (_db.select(_db.categories)..where((t) => t.kind.equals(kind.name)))
-        .get();
+    return (_db.select(
+      _db.categories,
+    )..where((t) => t.kind.equals(kind.name))).get();
   }
 
   @override
@@ -87,7 +90,9 @@ class LocalCategoryRepository implements CategoryRepository {
     }
     final nextOrder = siblings.isEmpty ? 0 : siblings.last.sortOrder + 1;
     final id = const Uuid().v4();
-    await _db.into(_db.categories).insert(
+    await _db
+        .into(_db.categories)
+        .insert(
           CategoriesCompanion.insert(
             id: id,
             kind: kind.name,
@@ -133,7 +138,11 @@ class LocalCategoryRepository implements CategoryRepository {
     final node = categoryById(all, id);
     if (node == null) return;
     final ids = subtreeIds(all, id);
-    if (ids.any((cid) => categoryById(all, cid)?.isSystem == true)) {
+    if (ids.any(
+      (cid) => !categoryCanBeDeleted(
+        isSystem: categoryById(all, cid)?.isSystem == true,
+      ),
+    )) {
       throw StateError('系统分类不能删除');
     }
     final fallbackId = itemsFallbackAfterDelete(all, node);
@@ -142,24 +151,18 @@ class LocalCategoryRepository implements CategoryRepository {
       if (kind == CategoryKind.clothing) {
         await (_db.update(_db.clothingItems)
               ..where((t) => t.categoryId.isIn(idList)))
-            .write(
-              ClothingItemsCompanion(categoryId: Value(fallbackId)),
-            );
+            .write(ClothingItemsCompanion(categoryId: Value(fallbackId)));
       } else {
-        await (_db.update(_db.outfits)
-              ..where((t) => t.categoryId.isIn(idList)))
-            .write(
-              OutfitsCompanion(categoryId: Value(fallbackId)),
-            );
+        await (_db.update(_db.outfits)..where((t) => t.categoryId.isIn(idList)))
+            .write(OutfitsCompanion(categoryId: Value(fallbackId)));
       }
-      await (_db.delete(_db.categoryCovers)
-            ..where(
-              (t) => t.kind.equals(kind.name) & t.categoryId.isIn(idList),
-            ))
+      await (_db.delete(
+            _db.categoryCovers,
+          )..where((t) => t.kind.equals(kind.name) & t.categoryId.isIn(idList)))
           .go();
-      await (_db.delete(_db.categories)
-            ..where((t) => _ofKind(kind) & t.id.isIn(idList)))
-          .go();
+      await (_db.delete(
+        _db.categories,
+      )..where((t) => _ofKind(kind) & t.id.isIn(idList))).go();
     });
   }
 }
