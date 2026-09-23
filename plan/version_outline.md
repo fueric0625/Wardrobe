@@ -1,6 +1,6 @@
 # 衣橱版本记录
 
-产品现为 **v1.9**。当前能做什么、代码怎么放，见 [docs/current-state.md](../docs/current-state.md)。不能破坏的行为见 [docs/invariants.md](../docs/invariants.md)。
+产品现为 **v1.10**。当前能做什么、代码怎么放，见 [docs/current-state.md](../docs/current-state.md)。不能破坏的行为见 [docs/invariants.md](../docs/invariants.md)。
 
 下面按时间记下每一版做了什么，以及当时明确不做的事。
 
@@ -94,3 +94,17 @@ Flutter Windows 桌面端。本地 SQLite 和图片，仓储层预留同步接�
 - 已发出的 schema 1–9 仍是手写升级，不改写成生成步骤。快照从版本 9 起
 
 当时明确不做：真实天气、联网、把 1–9 重写成快照步骤、用吊牌照拼进穿搭、云同步。
+
+## v1.10 验收收尾（2026-09-23）
+
+工程计划四个阶段落地后，按 Codex 验收报告补了下面几处。能做什么与 v1.9 相同。
+
+- 删除穿搭时，先等数据库删除成功，再回滚未提交的新图，最后才结束这次编辑。数据库删除失败时，新选的图片留到编辑器关闭再清掉。
+- 拼图的 x/y/w/h 按画布上的实际位置保存和读回，超出 0..1 的位置也会原样恢复。
+- 去掉全身照时，只有拼图布局是非空字符串，封面才切到拼图。还没摆过，以及用户删掉拼图后的空字符串，都保持原封面。
+- 多件衣物共用同一个图片文件时，要等没有任何衣物再引用这个文件，才会删除。
+- 是否在编辑已有穿搭，由控制器根据这套穿搭的编号判断。
+
+`dart format lib test` 已执行。`git diff --check` 通过。`flutter analyze` 无问题，`flutter test` 89 项通过，`flutter build windows --debug` 已生成 `build\windows\x64\runner\Debug\wardrobe.exe`。
+
+当时明确不做：继续扩大重构、改 schema、重开四个阶段。

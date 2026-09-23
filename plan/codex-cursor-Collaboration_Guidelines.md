@@ -13,7 +13,7 @@
 ### 1.1 一个主计划，两个协作角色
 
 - `plan/plan_v1.10.md`：已落地的工程计划。四个阶段不再重开。
-- [version_outline.md](version_outline.md)：产品从 v1.1 到 v1.9 做了什么。
+- [version_outline.md](version_outline.md)：产品从 v1.1 到 v1.10 做了什么。
 - 本文：记录怎么做、谁负责什么、如何审查、如何提交和如何回退。
 - Cursor：默认负责连续实现和本地迭代。
 - Codex：默认负责任务拆分、架构审查、风险识别、测试设计和必要的定向修复。
@@ -682,7 +682,7 @@ docs: update refactor workflow
 建议长期区分三种版本：
 
 ```text
-产品版本：v1.9、v1.10
+产品版本：v1.10、v1.11
 应用构建版本：1.9.0+1
 数据库版本：schema 9、schema 10
 ```
@@ -690,12 +690,12 @@ docs: update refactor workflow
 `plan/` 里长期保留这三份：
 
 ```text
-plan/version_outline.md                      产品版本记录（v1.1 至 v1.9）
+plan/version_outline.md                      产品版本记录（v1.1 至 v1.10）
 plan/plan_v1.10.md                   已落地的工程计划
 plan/codex-cursor-Collaboration_Guidelines.md      工具协作和代码审查规范
 ```
 
-产品下一档写成 v1.10，记进 `plan/version_outline.md`。不要把工程改动叫成新的产品版本。
+产品下一档写成 v1.11，记进 `plan/version_outline.md`。不要把工程改动叫成新的产品版本。
 
 ---
 
