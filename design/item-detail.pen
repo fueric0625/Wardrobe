@@ -1,0 +1,3651 @@
+{
+  "version": "2.18",
+  "children": [
+    {
+      "type": "frame",
+      "id": "gc0iQ",
+      "x": 80,
+      "y": 80,
+      "name": "只读详情",
+      "clip": true,
+      "width": 1180,
+      "fill": "$bg",
+      "layout": "vertical",
+      "gap": 8,
+      "padding": [
+        18,
+        28,
+        32,
+        28
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "bLV0u",
+          "name": "顶栏",
+          "width": "fill_container",
+          "gap": 12,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "yLGkN",
+              "name": "返回",
+              "gap": 6,
+              "padding": [
+                8,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "jl2rg",
+                  "name": "返回图标",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "chevron-left",
+                  "library": "lucide",
+                  "fill": "$primary"
+                },
+                {
+                  "type": "text",
+                  "id": "XULJ4",
+                  "name": "返回文字",
+                  "fill": "$primary",
+                  "content": "返回",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "MFA84",
+              "name": "标题",
+              "fill": "$text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "直身假两件短袖T恤",
+              "textAlign": "center",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "yVewy",
+              "name": "移动",
+              "padding": [
+                8,
+                12
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "AMSVg",
+                  "name": "移动文字",
+                  "fill": "$primary",
+                  "content": "移动",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "P4NwaR",
+              "name": "修改",
+              "fill": "$primary",
+              "cornerRadius": 10,
+              "padding": [
+                8,
+                16
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "XV2SW",
+                  "name": "修改文字",
+                  "fill": "#FFFFFF",
+                  "content": "修改",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "aFXzH",
+          "name": "正文",
+          "width": "fill_container",
+          "gap": 28,
+          "children": [
+            {
+              "type": "frame",
+              "id": "VX8tX",
+              "name": "照片",
+              "width": 320,
+              "height": 420,
+              "fill": "#E6E8F0",
+              "cornerRadius": 16,
+              "layout": "vertical",
+              "gap": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "tuKLc",
+                  "name": "照片图标",
+                  "width": 28,
+                  "height": 28,
+                  "icon": "image",
+                  "library": "lucide",
+                  "fill": "$muted"
+                },
+                {
+                  "type": "text",
+                  "id": "YSOVR",
+                  "name": "照片说明",
+                  "fill": "$muted",
+                  "content": "衣物照片",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "cXPB6",
+              "name": "信息",
+              "width": "fill_container",
+              "fill": "$surface",
+              "cornerRadius": 16,
+              "stroke": "$line",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 18,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "iKGJP",
+                  "name": "品名",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "NwNyP",
+                      "name": "品名标签",
+                      "fill": "$muted",
+                      "content": "品名",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Y75GGs",
+                      "name": "品名值",
+                      "fill": "$text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "直身假两件短袖T恤",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "LKWa3",
+                  "name": "分类",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bK7Ip",
+                      "name": "分类标签",
+                      "fill": "$muted",
+                      "content": "分类",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "s7Rbnw",
+                      "name": "分类值",
+                      "fill": "$text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "上装",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hu42d",
+                      "name": "分类说明",
+                      "fill": "$muted",
+                      "content": "随所在目录自动显示",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "lPTGc",
+                  "name": "尺码与款式",
+                  "width": "fill_container",
+                  "gap": 28,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "iPTYw",
+                      "name": "尺码",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ubZG2",
+                          "name": "尺码标签",
+                          "fill": "$muted",
+                          "content": "尺码",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "chm4b",
+                          "name": "尺码值",
+                          "fill": "$text",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "175/92A",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "LqcKr",
+                      "name": "款式",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "VuhaP",
+                          "name": "款式标签",
+                          "fill": "$muted",
+                          "content": "款式",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "sj0gQ",
+                          "name": "已选款式",
+                          "width": "fill_container",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "GXahq",
+                              "name": "款式 直身",
+                              "fill": "$soft",
+                              "cornerRadius": 999,
+                              "padding": [
+                                4,
+                                8
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "C2z3OR",
+                                  "name": "直身文字",
+                                  "fill": "$text",
+                                  "content": "直身",
+                                  "fontFamily": "Noto Sans SC",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Oph30",
+                              "name": "款式 假两件",
+                              "fill": "$soft",
+                              "cornerRadius": 999,
+                              "padding": [
+                                4,
+                                8
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "bf8sF",
+                                  "name": "假两件文字",
+                                  "fill": "$text",
+                                  "content": "假两件",
+                                  "fontFamily": "Noto Sans SC",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "GFu7k",
+                              "name": "款式 短袖",
+                              "fill": "$soft",
+                              "cornerRadius": 999,
+                              "padding": [
+                                4,
+                                8
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ftoey",
+                                  "name": "短袖文字",
+                                  "fill": "$text",
+                                  "content": "短袖",
+                                  "fontFamily": "Noto Sans SC",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "sN293",
+                  "name": "颜色",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "S4IQ69",
+                      "name": "颜色标签",
+                      "fill": "$muted",
+                      "content": "颜色",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Z71WYI",
+                      "name": "颜色值",
+                      "fill": "$text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "夹花深咖",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Vvfrh",
+                  "name": "面料与季节",
+                  "width": "fill_container",
+                  "gap": 28,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "k2VR0",
+                      "name": "面料",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "W8odvL",
+                          "name": "面料标签",
+                          "fill": "$muted",
+                          "content": "面料",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "KagER",
+                          "name": "面料值",
+                          "fill": "$text",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "100%棉（配料除外）",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uOjnE",
+                      "name": "季节",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Osafn",
+                          "name": "季节标签",
+                          "fill": "$muted",
+                          "content": "季节",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "PsFdU",
+                          "name": "季节值",
+                          "fill": "$text",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "秋",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "AYc6f",
+                  "name": "品牌",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "WqzFF",
+                      "name": "品牌标签",
+                      "fill": "$muted",
+                      "content": "品牌",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "uTUkB",
+                      "name": "品牌值",
+                      "fill": "$empty",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "未填写",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "niU37",
+                  "name": "洗涤维护",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "xXBqA",
+                      "name": "洗涤维护标签",
+                      "fill": "$muted",
+                      "content": "洗涤维护",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "iS78z",
+                      "name": "已选图标",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "VEsw3",
+                          "name": "40℃ 缓和",
+                          "fill": "$soft",
+                          "cornerRadius": 999,
+                          "gap": 6,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "wj4MN",
+                              "name": "40℃ 缓和图标",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "droplets",
+                              "library": "lucide",
+                              "fill": "$primary"
+                            },
+                            {
+                              "type": "text",
+                              "id": "JF7IP",
+                              "name": "40℃ 缓和文字",
+                              "fill": "$text",
+                              "content": "40℃ 缓和",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "KOcee",
+                          "name": "不可漂白",
+                          "fill": "$soft",
+                          "cornerRadius": 999,
+                          "gap": 6,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "IVz3K",
+                              "name": "不可漂白图标",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "ban",
+                              "library": "lucide",
+                              "fill": "$primary"
+                            },
+                            {
+                              "type": "text",
+                              "id": "kac4P",
+                              "name": "不可漂白文字",
+                              "fill": "$text",
+                              "content": "不可漂白",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "R16cCc",
+                          "name": "悬挂阴干",
+                          "fill": "$soft",
+                          "cornerRadius": 999,
+                          "gap": 6,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "qdzZl",
+                              "name": "悬挂阴干图标",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "sun",
+                              "library": "lucide",
+                              "fill": "$primary"
+                            },
+                            {
+                              "type": "text",
+                              "id": "eKwmq",
+                              "name": "悬挂阴干文字",
+                              "fill": "$text",
+                              "content": "悬挂阴干",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "N2wkfw",
+                          "name": "中温熨烫",
+                          "fill": "$soft",
+                          "cornerRadius": 999,
+                          "gap": 6,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "VNJgx",
+                              "name": "中温熨烫图标",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "shirt",
+                              "library": "lucide",
+                              "fill": "$primary"
+                            },
+                            {
+                              "type": "text",
+                              "id": "kLvuG",
+                              "name": "中温熨烫文字",
+                              "fill": "$text",
+                              "content": "中温熨烫",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "zoVrH",
+                          "name": "不可干洗",
+                          "fill": "$soft",
+                          "cornerRadius": 999,
+                          "gap": 6,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "fjPkv",
+                              "name": "不可干洗图标",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "circle-off",
+                              "library": "lucide",
+                              "fill": "$primary"
+                            },
+                            {
+                              "type": "text",
+                              "id": "j2WvsX",
+                              "name": "不可干洗文字",
+                              "fill": "$text",
+                              "content": "不可干洗",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "fKCWH",
+                  "name": "价格与购入时间",
+                  "width": "fill_container",
+                  "gap": 28,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "O1ACFZ",
+                      "name": "价格",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "VBhQM",
+                          "name": "价格标签",
+                          "fill": "$muted",
+                          "content": "价格",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "fuNa7",
+                          "name": "价格值",
+                          "fill": "$text",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "100 元",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "K6bQXT",
+                      "name": "购入时间",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ocOJX",
+                          "name": "购入时间标签",
+                          "fill": "$muted",
+                          "content": "购入时间",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ZzAQ1",
+                          "name": "购入时间值",
+                          "fill": "$text",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "2026-09-20",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Zo1wj",
+                  "name": "尺码测量",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "eoWW7",
+                      "name": "尺码测量标题",
+                      "fill": "$text",
+                      "content": "尺码测量",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HuXBc",
+                      "name": "测量项",
+                      "width": "fill_container",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "X8PgY",
+                          "name": "衣长",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "gNcDk",
+                              "name": "衣长标签",
+                              "fill": "$muted",
+                              "content": "衣长",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "GffXT",
+                              "name": "衣长值",
+                              "fill": "$empty",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "未填写",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "q9u31",
+                          "name": "胸围",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "JNdf2",
+                              "name": "胸围标签",
+                              "fill": "$muted",
+                              "content": "胸围",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "eQEZn",
+                              "name": "胸围值",
+                              "fill": "$empty",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "未填写",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "X9X9iq",
+                          "name": "肩宽",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "cgzGL",
+                              "name": "肩宽标签",
+                              "fill": "$muted",
+                              "content": "肩宽",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "jC6E9",
+                              "name": "肩宽值",
+                              "fill": "$empty",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "未填写",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ixt8t",
+                          "name": "下摆围",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "v75Aiy",
+                              "name": "下摆围标签",
+                              "fill": "$muted",
+                              "content": "下摆围",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Mz4w2",
+                              "name": "下摆围值",
+                              "fill": "$empty",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "未填写",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "e3ZFPG",
+                  "name": "存放位置",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SuOLb",
+                      "name": "存放位置标签",
+                      "fill": "$muted",
+                      "content": "存放位置",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "rWnXM",
+                      "name": "存放位置值",
+                      "fill": "$empty",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "未填写",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "bZmAX",
+                  "name": "标签",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "TU12E",
+                      "name": "标签标签",
+                      "fill": "$muted",
+                      "content": "标签",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "osl7z",
+                      "name": "标签值",
+                      "fill": "$empty",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "未填写",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "o0wko5",
+                  "name": "备注",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ziGpS",
+                      "name": "备注标签",
+                      "fill": "$muted",
+                      "content": "备注",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "zTY2R",
+                      "name": "备注值",
+                      "fill": "$empty",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "未填写",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vjvYP",
+                  "name": "吊牌识别原文",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "x1tloz",
+                      "name": "吊牌标题",
+                      "fill": "$text",
+                      "content": "吊牌识别原文",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MI2sN",
+                      "name": "吊牌内容",
+                      "width": "fill_container",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "SvnAy",
+                          "name": "吊牌图",
+                          "width": 88,
+                          "height": 120,
+                          "fill": "#F3F1EA",
+                          "cornerRadius": 10,
+                          "stroke": "$line",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "AUeXB",
+                              "name": "吊牌图文字",
+                              "fill": "$muted",
+                              "content": "吊牌",
+                              "fontFamily": "Noto Sans SC",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "apocG",
+                          "name": "吊牌文字",
+                          "fill": "$text",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "品名：直身假两件短袖T恤\n号型：175/92A\n颜色：夹花深咖\n成分：100%棉（配料除外）\n组合：C1372-8-1-A (D)\n¥1596.00",
+                          "lineHeight": 1.45,
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "QPPo9",
+      "x": 1324,
+      "y": 80,
+      "name": "洗涤图标选择",
+      "clip": true,
+      "width": 1080,
+      "fill": "$bg",
+      "layout": "vertical",
+      "gap": 20,
+      "padding": 28,
+      "children": [
+        {
+          "type": "text",
+          "id": "ESgdI",
+          "name": "选择标题",
+          "fill": "$text",
+          "content": "洗涤维护",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 18,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "pCpa0",
+          "name": "选择说明",
+          "fill": "$muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "点一下加入，再点取消。每一组通常只留一个。不从吊牌识别填入。",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "JwO3c",
+          "name": "洗涤",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": 16,
+          "stroke": "$line",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "T3tRU",
+              "name": "洗涤标题行",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "OEoYO",
+                  "name": "洗涤组图标",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "droplets",
+                  "library": "lucide",
+                  "fill": "$primary"
+                },
+                {
+                  "type": "text",
+                  "id": "skxvq",
+                  "name": "洗涤组名",
+                  "fill": "$text",
+                  "content": "洗涤",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "scfxc",
+              "name": "洗涤第1行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "q0WHB",
+                  "name": "洗涤 95℃",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "POHqF",
+                      "name": "95℃图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "pWEIY",
+                      "name": "95℃文字",
+                      "fill": "$text",
+                      "content": "95℃",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "J0rd8",
+                  "name": "洗涤 70℃",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "UNrQo",
+                      "name": "70℃图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Qd9GI",
+                      "name": "70℃文字",
+                      "fill": "$text",
+                      "content": "70℃",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ixDej",
+                  "name": "洗涤 60℃",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "AVaYe",
+                      "name": "60℃图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "gZHJP",
+                      "name": "60℃文字",
+                      "fill": "$text",
+                      "content": "60℃",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "K5HiB",
+                  "name": "洗涤 60℃ 缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "fKocL",
+                      "name": "60℃ 缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "v3wqX",
+                      "name": "60℃ 缓和文字",
+                      "fill": "$text",
+                      "content": "60℃ 缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "oby7B",
+              "name": "洗涤第2行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "w096z",
+                  "name": "洗涤 50℃",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "xnHNl",
+                      "name": "50℃图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Z08qAz",
+                      "name": "50℃文字",
+                      "fill": "$text",
+                      "content": "50℃",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "n7TFYH",
+                  "name": "洗涤 50℃ 缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "ZLFcv",
+                      "name": "50℃ 缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "R9LSK",
+                      "name": "50℃ 缓和文字",
+                      "fill": "$text",
+                      "content": "50℃ 缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "v37GgQ",
+                  "name": "洗涤 40℃",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "IYsk9",
+                      "name": "40℃图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xh6Ad",
+                      "name": "40℃文字",
+                      "fill": "$text",
+                      "content": "40℃",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "QV6pS",
+                  "name": "洗涤 40℃ 缓和",
+                  "fill": "$soft",
+                  "cornerRadius": 999,
+                  "stroke": "$primary",
+                  "strokeWidth": 1.5,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "A0Yl3",
+                      "name": "40℃ 缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "zaziy",
+                      "name": "40℃ 缓和文字",
+                      "fill": "$text",
+                      "content": "40℃ 缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "enwlD",
+              "name": "洗涤第3行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "OVOdj",
+                  "name": "洗涤 40℃ 非常缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "XFFUb",
+                      "name": "40℃ 非常缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "P6w8FJ",
+                      "name": "40℃ 非常缓和文字",
+                      "fill": "$text",
+                      "content": "40℃ 非常缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gHHqV",
+                  "name": "洗涤 30℃",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "LjNOC",
+                      "name": "30℃图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hFwb9",
+                      "name": "30℃文字",
+                      "fill": "$text",
+                      "content": "30℃",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pXBQ2",
+                  "name": "洗涤 30℃ 缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "e5I8D",
+                      "name": "30℃ 缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "dCNeW",
+                      "name": "30℃ 缓和文字",
+                      "fill": "$text",
+                      "content": "30℃ 缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "GMEbS",
+                  "name": "洗涤 30℃ 非常缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "a1Kqj",
+                      "name": "30℃ 非常缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "sOjEp",
+                      "name": "30℃ 非常缓和文字",
+                      "fill": "$text",
+                      "content": "30℃ 非常缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "j6qcG",
+              "name": "洗涤第4行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "yJzot",
+                  "name": "洗涤 手洗",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "abknh",
+                      "name": "手洗图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "V1A7K",
+                      "name": "手洗文字",
+                      "fill": "$text",
+                      "content": "手洗",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "rEv56",
+                  "name": "洗涤 不可水洗",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Z9h23Y",
+                      "name": "不可水洗图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "droplets",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "QWAg3",
+                      "name": "不可水洗文字",
+                      "fill": "$text",
+                      "content": "不可水洗",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Q1nwy",
+          "name": "漂白",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": 16,
+          "stroke": "$line",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "qywAD",
+              "name": "漂白标题行",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "a3uxqR",
+                  "name": "漂白组图标",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "triangle-alert",
+                  "library": "lucide",
+                  "fill": "$primary"
+                },
+                {
+                  "type": "text",
+                  "id": "xD2E1",
+                  "name": "漂白组名",
+                  "fill": "$text",
+                  "content": "漂白",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "P90MzQ",
+              "name": "漂白第1行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "e8ONAJ",
+                  "name": "漂白 可漂白",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "M3GQA",
+                      "name": "可漂白图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "triangle-alert",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "B6vZP",
+                      "name": "可漂白文字",
+                      "fill": "$text",
+                      "content": "可漂白",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "fEu9T",
+                  "name": "漂白 仅非氯漂",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "rItgt",
+                      "name": "仅非氯漂图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "triangle-alert",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "neSUD",
+                      "name": "仅非氯漂文字",
+                      "fill": "$text",
+                      "content": "仅非氯漂",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "eRVU8",
+                  "name": "漂白 不可漂白",
+                  "fill": "$soft",
+                  "cornerRadius": 999,
+                  "stroke": "$primary",
+                  "strokeWidth": 1.5,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "JFPPz",
+                      "name": "不可漂白图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "triangle-alert",
+                      "library": "lucide",
+                      "fill": "$primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "e8udtc",
+                      "name": "不可漂白文字",
+                      "fill": "$text",
+                      "content": "不可漂白",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Q7hqF",
+          "name": "干燥",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": 16,
+          "stroke": "$line",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "Ak96g",
+              "name": "干燥标题行",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "klkcg",
+                  "name": "干燥组图标",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "sun",
+                  "library": "lucide",
+                  "fill": "$primary"
+                },
+                {
+                  "type": "text",
+                  "id": "XFCKQ",
+                  "name": "干燥组名",
+                  "fill": "$text",
+                  "content": "干燥",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "N3NGr",
+              "name": "干燥第1行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "y2Zv2",
+                  "name": "干燥 滚筒普通",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Pf0X6",
+                      "name": "滚筒普通图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "sun",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "clh8M",
+                      "name": "滚筒普通文字",
+                      "fill": "$text",
+                      "content": "滚筒普通",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ydy8o",
+                  "name": "干燥 滚筒缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "y5Kss",
+                      "name": "滚筒缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "sun",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "BWrA5",
+                      "name": "滚筒缓和文字",
+                      "fill": "$text",
+                      "content": "滚筒缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "S6lOMv",
+                  "name": "干燥 不可滚筒",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "ESlxp",
+                      "name": "不可滚筒图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "sun",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "NnZJ9",
+                      "name": "不可滚筒文字",
+                      "fill": "$text",
+                      "content": "不可滚筒",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "YKYom",
+                  "name": "干燥 悬挂晾干",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "wAsse",
+                      "name": "悬挂晾干图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "sun",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "iZLzS",
+                      "name": "悬挂晾干文字",
+                      "fill": "$text",
+                      "content": "悬挂晾干",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "OMyHC",
+              "name": "干燥第2行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "HS91R",
+                  "name": "干燥 滴干",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "mP92T",
+                      "name": "滴干图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "sun",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "r0YMR",
+                      "name": "滴干文字",
+                      "fill": "$text",
+                      "content": "滴干",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "stxW8",
+                  "name": "干燥 平摊",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "myTwY",
+                      "name": "平摊图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "sun",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "tmi5R",
+                      "name": "平摊文字",
+                      "fill": "$text",
+                      "content": "平摊",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "t27fp",
+                  "name": "干燥 悬挂阴干",
+                  "fill": "$soft",
+                  "cornerRadius": 999,
+                  "stroke": "$primary",
+                  "strokeWidth": 1.5,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "W5UBX",
+                      "name": "悬挂阴干图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "sun",
+                      "library": "lucide",
+                      "fill": "$primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "yHvB1",
+                      "name": "悬挂阴干文字",
+                      "fill": "$text",
+                      "content": "悬挂阴干",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "B8Ysn",
+                  "name": "干燥 滴干阴干",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "uFndR",
+                      "name": "滴干阴干图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "sun",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "PBV78",
+                      "name": "滴干阴干文字",
+                      "fill": "$text",
+                      "content": "滴干阴干",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "UfRum",
+              "name": "干燥第3行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "p80YMV",
+                  "name": "干燥 平摊阴干",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "ckOFM",
+                      "name": "平摊阴干图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "sun",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "kXnrK",
+                      "name": "平摊阴干文字",
+                      "fill": "$text",
+                      "content": "平摊阴干",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "a61uuU",
+          "name": "熨烫",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": 16,
+          "stroke": "$line",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "agSkv",
+              "name": "熨烫标题行",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "xvtQy",
+                  "name": "熨烫组图标",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "shirt",
+                  "library": "lucide",
+                  "fill": "$primary"
+                },
+                {
+                  "type": "text",
+                  "id": "n1c5Sy",
+                  "name": "熨烫组名",
+                  "fill": "$text",
+                  "content": "熨烫",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "RTc2u",
+              "name": "熨烫第1行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "grJBh",
+                  "name": "熨烫 低温",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "xC5Wu",
+                      "name": "低温图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "shirt",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "M5s8Q",
+                      "name": "低温文字",
+                      "fill": "$text",
+                      "content": "低温",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "I0TQp",
+                  "name": "熨烫 中温",
+                  "fill": "$soft",
+                  "cornerRadius": 999,
+                  "stroke": "$primary",
+                  "strokeWidth": 1.5,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "XQ18m",
+                      "name": "中温图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "shirt",
+                      "library": "lucide",
+                      "fill": "$primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "OoRRd",
+                      "name": "中温文字",
+                      "fill": "$text",
+                      "content": "中温",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "aJ6SY",
+                  "name": "熨烫 高温",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "LLtwG",
+                      "name": "高温图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "shirt",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fx5fo",
+                      "name": "高温文字",
+                      "fill": "$text",
+                      "content": "高温",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ynbgQ",
+                  "name": "熨烫 不可熨烫",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "rKyWB",
+                      "name": "不可熨烫图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "shirt",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "FtTRt",
+                      "name": "不可熨烫文字",
+                      "fill": "$text",
+                      "content": "不可熨烫",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "JTAIQ",
+          "name": "专业护理",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": 16,
+          "stroke": "$line",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "I89C0",
+              "name": "专业护理标题行",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "Ey4Ob",
+                  "name": "专业护理组图标",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "circle",
+                  "library": "lucide",
+                  "fill": "$primary"
+                },
+                {
+                  "type": "text",
+                  "id": "iMLIH",
+                  "name": "专业护理组名",
+                  "fill": "$text",
+                  "content": "专业护理",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "d7c2QL",
+              "name": "专业护理第1行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "RvJT3",
+                  "name": "专业护理 干洗",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "n8whX",
+                      "name": "干洗图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "zewom",
+                      "name": "干洗文字",
+                      "fill": "$text",
+                      "content": "干洗",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "xQM1p",
+                  "name": "专业护理 干洗缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "mnYsw",
+                      "name": "干洗缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "nUpfp",
+                      "name": "干洗缓和文字",
+                      "fill": "$text",
+                      "content": "干洗缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "l9nemm",
+                  "name": "专业护理 干洗非常缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "btPVt",
+                      "name": "干洗非常缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "x5MVfW",
+                      "name": "干洗非常缓和文字",
+                      "fill": "$text",
+                      "content": "干洗非常缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "j8eys",
+                  "name": "专业护理 不可干洗",
+                  "fill": "$soft",
+                  "cornerRadius": 999,
+                  "stroke": "$primary",
+                  "strokeWidth": 1.5,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "owqX7",
+                      "name": "不可干洗图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle",
+                      "library": "lucide",
+                      "fill": "$primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "A4wY4z",
+                      "name": "不可干洗文字",
+                      "fill": "$text",
+                      "content": "不可干洗",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Q6fs5",
+              "name": "专业护理第2行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "jPTwM",
+                  "name": "专业护理 石油溶剂",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "j8lJp4",
+                      "name": "石油溶剂图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "g9Rn27",
+                      "name": "石油溶剂文字",
+                      "fill": "$text",
+                      "content": "石油溶剂",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Ih9dc",
+                  "name": "专业护理 石油溶剂缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Idu6a",
+                      "name": "石油溶剂缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hGgHM",
+                      "name": "石油溶剂缓和文字",
+                      "fill": "$text",
+                      "content": "石油溶剂缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "HuUOo",
+                  "name": "专业护理 湿洗",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "gp32O",
+                      "name": "湿洗图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "tIjZR",
+                      "name": "湿洗文字",
+                      "fill": "$text",
+                      "content": "湿洗",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "uN86P",
+                  "name": "专业护理 湿洗缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "K8xdqa",
+                      "name": "湿洗缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "dOvJu",
+                      "name": "湿洗缓和文字",
+                      "fill": "$text",
+                      "content": "湿洗缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "NTMms",
+              "name": "专业护理第3行",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "JIeaE",
+                  "name": "专业护理 湿洗非常缓和",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "B2q0R",
+                      "name": "湿洗非常缓和图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "w6ajdW",
+                      "name": "湿洗非常缓和文字",
+                      "fill": "$text",
+                      "content": "湿洗非常缓和",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "QcTzM",
+                  "name": "专业护理 不可湿洗",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "ePlrW",
+                      "name": "不可湿洗图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle",
+                      "library": "lucide",
+                      "fill": "$muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Z4eGR",
+                      "name": "不可湿洗文字",
+                      "fill": "$text",
+                      "content": "不可湿洗",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "em8Gu",
+      "x": 2468,
+      "y": 80,
+      "name": "款式选择",
+      "clip": true,
+      "width": 1080,
+      "fill": "$bg",
+      "layout": "vertical",
+      "gap": 20,
+      "padding": 28,
+      "children": [
+        {
+          "type": "text",
+          "id": "r7Zl1H",
+          "name": "款式标题",
+          "fill": "$text",
+          "content": "款式",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 18,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "t3Vkue",
+          "name": "款式说明",
+          "fill": "$muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "点一下加入，再点取消。与洗涤不同，款式可以同时选多个，例如直身、短袖、假两件。",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "ThYG0",
+          "name": "版型",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": 16,
+          "stroke": "$line",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "tVdGR",
+              "name": "版型组名",
+              "fill": "$text",
+              "content": "版型",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "P0R01",
+              "name": "版型选项",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "G4sx2",
+                  "name": "版型 修身",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "sA1fa",
+                      "name": "修身选项文字",
+                      "fill": "$text",
+                      "content": "修身",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "H3kiE",
+                  "name": "版型 直身",
+                  "fill": "$soft",
+                  "cornerRadius": 999,
+                  "stroke": "$primary",
+                  "strokeWidth": 1.5,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "lNbvW",
+                      "name": "直身选项文字",
+                      "fill": "$text",
+                      "content": "直身",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "V0mqCF",
+                  "name": "版型 宽松",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "HUl0i",
+                      "name": "宽松选项文字",
+                      "fill": "$text",
+                      "content": "宽松",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yxVys",
+                  "name": "版型 落肩",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "yOYgD",
+                      "name": "落肩选项文字",
+                      "fill": "$text",
+                      "content": "落肩",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "srCts",
+          "name": "袖长",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": 16,
+          "stroke": "$line",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "C8HY0E",
+              "name": "袖长组名",
+              "fill": "$text",
+              "content": "袖长",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "XrwPl",
+              "name": "袖长选项",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "P2anG",
+                  "name": "袖长 无袖",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Av2YD",
+                      "name": "无袖选项文字",
+                      "fill": "$text",
+                      "content": "无袖",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DmGF3",
+                  "name": "袖长 短袖",
+                  "fill": "$soft",
+                  "cornerRadius": 999,
+                  "stroke": "$primary",
+                  "strokeWidth": 1.5,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "oioIO",
+                      "name": "短袖选项文字",
+                      "fill": "$text",
+                      "content": "短袖",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "A7OZ5",
+                  "name": "袖长 五分袖",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "DFEXt",
+                      "name": "五分袖选项文字",
+                      "fill": "$text",
+                      "content": "五分袖",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ReqPj",
+                  "name": "袖长 长袖",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "GzalP",
+                      "name": "长袖选项文字",
+                      "fill": "$text",
+                      "content": "长袖",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Q8BjW",
+          "name": "领型",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": 16,
+          "stroke": "$line",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "ZgYhq",
+              "name": "领型组名",
+              "fill": "$text",
+              "content": "领型",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "Bo90b",
+              "name": "领型选项",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "bQNo7",
+                  "name": "领型 圆领",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Bc2Hg",
+                      "name": "圆领选项文字",
+                      "fill": "$text",
+                      "content": "圆领",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "rCosG",
+                  "name": "领型 V领",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "yj9Y4",
+                      "name": "V领选项文字",
+                      "fill": "$text",
+                      "content": "V领",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Khj2i",
+                  "name": "领型 翻领",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "owvqi",
+                      "name": "翻领选项文字",
+                      "fill": "$text",
+                      "content": "翻领",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Wzpkz",
+                  "name": "领型 连帽",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "cCZMm",
+                      "name": "连帽选项文字",
+                      "fill": "$text",
+                      "content": "连帽",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "m69SWd",
+                  "name": "领型 高领",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "RXTTu",
+                      "name": "高领选项文字",
+                      "fill": "$text",
+                      "content": "高领",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "cyzPg",
+          "name": "结构",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": 16,
+          "stroke": "$line",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "knx3e",
+              "name": "结构组名",
+              "fill": "$text",
+              "content": "结构",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "si6BO",
+              "name": "结构选项",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "quRT8",
+                  "name": "结构 假两件",
+                  "fill": "$soft",
+                  "cornerRadius": 999,
+                  "stroke": "$primary",
+                  "strokeWidth": 1.5,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mADzd",
+                      "name": "假两件选项文字",
+                      "fill": "$text",
+                      "content": "假两件",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Z5kWns",
+                  "name": "结构 开衫",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "NZZRx",
+                      "name": "开衫选项文字",
+                      "fill": "$text",
+                      "content": "开衫",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "KDpVo",
+                  "name": "结构 套头",
+                  "fill": "$surface",
+                  "cornerRadius": 999,
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "WFCJf",
+                      "name": "套头选项文字",
+                      "fill": "$text",
+                      "content": "套头",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "bg": {
+      "type": "color",
+      "value": "#F5F6FA"
+    },
+    "surface": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "text": {
+      "type": "color",
+      "value": "#2B2F3A"
+    },
+    "muted": {
+      "type": "color",
+      "value": "#8A90A5"
+    },
+    "line": {
+      "type": "color",
+      "value": "#EEF0F6"
+    },
+    "primary": {
+      "type": "color",
+      "value": "#5B6CFF"
+    },
+    "soft": {
+      "type": "color",
+      "value": "#E8EBFF"
+    },
+    "empty": {
+      "type": "color",
+      "value": "#B0B6C9"
+    }
+  },
+  "fileToken": "a76d0cca-20d3-41c1-81a4-34de0f653907"
+}

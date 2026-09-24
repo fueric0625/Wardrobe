@@ -33,6 +33,7 @@ assets/models/        本机 ONNX 与 OCR 字典
 windows/runner/       Flutter 窗口与 ONNX FFI
 windows/third_party/onnxruntime/   ONNX Runtime 头文件和库，不逐文件展开
 docs/                 当前状态、不变量、运行与打包
+design/               Pencil 稿，当前是衣物详情 item-detail.pen
 drift_schemas/app_database/        schema 9 起的 Drift 快照
 ```
 
@@ -75,13 +76,13 @@ lib/app/
 
 ```text
 lib/core/database/
-├── app_database.dart     8 张表、schema 9、种子分类
+├── app_database.dart     8 张表、schema 10、种子分类
 └── app_database.g.dart   生成代码
 ```
 
 职责：SQLite 里的结构化数据，以及 schema 1–9 的手写升级。
 
-关键类型：`AppDatabase`。`schemaVersion` 与 `schemaSnapshotBaseline` 都是 9。低于 9 的库走 `_upgradeThroughSchema9`，这段不改写成生成步骤。
+关键类型：`AppDatabase`。`schemaSnapshotBaseline` 是 9，`schemaVersion` 是 10。低于 9 的库走 `_upgradeThroughSchema9`，这段不改写成生成步骤。schema 10 用 `app_database.steps.dart` 给衣物表加上品名、号型和洗涤选择。
 
 读写：`_openConnection` 把库放在 `%APPDATA%\wardrobe\wardrobe.sqlite`。建库时种子衣物分类和穿搭分类。Repository 是唯一写表的入口。
 
@@ -126,7 +127,7 @@ lib/core/catalog/
 ├── catalogs.dart                 CategoryKind、种子、maxCategoryDepth = 2
 ├── category_tree.dart            父子、深度、同级重名、子树筛选
 ├── domain/category_policy.dart   系统分类不可删、同级排序
-├── category_repository.dart      增删改、上移下移
+├── category_repository.dart      增删改、同级拖拽排序
 ├── cover_repository.dart         分类封面
 ├── providers.dart                衣物分类流、穿搭分类流、封面流
 ├── category_manage_page.dart     分类管理页
@@ -201,6 +202,8 @@ lib/features/wardrobe/
 ├── item_detail_page.dart        详情、封面、移动分类
 ├── item_edit_page.dart          新增与编辑，图片阶段和表单阶段
 ├── item_edit_controller.dart    ItemEditDraft
+├── item_attributes.dart         款式选项、洗涤选项、编码
+├── item_attribute_editor.dart   款式与洗涤的点选卡片
 ├── item_photos.dart             图片工作室、吊牌 OCR 块
 ├── photo_role.dart              garment / tag
 ├── click_prompt_overlay.dart    点选
@@ -211,7 +214,7 @@ lib/features/wardrobe/
 └── providers.dart
 ```
 
-职责：分类浏览、衣物详情，以及新增时的图片工作室。工作室先点选抠外形、笔擦、取样填补，再从 mask 取色。吊牌照单独加，OCR 建议品牌、面料、尺码。
+职责：分类浏览、衣物详情，以及新增时的图片工作室。详情字段顺序和款式、洗涤的点选见 `item_attributes.dart`。工作室先点选抠外形、笔擦、取样填补，再从 mask 取色。吊牌照单独加，OCR 建议品牌、面料、尺码。
 
 关键类型：`ItemRepository`、`ItemImageDraft`、`ItemPhotoRole`、`ItemEditDraft`、`ItemPhotoStudio`。
 

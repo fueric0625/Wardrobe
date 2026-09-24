@@ -10,6 +10,7 @@ import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/catalog/cover_repository.dart';
 import 'package:wardrobe/core/catalog/category_item_dialogs.dart';
+import 'package:wardrobe/features/wardrobe/item_attribute_editor.dart';
 import 'package:wardrobe/features/wardrobe/wardrobe_page.dart';
 import 'package:wardrobe/widgets/common.dart';
 
@@ -50,7 +51,10 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
           CategoryPickItem(
             id: item.id,
             imagePath: item.imagePath,
-            label: item.type.trim().isEmpty ? '未命名' : item.type.trim(),
+            label: itemCardTitle(
+              productName: item.productName,
+              type: item.type,
+            ),
           ),
       ],
     );
@@ -137,6 +141,7 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
             directItems.where((item) {
               if (q.isEmpty) return true;
               final hay = [
+                item.productName,
                 item.type,
                 item.style,
                 item.brand,
@@ -266,7 +271,10 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
                           final item = items[index - children.length];
                           return ItemTile(
                             coverPath: item.imagePath,
-                            title: item.type.isEmpty ? '未命名' : item.type,
+                            title: itemCardTitle(
+                              productName: item.productName,
+                              type: item.type,
+                            ),
                             subtitle: item.brand,
                             isCover: customCoverId == item.id,
                             onTap: () =>

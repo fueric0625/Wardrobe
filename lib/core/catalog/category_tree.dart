@@ -104,6 +104,33 @@ Set<String> subtreeIds(List<Category> all, String id) {
   return ids;
 }
 
+/// Same-parent order after dropping [draggedId] on [targetId].
+/// Null when the drop does not change order, including a different parent.
+List<String>? siblingIdsAfterDrop(
+  List<Category> all, {
+  required String draggedId,
+  required String targetId,
+  required bool insertAfter,
+}) {
+  final dragged = categoryById(all, draggedId);
+  final target = categoryById(all, targetId);
+  if (dragged == null || target == null || dragged.id == target.id) {
+    return null;
+  }
+  if (dragged.parentId != target.parentId) return null;
+  final siblings = childrenOf(all, dragged.parentId);
+  final oldIndex = siblings.indexWhere((c) => c.id == draggedId);
+  var newIndex = siblings.indexWhere((c) => c.id == targetId);
+  if (oldIndex < 0 || newIndex < 0) return null;
+  if (insertAfter) newIndex += 1;
+  if (oldIndex < newIndex) newIndex -= 1;
+  if (oldIndex == newIndex) return null;
+  final next = [...siblings];
+  final moved = next.removeAt(oldIndex);
+  next.insert(newIndex, moved);
+  return next.map((c) => c.id).toList();
+}
+
 List<Category> flattenPreorder(List<Category> all) {
   final out = <Category>[];
   void walk(Category node) {

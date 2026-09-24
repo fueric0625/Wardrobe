@@ -18,6 +18,8 @@ import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/vision/coordinates/image_edit_session.dart';
 import 'package:wardrobe/features/wardrobe/domain/item_photo_policy.dart';
+import 'package:wardrobe/features/wardrobe/item_attribute_editor.dart';
+import 'package:wardrobe/features/wardrobe/item_attributes.dart';
 import 'package:wardrobe/features/wardrobe/item_edit_controller.dart';
 import 'package:wardrobe/core/vision/cutout/color_extract.dart';
 import 'package:wardrobe/core/vision/cutout/erase_brush.dart';
@@ -41,8 +43,11 @@ class ItemEditPage extends ConsumerStatefulWidget {
 }
 
 class _ItemEditPageState extends ConsumerState<ItemEditPage> {
+  final _productName = TextEditingController();
+  final _sizeCode = TextEditingController();
   final _type = TextEditingController();
-  final _style = TextEditingController();
+  final Set<String> _styles = {};
+  final Set<String> _care = {};
   final _color = TextEditingController();
   final _fabric = TextEditingController();
   final _brand = TextEditingController();
@@ -93,8 +98,9 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
 
   @override
   void dispose() {
+    _productName.dispose();
+    _sizeCode.dispose();
     _type.dispose();
-    _style.dispose();
     _color.dispose();
     _fabric.dispose();
     _brand.dispose();
@@ -132,8 +138,15 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       context.go('/wardrobe');
       return;
     }
+    _productName.text = item.productName;
+    _sizeCode.text = item.sizeCode;
     _type.text = item.type;
-    _style.text = item.style;
+    _styles
+      ..clear()
+      ..addAll(decodeStyle(item.style));
+    _care
+      ..clear()
+      ..addAll(decodeCare(item.careJson));
     _color.text = item.color;
     _fabric.text = item.fabric;
     _brand.text = item.brand;
@@ -714,8 +727,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       final draft = ItemEditDraft(
         id: id,
         categoryId: selectedId,
+        productName: _productName.text,
+        sizeCode: _sizeCode.text,
+        careJson: encodeCare(_care),
         type: _type.text,
-        style: _style.text,
+        style: encodeStyle(_styles),
         color: _color.text,
         season: _seasons.join(','),
         fabric: _fabric.text,
@@ -979,57 +995,53 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                       value: selectedId,
                       onChanged: (v) => setState(() => _categoryId = v),
                     ),
-                    _split(
-                      _LabeledField(
-                        label: '类别',
-                        hint: '如衬衫、长裤',
-                        controller: _type,
-                      ),
-                      _LabeledField(
-                        label: '款式',
-                        hint: '如阔腿裤、直筒裤',
-                        controller: _style,
-                      ),
+                    _LabeledField(
+                      label: '品名',
+                      hint: '吊牌上的产品名称',
+                      controller: _productName,
                     ),
-                    _split(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _LabeledField(
-                            label: '颜色',
-                            hint: '手填或用识别结果',
-                            controller: _color,
+                    _LabeledField(
+                      label: '尺码',
+                      hint: '如 175/92A',
+                      controller: _sizeCode,
+                    ),
+                    StyleEditor(
+                      selected: _styles,
+                      onChanged: (next) => setState(() {
+                        _styles
+                          ..clear()
+                          ..addAll(next);
+                      }),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _LabeledField(
+                          label: '颜色',
+                          hint: '手填或用识别结果',
+                          controller: _color,
+                        ),
+                        if (_detectedColorHint != null) ...[
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                '识别：$_detectedColorHint',
+                                style: const TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _applyDetectedColor,
+                                child: const Text('填入'),
+                              ),
+                            ],
                           ),
-                          if (_detectedColorHint != null) ...[
-                            const SizedBox(height: 6),
-                            Wrap(
-                              spacing: 8,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text(
-                                  '识别：$_detectedColorHint',
-                                  style: const TextStyle(
-                                    color: AppColors.textMuted,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: _applyDetectedColor,
-                                  child: const Text('填入'),
-                                ),
-                              ],
-                            ),
-                          ],
                         ],
-                      ),
-                      _SeasonPicker(
-                        selected: _seasons,
-                        onChanged: (next) => setState(() {
-                          _seasons
-                            ..clear()
-                            ..addAll(next);
-                        }),
-                      ),
+                      ],
                     ),
                     _split(
                       Column(
@@ -1048,22 +1060,38 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                           ),
                         ],
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _LabeledField(
-                            label: '品牌',
-                            hint: '手填品牌',
-                            controller: _brand,
-                          ),
-                          _ocrFillHint(
-                            value: _mergedTagOcr.brand,
-                            onApply: () => setState(
-                              () => _brand.text = _mergedTagOcr.brand ?? '',
-                            ),
-                          ),
-                        ],
+                      _SeasonPicker(
+                        selected: _seasons,
+                        onChanged: (next) => setState(() {
+                          _seasons
+                            ..clear()
+                            ..addAll(next);
+                        }),
                       ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _LabeledField(
+                          label: '品牌',
+                          hint: '手填品牌',
+                          controller: _brand,
+                        ),
+                        _ocrFillHint(
+                          value: _mergedTagOcr.brand,
+                          onApply: () => setState(
+                            () => _brand.text = _mergedTagOcr.brand ?? '',
+                          ),
+                        ),
+                      ],
+                    ),
+                    CareEditor(
+                      selected: _care,
+                      onChanged: (next) => setState(() {
+                        _care
+                          ..clear()
+                          ..addAll(next);
+                      }),
                     ),
                     _split(
                       _LabeledField(
@@ -1088,7 +1116,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                       const Padding(
                         padding: EdgeInsets.only(top: 8, bottom: 4),
                         child: Text(
-                          '尺码',
+                          '尺码测量',
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -1112,11 +1140,6 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                         onApply: () => _applySizeOcr(sizeFields),
                       ),
                     ],
-                    _LabeledField(
-                      label: '购买信息',
-                      hint: '商场专柜、淘宝、闲鱼等',
-                      controller: _purchaseInfo,
-                    ),
                     _LabeledField(
                       label: '存放位置',
                       hint: '输入存放位置',

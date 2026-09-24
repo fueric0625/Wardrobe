@@ -50,10 +50,46 @@ class $ClothingItemsTable extends ClothingItems
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _productNameMeta = const VerificationMeta(
+    'productName',
+  );
+  @override
+  late final GeneratedColumn<String> productName = GeneratedColumn<String>(
+    'product_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _sizeCodeMeta = const VerificationMeta(
+    'sizeCode',
+  );
+  @override
+  late final GeneratedColumn<String> sizeCode = GeneratedColumn<String>(
+    'size_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _styleMeta = const VerificationMeta('style');
   @override
   late final GeneratedColumn<String> style = GeneratedColumn<String>(
     'style',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _careJsonMeta = const VerificationMeta(
+    'careJson',
+  );
+  @override
+  late final GeneratedColumn<String> careJson = GeneratedColumn<String>(
+    'care_json',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -204,7 +240,10 @@ class $ClothingItemsTable extends ClothingItems
     categoryId,
     imagePath,
     type,
+    productName,
+    sizeCode,
     style,
+    careJson,
     color,
     season,
     fabric,
@@ -256,10 +295,31 @@ class $ClothingItemsTable extends ClothingItems
         type.isAcceptableOrUnknown(data['type']!, _typeMeta),
       );
     }
+    if (data.containsKey('product_name')) {
+      context.handle(
+        _productNameMeta,
+        productName.isAcceptableOrUnknown(
+          data['product_name']!,
+          _productNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('size_code')) {
+      context.handle(
+        _sizeCodeMeta,
+        sizeCode.isAcceptableOrUnknown(data['size_code']!, _sizeCodeMeta),
+      );
+    }
     if (data.containsKey('style')) {
       context.handle(
         _styleMeta,
         style.isAcceptableOrUnknown(data['style']!, _styleMeta),
+      );
+    }
+    if (data.containsKey('care_json')) {
+      context.handle(
+        _careJsonMeta,
+        careJson.isAcceptableOrUnknown(data['care_json']!, _careJsonMeta),
       );
     }
     if (data.containsKey('color')) {
@@ -378,9 +438,21 @@ class $ClothingItemsTable extends ClothingItems
         DriftSqlType.string,
         data['${effectivePrefix}type'],
       )!,
+      productName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_name'],
+      )!,
+      sizeCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}size_code'],
+      )!,
       style: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}style'],
+      )!,
+      careJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}care_json'],
       )!,
       color: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -448,7 +520,10 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
   final String categoryId;
   final String? imagePath;
   final String type;
+  final String productName;
+  final String sizeCode;
   final String style;
+  final String careJson;
   final String color;
   final String season;
   final String fabric;
@@ -467,7 +542,10 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
     required this.categoryId,
     this.imagePath,
     required this.type,
+    required this.productName,
+    required this.sizeCode,
     required this.style,
+    required this.careJson,
     required this.color,
     required this.season,
     required this.fabric,
@@ -491,7 +569,10 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
       map['image_path'] = Variable<String>(imagePath);
     }
     map['type'] = Variable<String>(type);
+    map['product_name'] = Variable<String>(productName);
+    map['size_code'] = Variable<String>(sizeCode);
     map['style'] = Variable<String>(style);
+    map['care_json'] = Variable<String>(careJson);
     map['color'] = Variable<String>(color);
     map['season'] = Variable<String>(season);
     map['fabric'] = Variable<String>(fabric);
@@ -520,7 +601,10 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
           ? const Value.absent()
           : Value(imagePath),
       type: Value(type),
+      productName: Value(productName),
+      sizeCode: Value(sizeCode),
       style: Value(style),
+      careJson: Value(careJson),
       color: Value(color),
       season: Value(season),
       fabric: Value(fabric),
@@ -551,7 +635,10 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
       categoryId: serializer.fromJson<String>(json['categoryId']),
       imagePath: serializer.fromJson<String?>(json['imagePath']),
       type: serializer.fromJson<String>(json['type']),
+      productName: serializer.fromJson<String>(json['productName']),
+      sizeCode: serializer.fromJson<String>(json['sizeCode']),
       style: serializer.fromJson<String>(json['style']),
+      careJson: serializer.fromJson<String>(json['careJson']),
       color: serializer.fromJson<String>(json['color']),
       season: serializer.fromJson<String>(json['season']),
       fabric: serializer.fromJson<String>(json['fabric']),
@@ -575,7 +662,10 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
       'categoryId': serializer.toJson<String>(categoryId),
       'imagePath': serializer.toJson<String?>(imagePath),
       'type': serializer.toJson<String>(type),
+      'productName': serializer.toJson<String>(productName),
+      'sizeCode': serializer.toJson<String>(sizeCode),
       'style': serializer.toJson<String>(style),
+      'careJson': serializer.toJson<String>(careJson),
       'color': serializer.toJson<String>(color),
       'season': serializer.toJson<String>(season),
       'fabric': serializer.toJson<String>(fabric),
@@ -597,7 +687,10 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
     String? categoryId,
     Value<String?> imagePath = const Value.absent(),
     String? type,
+    String? productName,
+    String? sizeCode,
     String? style,
+    String? careJson,
     String? color,
     String? season,
     String? fabric,
@@ -616,7 +709,10 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
     categoryId: categoryId ?? this.categoryId,
     imagePath: imagePath.present ? imagePath.value : this.imagePath,
     type: type ?? this.type,
+    productName: productName ?? this.productName,
+    sizeCode: sizeCode ?? this.sizeCode,
     style: style ?? this.style,
+    careJson: careJson ?? this.careJson,
     color: color ?? this.color,
     season: season ?? this.season,
     fabric: fabric ?? this.fabric,
@@ -639,7 +735,12 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
           : this.categoryId,
       imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
       type: data.type.present ? data.type.value : this.type,
+      productName: data.productName.present
+          ? data.productName.value
+          : this.productName,
+      sizeCode: data.sizeCode.present ? data.sizeCode.value : this.sizeCode,
       style: data.style.present ? data.style.value : this.style,
+      careJson: data.careJson.present ? data.careJson.value : this.careJson,
       color: data.color.present ? data.color.value : this.color,
       season: data.season.present ? data.season.value : this.season,
       fabric: data.fabric.present ? data.fabric.value : this.fabric,
@@ -669,7 +770,10 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
           ..write('categoryId: $categoryId, ')
           ..write('imagePath: $imagePath, ')
           ..write('type: $type, ')
+          ..write('productName: $productName, ')
+          ..write('sizeCode: $sizeCode, ')
           ..write('style: $style, ')
+          ..write('careJson: $careJson, ')
           ..write('color: $color, ')
           ..write('season: $season, ')
           ..write('fabric: $fabric, ')
@@ -688,12 +792,15 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     categoryId,
     imagePath,
     type,
+    productName,
+    sizeCode,
     style,
+    careJson,
     color,
     season,
     fabric,
@@ -707,7 +814,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
     note,
     createdAt,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -716,7 +823,10 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
           other.categoryId == this.categoryId &&
           other.imagePath == this.imagePath &&
           other.type == this.type &&
+          other.productName == this.productName &&
+          other.sizeCode == this.sizeCode &&
           other.style == this.style &&
+          other.careJson == this.careJson &&
           other.color == this.color &&
           other.season == this.season &&
           other.fabric == this.fabric &&
@@ -737,7 +847,10 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
   final Value<String> categoryId;
   final Value<String?> imagePath;
   final Value<String> type;
+  final Value<String> productName;
+  final Value<String> sizeCode;
   final Value<String> style;
+  final Value<String> careJson;
   final Value<String> color;
   final Value<String> season;
   final Value<String> fabric;
@@ -757,7 +870,10 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
     this.categoryId = const Value.absent(),
     this.imagePath = const Value.absent(),
     this.type = const Value.absent(),
+    this.productName = const Value.absent(),
+    this.sizeCode = const Value.absent(),
     this.style = const Value.absent(),
+    this.careJson = const Value.absent(),
     this.color = const Value.absent(),
     this.season = const Value.absent(),
     this.fabric = const Value.absent(),
@@ -778,7 +894,10 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
     required String categoryId,
     this.imagePath = const Value.absent(),
     this.type = const Value.absent(),
+    this.productName = const Value.absent(),
+    this.sizeCode = const Value.absent(),
     this.style = const Value.absent(),
+    this.careJson = const Value.absent(),
     this.color = const Value.absent(),
     this.season = const Value.absent(),
     this.fabric = const Value.absent(),
@@ -802,7 +921,10 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
     Expression<String>? categoryId,
     Expression<String>? imagePath,
     Expression<String>? type,
+    Expression<String>? productName,
+    Expression<String>? sizeCode,
     Expression<String>? style,
+    Expression<String>? careJson,
     Expression<String>? color,
     Expression<String>? season,
     Expression<String>? fabric,
@@ -823,7 +945,10 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
       if (categoryId != null) 'category_id': categoryId,
       if (imagePath != null) 'image_path': imagePath,
       if (type != null) 'type': type,
+      if (productName != null) 'product_name': productName,
+      if (sizeCode != null) 'size_code': sizeCode,
       if (style != null) 'style': style,
+      if (careJson != null) 'care_json': careJson,
       if (color != null) 'color': color,
       if (season != null) 'season': season,
       if (fabric != null) 'fabric': fabric,
@@ -846,7 +971,10 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
     Value<String>? categoryId,
     Value<String?>? imagePath,
     Value<String>? type,
+    Value<String>? productName,
+    Value<String>? sizeCode,
     Value<String>? style,
+    Value<String>? careJson,
     Value<String>? color,
     Value<String>? season,
     Value<String>? fabric,
@@ -867,7 +995,10 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
       categoryId: categoryId ?? this.categoryId,
       imagePath: imagePath ?? this.imagePath,
       type: type ?? this.type,
+      productName: productName ?? this.productName,
+      sizeCode: sizeCode ?? this.sizeCode,
       style: style ?? this.style,
+      careJson: careJson ?? this.careJson,
       color: color ?? this.color,
       season: season ?? this.season,
       fabric: fabric ?? this.fabric,
@@ -900,8 +1031,17 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
     if (type.present) {
       map['type'] = Variable<String>(type.value);
     }
+    if (productName.present) {
+      map['product_name'] = Variable<String>(productName.value);
+    }
+    if (sizeCode.present) {
+      map['size_code'] = Variable<String>(sizeCode.value);
+    }
     if (style.present) {
       map['style'] = Variable<String>(style.value);
+    }
+    if (careJson.present) {
+      map['care_json'] = Variable<String>(careJson.value);
     }
     if (color.present) {
       map['color'] = Variable<String>(color.value);
@@ -955,7 +1095,10 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
           ..write('categoryId: $categoryId, ')
           ..write('imagePath: $imagePath, ')
           ..write('type: $type, ')
+          ..write('productName: $productName, ')
+          ..write('sizeCode: $sizeCode, ')
           ..write('style: $style, ')
+          ..write('careJson: $careJson, ')
           ..write('color: $color, ')
           ..write('season: $season, ')
           ..write('fabric: $fabric, ')
@@ -3851,7 +3994,10 @@ typedef $$ClothingItemsTableCreateCompanionBuilder =
       required String categoryId,
       Value<String?> imagePath,
       Value<String> type,
+      Value<String> productName,
+      Value<String> sizeCode,
       Value<String> style,
+      Value<String> careJson,
       Value<String> color,
       Value<String> season,
       Value<String> fabric,
@@ -3873,7 +4019,10 @@ typedef $$ClothingItemsTableUpdateCompanionBuilder =
       Value<String> categoryId,
       Value<String?> imagePath,
       Value<String> type,
+      Value<String> productName,
+      Value<String> sizeCode,
       Value<String> style,
+      Value<String> careJson,
       Value<String> color,
       Value<String> season,
       Value<String> fabric,
@@ -3919,8 +4068,23 @@ class $$ClothingItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get productName => $composableBuilder(
+    column: $table.productName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sizeCode => $composableBuilder(
+    column: $table.sizeCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get style => $composableBuilder(
     column: $table.style,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get careJson => $composableBuilder(
+    column: $table.careJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4019,8 +4183,23 @@ class $$ClothingItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get productName => $composableBuilder(
+    column: $table.productName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sizeCode => $composableBuilder(
+    column: $table.sizeCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get style => $composableBuilder(
     column: $table.style,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get careJson => $composableBuilder(
+    column: $table.careJson,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4113,8 +4292,19 @@ class $$ClothingItemsTableAnnotationComposer
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
 
+  GeneratedColumn<String> get productName => $composableBuilder(
+    column: $table.productName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sizeCode =>
+      $composableBuilder(column: $table.sizeCode, builder: (column) => column);
+
   GeneratedColumn<String> get style =>
       $composableBuilder(column: $table.style, builder: (column) => column);
+
+  GeneratedColumn<String> get careJson =>
+      $composableBuilder(column: $table.careJson, builder: (column) => column);
 
   GeneratedColumn<String> get color =>
       $composableBuilder(column: $table.color, builder: (column) => column);
@@ -4197,7 +4387,10 @@ class $$ClothingItemsTableTableManager
                 Value<String> categoryId = const Value.absent(),
                 Value<String?> imagePath = const Value.absent(),
                 Value<String> type = const Value.absent(),
+                Value<String> productName = const Value.absent(),
+                Value<String> sizeCode = const Value.absent(),
                 Value<String> style = const Value.absent(),
+                Value<String> careJson = const Value.absent(),
                 Value<String> color = const Value.absent(),
                 Value<String> season = const Value.absent(),
                 Value<String> fabric = const Value.absent(),
@@ -4217,7 +4410,10 @@ class $$ClothingItemsTableTableManager
                 categoryId: categoryId,
                 imagePath: imagePath,
                 type: type,
+                productName: productName,
+                sizeCode: sizeCode,
                 style: style,
+                careJson: careJson,
                 color: color,
                 season: season,
                 fabric: fabric,
@@ -4239,7 +4435,10 @@ class $$ClothingItemsTableTableManager
                 required String categoryId,
                 Value<String?> imagePath = const Value.absent(),
                 Value<String> type = const Value.absent(),
+                Value<String> productName = const Value.absent(),
+                Value<String> sizeCode = const Value.absent(),
                 Value<String> style = const Value.absent(),
+                Value<String> careJson = const Value.absent(),
                 Value<String> color = const Value.absent(),
                 Value<String> season = const Value.absent(),
                 Value<String> fabric = const Value.absent(),
@@ -4259,7 +4458,10 @@ class $$ClothingItemsTableTableManager
                 categoryId: categoryId,
                 imagePath: imagePath,
                 type: type,
+                productName: productName,
+                sizeCode: sizeCode,
                 style: style,
+                careJson: careJson,
                 color: color,
                 season: season,
                 fabric: fabric,

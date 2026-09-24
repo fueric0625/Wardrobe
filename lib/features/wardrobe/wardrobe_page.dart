@@ -30,6 +30,7 @@ class _WardrobePageState extends ConsumerState<WardrobePage> {
 
   bool _matches(ClothingItem item, List<Category> categories, String q) {
     final hay = [
+      item.productName,
       item.type,
       item.style,
       item.brand,
@@ -178,7 +179,9 @@ class _ItemSearchGrid extends StatelessWidget {
         final item = items[index];
         return ItemTile(
           coverPath: item.imagePath,
-          title: item.type.isEmpty
+          title: item.productName.trim().isNotEmpty
+              ? item.productName.trim()
+              : item.type.isEmpty
               ? categoryPath(categories, item.categoryId)
               : item.type,
           subtitle: item.brand,

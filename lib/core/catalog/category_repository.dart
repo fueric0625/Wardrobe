@@ -15,7 +15,11 @@ abstract class CategoryRepository {
     required String label,
     List<String> sizeFields = const [],
   });
-  Future<void> moveSibling(CategoryKind kind, String id, int delta);
+  Future<void> reorderSiblings(
+    CategoryKind kind,
+    String? parentId,
+    List<String> orderedIds,
+  );
   Future<void> deleteSubtree(CategoryKind kind, String id);
 }
 
@@ -108,27 +112,27 @@ class LocalCategoryRepository implements CategoryRepository {
   }
 
   @override
-  Future<void> moveSibling(CategoryKind kind, String id, int delta) async {
-    if (delta == 0) return;
+  Future<void> reorderSiblings(
+    CategoryKind kind,
+    String? parentId,
+    List<String> orderedIds,
+  ) async {
     final all = await get(kind);
-    final node = categoryById(all, id);
-    if (node == null) return;
-    final siblings = childrenOf(all, node.parentId);
-    final index = siblings.indexWhere((c) => c.id == id);
-    final target = index + delta;
-    if (index < 0 || target < 0 || target >= siblings.length) return;
-    final other = siblings[target];
+    final siblings = childrenOf(all, parentId);
+    if (orderedIds.length != siblings.length) return;
+    final byId = {for (final sibling in siblings) sibling.id: sibling};
+    if (orderedIds.toSet().length != orderedIds.length) return;
+    if (orderedIds.any((id) => !byId.containsKey(id))) return;
     await _db.batch((batch) {
-      batch.update(
-        _db.categories,
-        CategoriesCompanion(sortOrder: Value(other.sortOrder)),
-        where: (t) => _ofKind(kind) & t.id.equals(node.id),
-      );
-      batch.update(
-        _db.categories,
-        CategoriesCompanion(sortOrder: Value(node.sortOrder)),
-        where: (t) => _ofKind(kind) & t.id.equals(other.id),
-      );
+      for (var i = 0; i < orderedIds.length; i++) {
+        final node = byId[orderedIds[i]]!;
+        if (node.sortOrder == i) continue;
+        batch.update(
+          _db.categories,
+          CategoriesCompanion(sortOrder: Value(i)),
+          where: (t) => _ofKind(kind) & t.id.equals(node.id),
+        );
+      }
     });
   }
 

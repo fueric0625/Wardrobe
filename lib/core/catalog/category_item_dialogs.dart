@@ -33,146 +33,146 @@ Future<AddSubcategoryResult?> promptAddSubcategory(
   BuildContext context, {
   List<CategoryPickItem> items = const [],
   String pickHint = '把当前分类里的衣物移入（可选）',
-}) async {
-  final controller = TextEditingController();
-  final selected = <String>{};
-  final result = await showDialog<AddSubcategoryResult>(
+}) {
+  return showDialog<AddSubcategoryResult>(
     context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return Dialog(
-            backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: items.isEmpty ? 400 : 520,
-                maxHeight: MediaQuery.sizeOf(context).height * 0.82,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      '添加子分类',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.text,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    TextField(
-                      controller: controller,
-                      autofocus: true,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.text,
-                      ),
-                      onSubmitted: (value) {
-                        final label = value.trim();
-                        if (label.isEmpty) return;
-                        Navigator.pop(
-                          context,
-                          AddSubcategoryResult(
-                            label: label,
-                            itemIds: selected.toList(),
-                          ),
-                        );
-                      },
-                      decoration: const InputDecoration(
-                        hintText: '分类名称',
-                        hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textMuted,
-                        ),
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                    if (items.isNotEmpty) ...[
-                      const SizedBox(height: 18),
-                      Text(
-                        selected.isEmpty ? pickHint : '已选 ${selected.length} 件',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 280),
-                        child: GridView.builder(
-                          shrinkWrap: true,
-                          itemCount: items.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: 92,
-                                mainAxisSpacing: 8,
-                                crossAxisSpacing: 8,
-                                childAspectRatio: 0.82,
-                              ),
-                          itemBuilder: (context, index) {
-                            final item = items[index];
-                            final checked = selected.contains(item.id);
-                            return _SelectableItemThumb(
-                              item: item,
-                              selected: checked,
-                              onTap: () => setState(() {
-                                if (checked) {
-                                  selected.remove(item.id);
-                                } else {
-                                  selected.add(item.id);
-                                }
-                              }),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('取消'),
-                        ),
-                        FilledButton(
-                          onPressed: () {
-                            final label = controller.text.trim();
-                            if (label.isEmpty) return;
-                            Navigator.pop(
-                              context,
-                              AddSubcategoryResult(
-                                label: label,
-                                itemIds: selected.toList(),
-                              ),
-                            );
-                          },
-                          child: const Text('确定'),
-                        ),
-                      ],
-                    ),
-                  ],
+    builder: (context) =>
+        _AddSubcategoryDialog(items: items, pickHint: pickHint),
+  );
+}
+
+class _AddSubcategoryDialog extends StatefulWidget {
+  const _AddSubcategoryDialog({required this.items, required this.pickHint});
+
+  final List<CategoryPickItem> items;
+  final String pickHint;
+
+  @override
+  State<_AddSubcategoryDialog> createState() => _AddSubcategoryDialogState();
+}
+
+class _AddSubcategoryDialogState extends State<_AddSubcategoryDialog> {
+  final TextEditingController _controller = TextEditingController();
+  final Set<String> _selected = {};
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final label = _controller.text.trim();
+    if (label.isEmpty) return;
+    Navigator.pop(
+      context,
+      AddSubcategoryResult(label: label, itemIds: _selected.toList()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: widget.items.isEmpty ? 400 : 520,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                '添加子分类',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.text,
                 ),
               ),
-            ),
-          );
-        },
-      );
-    },
-  );
-  controller.dispose();
-  return result;
+              const SizedBox(height: 18),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                style: const TextStyle(fontSize: 14, color: AppColors.text),
+                onSubmitted: (_) => _submit(),
+                decoration: const InputDecoration(
+                  hintText: '分类名称',
+                  hintStyle: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textMuted,
+                  ),
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+              if (widget.items.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                Text(
+                  _selected.isEmpty
+                      ? widget.pickHint
+                      : '已选 ${_selected.length} 件',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 280),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    itemCount: widget.items.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 92,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 0.82,
+                        ),
+                    itemBuilder: (context, index) {
+                      final item = widget.items[index];
+                      final checked = _selected.contains(item.id);
+                      return _SelectableItemThumb(
+                        item: item,
+                        selected: checked,
+                        onTap: () => setState(() {
+                          if (checked) {
+                            _selected.remove(item.id);
+                          } else {
+                            _selected.add(item.id);
+                          }
+                        }),
+                      );
+                    },
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('取消'),
+                  ),
+                  FilledButton(onPressed: _submit, child: const Text('确定')),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 Future<Category?> promptMoveToCategory(

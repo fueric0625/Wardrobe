@@ -9,6 +9,8 @@ import 'package:wardrobe/core/catalog/category_tree.dart';
 import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/vision/ocr/tag_ocr.dart';
+import 'package:wardrobe/features/wardrobe/item_attribute_editor.dart';
+import 'package:wardrobe/features/wardrobe/item_attributes.dart';
 import 'package:wardrobe/features/wardrobe/photo_role.dart';
 import 'package:wardrobe/core/catalog/category_item_dialogs.dart';
 import 'package:wardrobe/features/wardrobe/item_photos.dart';
@@ -59,7 +61,9 @@ class ItemDetailPage extends ConsumerWidget {
 
         final categories = ref.watch(clothingCategoryRowsProvider);
         final category = categoryById(categories, item.categoryId);
-        final title = item.type.trim().isEmpty ? '单品详情' : item.type.trim();
+        final title = item.productName.trim().isEmpty
+            ? '单品详情'
+            : item.productName.trim();
         final measures = decodeMeasurements(item.measurements);
         final sizeFields = category == null
             ? <String>[]
@@ -145,26 +149,84 @@ class ItemDetailPage extends ConsumerWidget {
                         Expanded(
                           child: DetailFormCard(
                             children: [
-                              _split(
-                                ReadOnlyField(label: '分类', value: path),
-                                ReadOnlyField(label: '类别', value: item.type),
+                              ReadOnlyField(
+                                label: '品名',
+                                value: item.productName,
                               ),
+                              ReadOnlyField(label: '分类', value: path),
                               _split(
-                                ReadOnlyField(label: '款式', value: item.style),
-                                ReadOnlyField(label: '颜色', value: item.color),
+                                ReadOnlyField(
+                                  label: '尺码',
+                                  value: item.sizeCode,
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      '款式',
+                                      style: TextStyle(
+                                        color: AppColors.textMuted,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    SelectedLabels(
+                                      labels: orderedStyle(
+                                        decodeStyle(item.style),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
+                              ReadOnlyField(label: '颜色', value: item.color),
                               _split(
+                                ReadOnlyField(label: '面料', value: item.fabric),
                                 ReadOnlyField(
                                   label: '季节',
                                   value: _joinTokens(item.season),
                                 ),
-                                ReadOnlyField(label: '面料', value: item.fabric),
+                              ),
+                              ReadOnlyField(label: '品牌', value: item.brand),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    '洗涤维护',
+                                    style: TextStyle(
+                                      color: AppColors.textMuted,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  SelectedLabels(
+                                    labels: [
+                                      for (final group in careGroups)
+                                        for (final option in group.options)
+                                          if (decodeCare(item.careJson)
+                                              .contains(option.id))
+                                            option.label,
+                                    ],
+                                    icons: [
+                                      for (final group in careGroups)
+                                        for (final option in group.options)
+                                          if (decodeCare(item.careJson)
+                                              .contains(option.id))
+                                            careGroupIcon(group.label),
+                                    ],
+                                  ),
+                                ],
                               ),
                               _split(
-                                ReadOnlyField(label: '品牌', value: item.brand),
                                 ReadOnlyField(
                                   label: '价格',
                                   value: _priceText(item.price),
+                                ),
+                                ReadOnlyField(
+                                  label: '购入时间',
+                                  value: item.purchasedAt == null
+                                      ? null
+                                      : DateFormat('yyyy-MM-dd')
+                                            .format(item.purchasedAt!),
                                 ),
                               ),
                               if (sizeFields.isNotEmpty) ...[
@@ -187,17 +249,6 @@ class ItemDetailPage extends ConsumerWidget {
                                   ],
                                 ),
                               ],
-                              ReadOnlyField(
-                                label: '购入时间',
-                                value: item.purchasedAt == null
-                                    ? null
-                                    : DateFormat('yyyy-MM-dd')
-                                          .format(item.purchasedAt!),
-                              ),
-                              ReadOnlyField(
-                                label: '购买信息',
-                                value: item.purchaseInfo,
-                              ),
                               ReadOnlyField(
                                 label: '存放位置',
                                 value: item.location,

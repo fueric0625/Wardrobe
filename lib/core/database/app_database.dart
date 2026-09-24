@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wardrobe/core/database/app_database.steps.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/core/storage/app_paths.dart';
 
@@ -15,7 +16,10 @@ class ClothingItems extends Table {
   TextColumn get categoryId => text()();
   TextColumn get imagePath => text().nullable()();
   TextColumn get type => text().withDefault(const Constant(''))();
+  TextColumn get productName => text().withDefault(const Constant(''))();
+  TextColumn get sizeCode => text().withDefault(const Constant(''))();
   TextColumn get style => text().withDefault(const Constant(''))();
+  TextColumn get careJson => text().withDefault(const Constant(''))();
   TextColumn get color => text().withDefault(const Constant(''))();
   TextColumn get season => text().withDefault(const Constant(''))();
   TextColumn get fabric => text().withDefault(const Constant(''))();
@@ -147,7 +151,7 @@ class AppDatabase extends _$AppDatabase {
   static const schemaSnapshotBaseline = 9;
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -214,11 +218,26 @@ class AppDatabase extends _$AppDatabase {
   /// writes `app_database.steps.dart`; implement only the newest callback,
   /// for example `from9To10`, and call `stepByStep(...)(m, from, to)` here.
   Future<void> _upgradeFromSchemaSnapshots(Migrator m, int from, int to) {
-    throw StateError(
-      'Schema $to has no step-by-step migration from $from '
-      '(${m.database.schemaVersion}). '
-      'Run `dart run drift_dev make-migrations` and fill the newest step.',
-    );
+    return stepByStep(
+      from9To10: (m, schema) async {
+        if (!await _tableExists(schema.clothingItems.actualTableName)) return;
+        await _addColumnIfMissing(
+          m,
+          schema.clothingItems,
+          schema.clothingItems.productName,
+        );
+        await _addColumnIfMissing(
+          m,
+          schema.clothingItems,
+          schema.clothingItems.sizeCode,
+        );
+        await _addColumnIfMissing(
+          m,
+          schema.clothingItems,
+          schema.clothingItems.careJson,
+        );
+      },
+    )(m, from, to);
   }
 
   Future<void> seedClothingCategories() {

@@ -78,6 +78,47 @@ void main() {
     expect(subtreeIds(all, 'shirt').contains('hooded'), isFalse);
   });
 
+  test('drag reorder stays inside the same parent', () {
+    final bottoms = cat(id: 'bottoms', label: '下装', sortOrder: 1);
+    final tree = [tops, bottoms, hoodie, shirt];
+    expect(
+      siblingIdsAfterDrop(
+        tree,
+        draggedId: 'hoodie',
+        targetId: 'shirt',
+        insertAfter: true,
+      ),
+      ['shirt', 'hoodie'],
+    );
+    expect(
+      siblingIdsAfterDrop(
+        tree,
+        draggedId: 'tops',
+        targetId: 'bottoms',
+        insertAfter: true,
+      ),
+      ['bottoms', 'tops'],
+    );
+    expect(
+      siblingIdsAfterDrop(
+        tree,
+        draggedId: 'hoodie',
+        targetId: 'bottoms',
+        insertAfter: false,
+      ),
+      isNull,
+    );
+    expect(
+      siblingIdsAfterDrop(
+        tree,
+        draggedId: 'shirt',
+        targetId: 'shirt',
+        insertAfter: true,
+      ),
+      isNull,
+    );
+  });
+
   test('sibling labels must be unique, other branches may reuse', () {
     expect(siblingLabelTaken(all, parentId: null, label: '上装'), isTrue);
     expect(siblingLabelTaken(all, parentId: 'tops', label: '卫衣'), isTrue);
@@ -96,7 +137,10 @@ void main() {
         id: id,
         categoryId: categoryId,
         type: '',
+        productName: '',
+        sizeCode: '',
         style: '',
+        careJson: '',
         color: '',
         season: '',
         fabric: '',

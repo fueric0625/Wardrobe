@@ -48,7 +48,7 @@ void main() {
     addTearDown(db.close);
 
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 9);
+    expect(version.read<int>('user_version'), 10);
 
     final columns = await db
         .customSelect('PRAGMA table_info(clothing_item_images)')
@@ -56,10 +56,10 @@ void main() {
     final names = columns.map((row) => row.read<String>('name')).toList();
     expect(names.where((name) => name == 'ocr_json').length, 1);
     expect(
-      (await db.customSelect('PRAGMA table_info(outfits)').get()).map(
+      (await db.customSelect('PRAGMA table_info(clothing_items)').get()).map(
         (row) => row.read<String>('name'),
       ),
-      containsAll(['source_image_path', 'cover_mode', 'collage_layout']),
+      containsAll(['product_name', 'size_code', 'care_json']),
     );
   });
 
@@ -68,7 +68,7 @@ void main() {
     addTearDown(db.close);
 
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 9);
+    expect(version.read<int>('user_version'), 10);
     final categories = await db.select(db.categories).get();
     expect(categories, isNotEmpty);
   });

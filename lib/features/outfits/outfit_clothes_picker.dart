@@ -126,7 +126,9 @@ class OutfitClothesPicker extends ConsumerWidget {
                       itemCount: shown.length,
                       itemBuilder: (context, index) {
                         final item = shown[index];
-                        final title = item.type.trim().isEmpty
+                        final title = item.productName.trim().isNotEmpty
+                            ? item.productName.trim()
+                            : item.type.trim().isEmpty
                             ? categoryPath(categories, item.categoryId)
                             : item.type.trim();
                         return ItemTile(

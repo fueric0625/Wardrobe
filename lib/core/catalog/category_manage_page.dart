@@ -24,7 +24,6 @@ class CategoryManagePage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('加载失败：$e')),
         data: (categories) {
-          final rows = flattenPreorder(categories);
           return Column(
             children: [
               Padding(
@@ -55,34 +54,18 @@ class CategoryManagePage extends ConsumerWidget {
                 ),
               ),
               Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(32, 8, 32, 32),
-                  itemCount: rows.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final category = rows[index];
-                    final depth = categoryDepth(categories, category);
-                    final siblings = childrenOf(categories, category.parentId);
-                    final siblingIndex = siblings.indexWhere(
-                      (c) => c.id == category.id,
-                    );
-                    return _CategoryRow(
-                      category: category,
-                      depth: depth,
-                      canMoveUp: siblingIndex > 0,
-                      canMoveDown:
-                          siblingIndex >= 0 &&
-                          siblingIndex < siblings.length - 1,
-                      canAddChild: canAddChild(categories, category),
-                      onRename: () => _rename(context, ref, kind, category),
-                      onAddChild: () => _addChild(context, ref, kind, category),
-                      onDelete: () =>
-                          _delete(context, ref, kind, categories, category),
-                      onMove: (delta) => ref
-                          .read(categoryRepositoryProvider)
-                          .moveSibling(kind, category.id, delta),
-                    );
+                child: _CategoryList(
+                  categories: categories,
+                  onReorder: (parentId, orderedIds) {
+                    return ref
+                        .read(categoryRepositoryProvider)
+                        .reorderSiblings(kind, parentId, orderedIds);
                   },
+                  onRename: (category) => _rename(context, ref, kind, category),
+                  onAddChild: (category) =>
+                      _addChild(context, ref, kind, category),
+                  onDelete: (category) =>
+                      _delete(context, ref, kind, categories, category),
                 ),
               ),
             ],
@@ -93,77 +76,241 @@ class CategoryManagePage extends ConsumerWidget {
   }
 }
 
-class _CategoryRow extends StatelessWidget {
-  const _CategoryRow({
-    required this.category,
-    required this.depth,
-    required this.canMoveUp,
-    required this.canMoveDown,
-    required this.canAddChild,
+class _CategoryList extends StatefulWidget {
+  const _CategoryList({
+    required this.categories,
+    required this.onReorder,
     required this.onRename,
     required this.onAddChild,
     required this.onDelete,
-    required this.onMove,
   });
 
-  final Category category;
-  final int depth;
-  final bool canMoveUp;
-  final bool canMoveDown;
-  final bool canAddChild;
-  final VoidCallback onRename;
-  final VoidCallback onAddChild;
-  final VoidCallback onDelete;
-  final ValueChanged<int> onMove;
+  final List<Category> categories;
+  final Future<void> Function(String? parentId, List<String> orderedIds)
+  onReorder;
+  final ValueChanged<Category> onRename;
+  final ValueChanged<Category> onAddChild;
+  final ValueChanged<Category> onDelete;
+
+  @override
+  State<_CategoryList> createState() => _CategoryListState();
+}
+
+class _CategoryListState extends State<_CategoryList> {
+  String? _draggingId;
+  String? _hoverId;
+  bool _insertAfter = false;
+
+  bool _inDraggedSubtree(Category category) {
+    final draggingId = _draggingId;
+    if (draggingId == null) return false;
+    var current = category;
+    final seen = <String>{};
+    while (seen.add(current.id)) {
+      if (current.id == draggingId) return true;
+      final parentId = current.parentId;
+      if (parentId == null) return false;
+      final parent = categoryById(widget.categories, parentId);
+      if (parent == null) return false;
+      current = parent;
+    }
+    return false;
+  }
+
+  Future<void> _drop(String draggedId, String targetId) async {
+    final ordered = siblingIdsAfterDrop(
+      widget.categories,
+      draggedId: draggedId,
+      targetId: targetId,
+      insertAfter: _insertAfter,
+    );
+    final dragged = categoryById(widget.categories, draggedId);
+    if (ordered == null || dragged == null) return;
+    await widget.onReorder(dragged.parentId, ordered);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(16.0 + depth * 24, 10, 12, 10),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            depth == 0 ? Icons.folder_outlined : Icons.subdirectory_arrow_right,
-            size: 20,
-            color: AppColors.textMuted,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              category.label,
-              style: TextStyle(
-                fontWeight: depth == 0 ? FontWeight.w700 : FontWeight.w500,
+    final rows = flattenPreorder(widget.categories);
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(32, 8, 32, 32),
+      itemCount: rows.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final category = rows[index];
+        return _CategoryRow(
+          categories: widget.categories,
+          category: category,
+          depth: categoryDepth(widget.categories, category),
+          canAddChild: canAddChild(widget.categories, category),
+          dimmed: _inDraggedSubtree(category),
+          showBefore: _hoverId == category.id && !_insertAfter,
+          showAfter: _hoverId == category.id && _insertAfter,
+          onRename: () => widget.onRename(category),
+          onAddChild: () => widget.onAddChild(category),
+          onDelete: () => widget.onDelete(category),
+          onDragStarted: () => setState(() => _draggingId = category.id),
+          onDragEnd: () => setState(() {
+            _draggingId = null;
+            _hoverId = null;
+          }),
+          onHover: (insertAfter) => setState(() {
+            _hoverId = category.id;
+            _insertAfter = insertAfter;
+          }),
+          onLeave: () {
+            if (_hoverId == category.id) {
+              setState(() => _hoverId = null);
+            }
+          },
+          onDrop: (draggedId) => _drop(draggedId, category.id),
+        );
+      },
+    );
+  }
+}
+
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
+    required this.categories,
+    required this.category,
+    required this.depth,
+    required this.canAddChild,
+    required this.dimmed,
+    required this.showBefore,
+    required this.showAfter,
+    required this.onRename,
+    required this.onAddChild,
+    required this.onDelete,
+    required this.onDragStarted,
+    required this.onDragEnd,
+    required this.onHover,
+    required this.onLeave,
+    required this.onDrop,
+  });
+
+  final List<Category> categories;
+  final Category category;
+  final int depth;
+  final bool canAddChild;
+  final bool dimmed;
+  final bool showBefore;
+  final bool showAfter;
+  final VoidCallback onRename;
+  final VoidCallback onAddChild;
+  final VoidCallback onDelete;
+  final VoidCallback onDragStarted;
+  final VoidCallback onDragEnd;
+  final ValueChanged<bool> onHover;
+  final VoidCallback onLeave;
+  final ValueChanged<String> onDrop;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = AppPalette.of(context).primary;
+    return DragTarget<String>(
+      onWillAcceptWithDetails: (details) {
+        final dragged = categoryById(categories, details.data);
+        if (dragged == null || dragged.id == category.id) return false;
+        return dragged.parentId == category.parentId;
+      },
+      onMove: (details) {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box == null || !box.hasSize) return;
+        final local = box.globalToLocal(details.offset);
+        onHover(local.dy > box.size.height / 2);
+      },
+      onLeave: (_) => onLeave(),
+      onAcceptWithDetails: (details) => onDrop(details.data),
+      builder: (context, candidate, _) {
+        final active = candidate.isNotEmpty && (showBefore || showAfter);
+        return Opacity(
+          opacity: dimmed ? 0.35 : 1,
+          child: Container(
+            padding: EdgeInsets.fromLTRB(8.0 + depth * 24, 6, 12, 6),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: active ? accent : AppColors.border,
+                width: active ? 2 : 1,
               ),
             ),
-          ),
-          IconButton(
-            tooltip: '上移',
-            onPressed: canMoveUp ? () => onMove(-1) : null,
-            icon: const Icon(Icons.keyboard_arrow_up),
-          ),
-          IconButton(
-            tooltip: '下移',
-            onPressed: canMoveDown ? () => onMove(1) : null,
-            icon: const Icon(Icons.keyboard_arrow_down),
-          ),
-          TextButton(onPressed: onRename, child: const Text('改名')),
-          if (canAddChild)
-            TextButton(onPressed: onAddChild, child: const Text('添加子分类')),
-          if (!category.isSystem)
-            TextButton(
-              onPressed: onDelete,
-              child: const Text(
-                '删除',
-                style: TextStyle(color: Colors.redAccent),
-              ),
+            child: Row(
+              children: [
+                Draggable<String>(
+                  data: category.id,
+                  dragAnchorStrategy: pointerDragAnchorStrategy,
+                  onDragStarted: onDragStarted,
+                  onDragEnd: (_) => onDragEnd(),
+                  feedback: Material(
+                    color: AppColors.surface,
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Text(
+                        category.label,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                  childWhenDragging: const Icon(
+                    Icons.drag_indicator,
+                    color: AppColors.textMuted,
+                  ),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.grab,
+                    child: Tooltip(
+                      message: '拖动排序',
+                      child: Semantics(
+                        container: true,
+                        child: const Icon(
+                          Icons.drag_indicator,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  depth == 0
+                      ? Icons.folder_outlined
+                      : Icons.subdirectory_arrow_right,
+                  size: 20,
+                  color: AppColors.textMuted,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    category.label,
+                    style: TextStyle(
+                      fontWeight: depth == 0
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+                  ),
+                ),
+                TextButton(onPressed: onRename, child: const Text('改名')),
+                if (canAddChild)
+                  TextButton(onPressed: onAddChild, child: const Text('添加子分类')),
+                if (!category.isSystem)
+                  TextButton(
+                    onPressed: onDelete,
+                    child: const Text(
+                      '删除',
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
+              ],
             ),
-        ],
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -285,33 +432,59 @@ Future<String?> _promptName(
   BuildContext context, {
   required String title,
   String? initial,
-}) async {
-  final controller = TextEditingController(text: initial ?? '');
-  final result = await showDialog<String>(
+}) {
+  return showDialog<String>(
     context: context,
-    builder: (context) => _AppDialog(
-      title: title,
+    builder: (context) => _NamePromptDialog(title: title, initial: initial),
+  );
+}
+
+class _NamePromptDialog extends StatefulWidget {
+  const _NamePromptDialog({required this.title, this.initial});
+
+  final String title;
+  final String? initial;
+
+  @override
+  State<_NamePromptDialog> createState() => _NamePromptDialogState();
+}
+
+class _NamePromptDialogState extends State<_NamePromptDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial ?? '',
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final label = _controller.text.trim();
+    if (label.isEmpty) return;
+    Navigator.pop(context, label);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _AppDialog(
+      title: widget.title,
       body: _DialogField(
-        controller: controller,
+        controller: _controller,
         hint: '分类名称',
         autofocus: true,
-        onSubmitted: (value) => Navigator.pop(context, value.trim()),
+        onSubmitted: (_) => _submit(),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('取消'),
         ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, controller.text.trim()),
-          child: const Text('确定'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('确定')),
       ],
-    ),
-  );
-  controller.dispose();
-  if (result == null || result.isEmpty) return null;
-  return result;
+    );
+  }
 }
 
 class _NewRootResult {
@@ -323,94 +496,99 @@ class _NewRootResult {
 Future<_NewRootResult?> _promptNewRoot(
   BuildContext context,
   CategoryKind kind,
-) async {
-  final controller = TextEditingController();
-  var templateId = clothingSizeTemplates.first.id;
-  final showTemplate = kind == CategoryKind.clothing;
-  final result = await showDialog<_NewRootResult>(
+) {
+  return showDialog<_NewRootResult>(
     context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return _AppDialog(
-            title: '新增大分类',
-            body: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _DialogField(
-                  controller: controller,
-                  hint: '分类名称',
-                  autofocus: true,
+    builder: (context) => _NewRootDialog(kind: kind),
+  );
+}
+
+class _NewRootDialog extends StatefulWidget {
+  const _NewRootDialog({required this.kind});
+
+  final CategoryKind kind;
+
+  @override
+  State<_NewRootDialog> createState() => _NewRootDialogState();
+}
+
+class _NewRootDialogState extends State<_NewRootDialog> {
+  final TextEditingController _controller = TextEditingController();
+  var _templateId = clothingSizeTemplates.first.id;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final label = _controller.text.trim();
+    if (label.isEmpty) return;
+    final fields = widget.kind == CategoryKind.clothing
+        ? clothingSizeTemplates.firstWhere((t) => t.id == _templateId).fields
+        : const <String>[];
+    Navigator.pop(context, _NewRootResult(label: label, fields: fields));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final showTemplate = widget.kind == CategoryKind.clothing;
+    return _AppDialog(
+      title: '新增大分类',
+      body: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _DialogField(controller: _controller, hint: '分类名称', autofocus: true),
+          if (showTemplate) ...[
+            const SizedBox(height: 16),
+            const Text(
+              '测量模板',
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 6),
+            DropdownButtonFormField<String>(
+              initialValue: _templateId,
+              style: const TextStyle(fontSize: 14, color: AppColors.text),
+              dropdownColor: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
                 ),
-                if (showTemplate) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    '测量模板',
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                  ),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    initialValue: templateId,
-                    style: const TextStyle(fontSize: 14, color: AppColors.text),
-                    dropdownColor: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
+              ),
+              items: [
+                for (final template in clothingSizeTemplates)
+                  DropdownMenuItem(
+                    value: template.id,
+                    child: Text(
+                      template.label,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.text,
                       ),
                     ),
-                    items: [
-                      for (final template in clothingSizeTemplates)
-                        DropdownMenuItem(
-                          value: template.id,
-                          child: Text(
-                            template.label,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.text,
-                            ),
-                          ),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) setState(() => templateId = value);
-                    },
                   ),
-                ],
               ],
+              onChanged: (value) {
+                if (value != null) setState(() => _templateId = value);
+              },
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  final label = controller.text.trim();
-                  if (label.isEmpty) return;
-                  final fields = showTemplate
-                      ? clothingSizeTemplates
-                            .firstWhere((t) => t.id == templateId)
-                            .fields
-                      : const <String>[];
-                  Navigator.pop(
-                    context,
-                    _NewRootResult(label: label, fields: fields),
-                  );
-                },
-                child: const Text('确定'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-  controller.dispose();
-  return result;
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('确定')),
+      ],
+    );
+  }
 }
 
 class _AppDialog extends StatelessWidget {
