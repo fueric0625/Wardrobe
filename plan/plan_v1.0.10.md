@@ -1,6 +1,6 @@
-# 工程计划 v1.10
+# 工程计划 v1.0.10
 
-这是工程计划 v1.10。四个阶段和文末的验收收尾都已落地，Codex 已验收。产品行为以 [docs/current-state.md](../docs/current-state.md) 和 [docs/invariants.md](../docs/invariants.md) 为准。本文保留当时的结构建议，不再作为新一轮重构的任务单。
+这是工程计划 v1.0.10。四个阶段和文末的验收收尾都已落地，Codex 已验收。产品行为以 [docs/current-state.md](../docs/current-state.md) 和 [docs/invariants.md](../docs/invariants.md) 为准。本文保留当时的结构建议，不再作为新一轮重构的任务单。
 
 可以。基于目前的代码结构，我建议**不要立即做大规模重构**，而是围绕几个共享锚点逐步优化：数据库模型、图片坐标体系、Repository 接口、Riverpod 状态和版本迁移。
 
@@ -600,14 +600,14 @@ Controller：更新 UI 状态
 
 目前至少存在两套版本概念：
 
-- `pubspec.yaml`：`1.9.0+1`
-- `plan/`：已经描述到 v1.10
+- `pubspec.yaml`：`1.0.10+1`
+- `plan/`：已经描述到 v1.0.10
 
 建议明确区分：
 
 ```text
-产品版本：v1.10
-应用构建版本：1.9.0+1
+产品版本：v1.0.10
+应用构建版本：1.0.10+1
 数据库版本：schema 9
 ```
 
@@ -798,7 +798,7 @@ core/design_system/
 
 ## 完成情况
 
-Codex 已验收 v1.10。四个阶段都已按本文落地。验收报告里的收尾项已经改完，范围停在下面几处。
+Codex 已验收 v1.0.10。四个阶段都已按本文落地。验收报告里的收尾项已经改完，范围停在下面几处。
 
 1. 规范和风险控制：`.editorconfig`、版本与 schema 文档、图片生命周期测试、封面策略测试、JSON codec。
 2. 拆状态：穿搭编辑拆成 Controller、Draft 和子页面；衣物编辑抽出图片会话；页面不再直接拼保存用的数据库对象。
@@ -814,4 +814,4 @@ Codex 已验收 v1.10。四个阶段都已按本文落地。验收报告里的�
 
 验证：`dart format lib test` 已执行。`git diff --check` 通过。`flutter analyze` 无问题，`flutter test` 89 项通过，`flutter build windows --debug` 已生成 `build\windows\x64\runner\Debug\wardrobe.exe`。
 
-后续新功能按 [codex-cursor-Collaboration_Guidelines.md](codex-cursor-Collaboration_Guidelines.md) 小步做，不再重开这四个阶段。产品记录见 [version_outline.md](version_outline.md) 的 v1.10。
+后续新功能按 [codex-cursor-Collaboration_Guidelines.md](codex-cursor-Collaboration_Guidelines.md) 小步做，不再重开这四个阶段。产品记录见 [version_outline.md](version_outline.md) 的 v1.0.10。

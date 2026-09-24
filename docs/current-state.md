@@ -1,6 +1,6 @@
 # 当前状态
 
-产品 **v1.10**，应用构建版本 **1.9.0+1**（`pubspec.yaml`），数据库 **schema 9**。版本沿革见 [plan/version_outline.md](../plan/version_outline.md)。不能破坏的行为见 [invariants.md](invariants.md)。
+产品 **v1.0.10**，应用构建版本 **1.0.10+1**（`pubspec.yaml`），数据库 **schema 9**。版本沿革见 [plan/version_outline.md](../plan/version_outline.md)。不能破坏的行为见 [invariants.md](invariants.md)。
 
 数据在 `%APPDATA%\wardrobe\`。改过数据库结构后必须完全重启，热重载不够。schema 1–9 是已发出的手写升级，不重写。快照从版本 9 起，见 `drift_schemas/app_database/`。
 

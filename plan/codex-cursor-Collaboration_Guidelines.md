@@ -2,7 +2,7 @@
 
 > 本文是本仓库的工程协作流程规范，不代表产品版本号。
 >
-> 工程结构以 `plan/plan_v1.10.md` 为已落地的计划，产品范围以 [version_outline.md](version_outline.md) 为准；本文规定如何使用 Codex 和 Cursor 安全、可回滚地做后续修改。
+> 工程结构以 `plan/plan_v1.0.10.md` 为已落地的计划，产品范围以 [version_outline.md](version_outline.md) 为准；本文规定如何使用 Codex 和 Cursor 安全、可回滚地做后续修改。
 >
 > 适用范围：`E:\wardrobe` 仓库的 Flutter/Dart、Windows 原生层、数据库、图片处理、ONNX 推理、测试和文档修改。
 
@@ -12,8 +12,8 @@
 
 ### 1.1 一个主计划，两个协作角色
 
-- `plan/plan_v1.10.md`：已落地的工程计划。四个阶段不再重开。
-- [version_outline.md](version_outline.md)：产品从 v1.1 到 v1.10 做了什么。
+- `plan/plan_v1.0.10.md`：已落地的工程计划。四个阶段不再重开。
+- [version_outline.md](version_outline.md)：产品从 v1.0.1 到 v1.0.10 做了什么。
 - 本文：记录怎么做、谁负责什么、如何审查、如何提交和如何回退。
 - Cursor：默认负责连续实现和本地迭代。
 - Codex：默认负责任务拆分、架构审查、风险识别、测试设计和必要的定向修复。
@@ -70,7 +70,7 @@ Cursor 实现时必须遵守：
 
 Codex 适合承担：
 
-- 把本次需求拆成可执行任务，不重开 `plan/plan_v1.10.md` 的四个阶段；
+- 把本次需求拆成可执行任务，不重开 `plan/plan_v1.0.10.md` 的四个阶段；
 - 在 Cursor 修改前确定范围和验收标准；
 - 审查 `git diff`；
 - 检查跨模块一致性和数据生命周期；
@@ -366,7 +366,7 @@ test/db_migration_test.dart
 
 ## 6. 如何使用工程计划
 
-`plan/plan_v1.10.md` 的四个阶段已经完成。新任务按第 3 节小步做，不再重开那四个阶段，也不另设一套阶段编号。
+`plan/plan_v1.0.10.md` 的四个阶段已经完成。新任务按第 3 节小步做，不再重开那四个阶段，也不另设一套阶段编号。
 
 ### 6.1 新任务怎么开始
 
@@ -426,7 +426,7 @@ test/db_migration_test.dart
 ### 7.1 实现任务模板
 
 ```text
-请只完成下面这一项任务，不要重开 plan/plan_v1.10.md 的四个阶段。
+请只完成下面这一项任务，不要重开 plan/plan_v1.0.10.md 的四个阶段。
 
 目标：
 - ...
@@ -682,20 +682,20 @@ docs: update refactor workflow
 建议长期区分三种版本：
 
 ```text
-产品版本：v1.10、v1.11
-应用构建版本：1.9.0+1
+产品版本：v1.0.10、v1.0.11
+应用构建版本：1.0.10+1
 数据库版本：schema 9、schema 10
 ```
 
 `plan/` 里长期保留这三份：
 
 ```text
-plan/version_outline.md                      产品版本记录（v1.1 至 v1.10）
-plan/plan_v1.10.md                   已落地的工程计划
+plan/version_outline.md                      产品版本记录（v1.0.1 至 v1.0.10）
+plan/plan_v1.0.10.md                   已落地的工程计划
 plan/codex-cursor-Collaboration_Guidelines.md      工具协作和代码审查规范
 ```
 
-产品下一档写成 v1.11，记进 `plan/version_outline.md`。不要把工程改动叫成新的产品版本。
+产品下一档写成 v1.0.11，记进 `plan/version_outline.md`。不要把工程改动叫成新的产品版本。
 
 ---
 
@@ -711,5 +711,5 @@ plan/codex-cursor-Collaboration_Guidelines.md      工具协作和代码审查�
 ### 2026-09-23 文档整理
 
 - 产品快照收成 `plan/version_outline.md`。
-- 工程计划改名为 `plan/plan_v1.10.md`，四个阶段标为已完成。
+- 工程计划改名为 `plan/plan_v1.0.10.md`，四个阶段标为已完成。
 - 新任务不再重开这四个阶段。
