@@ -87,8 +87,8 @@ class OutfitClothesPicker extends ConsumerWidget {
                       child: FilterChip(
                         label: const Text('全部'),
                         selected: filterId == null,
-                        selectedColor: AppColors.primarySoft,
-                        checkmarkColor: AppColors.primary,
+                        selectedColor: AppPalette.of(context).primarySoft,
+                        checkmarkColor: AppPalette.of(context).primary,
                         onSelected: (_) => onFilter(null),
                       ),
                     ),
@@ -98,8 +98,8 @@ class OutfitClothesPicker extends ConsumerWidget {
                         child: FilterChip(
                           label: Text(child.label),
                           selected: filterId == child.id,
-                          selectedColor: AppColors.primarySoft,
-                          checkmarkColor: AppColors.primary,
+                          selectedColor: AppPalette.of(context).primarySoft,
+                          checkmarkColor: AppPalette.of(context).primary,
                           onSelected: (_) => onFilter(child.id),
                         ),
                       ),

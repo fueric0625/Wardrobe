@@ -64,8 +64,12 @@ class LocalCover extends StatelessWidget {
     final file = path == null || path!.isEmpty ? null : File(path!);
     if (file == null || !file.existsSync()) {
       return placeholder ??
-          const Center(
-            child: Icon(Icons.add, size: 42, color: AppColors.primary),
+          Center(
+            child: Icon(
+              Icons.add,
+              size: 42,
+              color: AppPalette.of(context).primary,
+            ),
           );
     }
     final image = Image.file(
@@ -204,12 +208,12 @@ class ItemTile extends StatelessWidget {
                   if (isCover)
                     const Positioned(left: 10, top: 10, child: _CoverBadge()),
                   if (selected)
-                    const Positioned(
+                    Positioned(
                       right: 10,
                       top: 10,
                       child: Icon(
                         Icons.check_circle,
-                        color: AppColors.primary,
+                        color: AppPalette.of(context).primary,
                         size: 28,
                       ),
                     ),
@@ -245,7 +249,7 @@ class _CoverBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: AppPalette.of(context).primary,
         borderRadius: BorderRadius.circular(20),
       ),
       child: const Text(
@@ -294,7 +298,7 @@ class AppSearchField extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(24),
-            borderSide: const BorderSide(color: AppColors.primary),
+            borderSide: BorderSide(color: AppPalette.of(context).primary),
           ),
         ),
       ),
@@ -515,7 +519,7 @@ class AddFab extends StatelessWidget {
   Widget build(BuildContext context) {
     return FloatingActionButton(
       onPressed: onPressed,
-      backgroundColor: AppColors.primary,
+      backgroundColor: AppPalette.of(context).primary,
       foregroundColor: Colors.white,
       elevation: 2,
       child: const Icon(Icons.add, size: 30),

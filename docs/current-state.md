@@ -1,6 +1,6 @@
 # 当前状态
 
-产品 **v1.0.10**，应用构建版本 **1.0.10+1**（`pubspec.yaml`），数据库 **schema 9**。版本沿革见 [plan/version_outline.md](../plan/version_outline.md)。不能破坏的行为见 [invariants.md](invariants.md)。
+产品 **v1.0.11**，应用构建版本 **1.0.11+1**（`pubspec.yaml`），数据库 **schema 9**。版本沿革见 [plan/version_outline.md](../plan/version_outline.md)。不能破坏的行为见 [invariants.md](invariants.md)。
 
 数据在 `%APPDATA%\wardrobe\`。改过数据库结构后必须完全重启，热重载不够。schema 1–9 是已发出的手写升级，不重写。快照从版本 9 起，见 `drift_schemas/app_database/`。
 
@@ -12,9 +12,11 @@
 
 ## 目录
 
+各板块的文件和依赖见 [code-structure.md](code-structure.md)。
+
 ```text
 lib/core/database        Drift 库与 schema 9 基线
-lib/core/design_system   主题与字体
+lib/core/design_system   主题、字体、文字大小、主体色
 lib/core/storage         图片暂存、提交、回滚
 lib/core/serialization   拼图、颜色、OCR、测量的 JSON
 lib/core/vision          坐标映射、抠图、OCR、ONNX 会话
@@ -33,6 +35,8 @@ lib/features/calendar    月历、日程、虚拟天气
 穿搭向导是关联衣物、OOTD、详情。OOTD 左边是全身照，右边是 3:4 拼图，用衣物的点选抠图来摆。封面可以选全身照或拼图。详情两张都显示，各自可删。
 
 日历点某一天添加日程，同一天可以挂多套穿搭。天气按日期算出来，标「虚拟」，不联网。
+
+侧栏底部进入设置。可以改字体、文字大小和主体颜色，选择会记在本机并立刻生效。五款字体里的「微软雅黑」是完整的微软雅黑。等线没有「橱」，缺这个字时只从微软雅黑补上。
 
 ## 还没做
 

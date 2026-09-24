@@ -1339,8 +1339,8 @@ class _SeasonPicker extends StatelessWidget {
               FilterChip(
                 label: Text(season),
                 selected: selected.contains(season),
-                selectedColor: AppColors.primarySoft,
-                checkmarkColor: AppColors.primary,
+                selectedColor: AppPalette.of(context).primarySoft,
+                checkmarkColor: AppPalette.of(context).primary,
                 onSelected: (on) {
                   final next = {...selected};
                   if (on) {

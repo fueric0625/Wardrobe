@@ -155,8 +155,8 @@ class OutfitDetailStep extends ConsumerWidget {
                           FilterChip(
                             label: Text(season),
                             selected: state.seasons.contains(season),
-                            selectedColor: AppColors.primarySoft,
-                            checkmarkColor: AppColors.primary,
+                            selectedColor: AppPalette.of(context).primarySoft,
+                            checkmarkColor: AppPalette.of(context).primary,
                             onSelected: (on) =>
                                 controller.toggleSeason(season, on: on),
                           ),

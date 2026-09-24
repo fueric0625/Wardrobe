@@ -1,6 +1,6 @@
 # 衣橱版本记录
 
-产品现为 **v1.0.10**。当前能做什么、代码怎么放，见 [docs/current-state.md](../docs/current-state.md)。不能破坏的行为见 [docs/invariants.md](../docs/invariants.md)。
+产品现为 **v1.0.11**。当前能做什么、代码怎么放，见 [docs/current-state.md](../docs/current-state.md)。不能破坏的行为见 [docs/invariants.md](../docs/invariants.md)。
 
 下面按时间记下每一版做了什么，以及当时明确不做的事。
 
@@ -108,3 +108,13 @@ Flutter Windows 桌面端。本地 SQLite 和图片，仓储层预留同步接�
 `dart format lib test` 已执行。`git diff --check` 通过。`flutter analyze` 无问题，`flutter test` 89 项通过，`flutter build windows --debug` 已生成 `build\windows\x64\runner\Debug\wardrobe.exe`。
 
 当时明确不做：继续扩大重构、改 schema、重开四个阶段。
+
+## v1.0.11 设置页外观（2026-09-24）
+
+侧栏底部的字体按钮改为设置。设置页第一块是外观：字体、文字大小、主体颜色。选择写在 `%APPDATA%\wardrobe\appearance.json`，没有这份文件时沿用已有的 `font.txt`。
+
+主体色跟到主题和原先写死主色的页面。背景、文字、边框仍是原来的中性色。不新建 `lib/ui`。
+
+字体五款里，「微软雅黑」是 `Microsoft YaHei`，不是 UI 版。等线没有「橱」，缺字只从微软雅黑补，避免落到宋体，也避免和 UI 版混用后这个字小一号。以前存成 `Microsoft YaHei UI` 的选择，读入时改成 `Microsoft YaHei`。
+
+当时明确不做：自定义取色、深色模式、把列表排序写进设置、改数据库。

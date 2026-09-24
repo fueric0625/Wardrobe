@@ -42,7 +42,7 @@ class OutfitPhotoStep extends ConsumerWidget {
                       ChoiceChip(
                         label: const Text('全身照'),
                         selected: !useCollage,
-                        selectedColor: AppColors.primarySoft,
+                        selectedColor: AppPalette.of(context).primarySoft,
                         onSelected: (_) => controller.selectCoverPhoto(),
                       )
                     else
@@ -70,7 +70,7 @@ class OutfitPhotoStep extends ConsumerWidget {
                         ChoiceChip(
                           label: Text(outfitPhotoModeLabel(mode)),
                           selected: state.mode == mode,
-                          selectedColor: AppColors.primarySoft,
+                          selectedColor: AppPalette.of(context).primarySoft,
                           onSelected: state.photoBusy
                               ? null
                               : (_) => controller.applyMode(mode),
@@ -115,7 +115,10 @@ class _PhotoPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(outfitEditControllerProvider(editKey));
     final controller = ref.read(outfitEditControllerProvider(editKey).notifier);
-    final frame = _coverFrame(selected: selected);
+    final frame = _coverFrame(
+      selected: selected,
+      accent: AppPalette.of(context).primary,
+    );
     if (path == null) {
       return Material(
         color: AppColors.surface,
@@ -123,16 +126,19 @@ class _PhotoPanel extends ConsumerWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: state.photoBusy ? null : controller.pickImage,
-          child: const Column(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.add_photo_alternate_outlined,
                 size: 48,
-                color: AppColors.primary,
+                color: AppPalette.of(context).primary,
               ),
-              SizedBox(height: 12),
-              Text('点击选择全身照', style: TextStyle(color: AppColors.textMuted)),
+              const SizedBox(height: 12),
+              const Text(
+                '点击选择全身照',
+                style: TextStyle(color: AppColors.textMuted),
+              ),
             ],
           ),
         ),
@@ -188,7 +194,7 @@ class _CollagePanel extends ConsumerWidget {
               ChoiceChip(
                 label: const Text('拼图'),
                 selected: selected,
-                selectedColor: AppColors.primarySoft,
+                selectedColor: AppPalette.of(context).primarySoft,
                 onSelected: (_) => controller.selectCoverCollage(),
               )
             else
@@ -207,7 +213,10 @@ class _CollagePanel extends ConsumerWidget {
           child: CollageCoverBox(
             child: Material(
               color: AppColors.surface,
-              shape: _coverFrame(selected: selected),
+              shape: _coverFrame(
+                selected: selected,
+                accent: AppPalette.of(context).primary,
+              ),
               clipBehavior: Clip.antiAlias,
               child: collage.placements.isEmpty
                   ? const Center(
@@ -234,11 +243,14 @@ class _CollagePanel extends ConsumerWidget {
   }
 }
 
-RoundedRectangleBorder _coverFrame({required bool selected}) {
+RoundedRectangleBorder _coverFrame({
+  required bool selected,
+  required Color accent,
+}) {
   return RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(24),
     side: BorderSide(
-      color: selected ? AppColors.primary : AppColors.border,
+      color: selected ? accent : AppColors.border,
       width: selected ? 2 : 1,
     ),
   );

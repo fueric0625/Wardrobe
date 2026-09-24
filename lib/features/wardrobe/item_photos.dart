@@ -248,12 +248,12 @@ class ItemPhotoStrip extends StatelessWidget {
           child: Row(
             children: [
               if (photos.isEmpty)
-                const SizedBox(
+                SizedBox(
                   width: 56,
                   height: 56,
                   child: Icon(
                     Icons.add_photo_alternate_outlined,
-                    color: AppColors.primary,
+                    color: AppPalette.of(context).primary,
                   ),
                 )
               else
@@ -366,7 +366,9 @@ class _ItemPhotoViewerState extends State<ItemPhotoViewer> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: selected ? AppColors.primary : AppColors.border,
+                        color: selected
+                            ? AppPalette.of(context).primary
+                            : AppColors.border,
                         width: selected ? 2 : 1,
                       ),
                     ),
@@ -420,10 +422,10 @@ class _EmptyAdd extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.add_photo_alternate_outlined,
               size: 56,
-              color: AppColors.primary,
+              color: AppPalette.of(context).primary,
             ),
             const SizedBox(height: 12),
             const Text(
@@ -533,7 +535,7 @@ class _PreviewCard extends StatelessWidget {
                       imageHeight: height,
                       radius: eraseRadius,
                       accent: fillSampling
-                          ? AppColors.primary
+                          ? AppPalette.of(context).primary
                           : const Color(0xFF3D8B6E),
                       onStroke: fillSampling ? onFillSample : onFillPaint,
                     ),
@@ -854,7 +856,7 @@ class _ThumbStrip extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Icon(Icons.add, color: AppColors.primary),
+                child: Icon(Icons.add, color: AppPalette.of(context).primary),
               ),
             );
           }
@@ -869,7 +871,9 @@ class _ThumbStrip extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: selected ? AppColors.primary : AppColors.border,
+                  color: selected
+                      ? AppPalette.of(context).primary
+                      : AppColors.border,
                   width: selected ? 2 : 1,
                 ),
               ),

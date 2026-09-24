@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:wardrobe/app/settings_page.dart';
 import 'package:wardrobe/app/shell.dart';
 import 'package:wardrobe/core/catalog/catalogs.dart';
 import 'package:wardrobe/features/calendar/calendar_page.dart';
@@ -84,6 +85,11 @@ final appRouter = GoRouter(
           path: '/calendar',
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: CalendarPage()),
+        ),
+        GoRoute(
+          path: '/settings',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: SettingsPage()),
         ),
       ],
     ),

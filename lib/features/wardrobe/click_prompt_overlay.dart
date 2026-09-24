@@ -97,6 +97,7 @@ class _ClickPromptOverlayState extends State<ClickPromptOverlay> {
                   imageWidth: widget.imageWidth,
                   imageHeight: widget.imageHeight,
                   points: List<PromptPoint>.of(widget.points),
+                  color: AppPalette.of(context).primary,
                 ),
               ),
             ),
@@ -113,12 +114,14 @@ class _ClickPromptPainter extends CustomPainter {
     required this.imageWidth,
     required this.imageHeight,
     required this.points,
+    required this.color,
   });
 
   final ContainLayout layout;
   final int imageWidth;
   final int imageHeight;
   final List<PromptPoint> points;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -148,9 +151,7 @@ class _ClickPromptPainter extends CustomPainter {
       final local = mapper
           .toViewport(ImagePixelPoint(point.x.toDouble(), point.y.toDouble()))
           .toOffset();
-      final color = point.positive
-          ? AppColors.primary
-          : const Color(0xFFE25555);
+      final color = point.positive ? this.color : const Color(0xFFE25555);
       canvas.drawCircle(local, 7, Paint()..color = color);
       canvas.drawCircle(
         local,
@@ -184,7 +185,8 @@ class _ClickPromptPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ClickPromptPainter oldDelegate) {
-    return !listEquals(oldDelegate.points, points) ||
+    return oldDelegate.color != color ||
+        !listEquals(oldDelegate.points, points) ||
         oldDelegate.layout.drawWidth != layout.drawWidth ||
         oldDelegate.layout.drawHeight != layout.drawHeight ||
         oldDelegate.imageWidth != imageWidth ||

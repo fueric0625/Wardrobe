@@ -97,7 +97,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       onPressed: () => _shiftMonth(-1),
                       icon: const Icon(Icons.chevron_left),
                       style: IconButton.styleFrom(
-                        backgroundColor: AppColors.primarySoft,
+                        backgroundColor: AppPalette.of(context).primarySoft,
                       ),
                     ),
                     Padding(
@@ -114,7 +114,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       onPressed: () => _shiftMonth(1),
                       icon: const Icon(Icons.chevron_right),
                       style: IconButton.styleFrom(
-                        backgroundColor: AppColors.primarySoft,
+                        backgroundColor: AppPalette.of(context).primarySoft,
                       ),
                     ),
                     const Spacer(),
@@ -214,7 +214,7 @@ class _CircleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.primary,
+      color: AppPalette.of(context).primary,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -258,7 +258,9 @@ class _DayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected ? AppColors.primarySoft : AppColors.surface;
+    final bg = selected
+        ? AppPalette.of(context).primarySoft
+        : AppColors.surface;
     final solarColor = !inMonth
         ? AppColors.textMuted.withValues(alpha: 0.45)
         : AppColors.text;
@@ -278,8 +280,8 @@ class _DayCell extends StatelessWidget {
                 height: 28,
                 alignment: Alignment.center,
                 decoration: isToday
-                    ? const BoxDecoration(
-                        color: AppColors.primary,
+                    ? BoxDecoration(
+                        color: AppPalette.of(context).primary,
                         shape: BoxShape.circle,
                       )
                     : null,
@@ -306,7 +308,9 @@ class _DayCell extends StatelessWidget {
                 width: 6,
                 height: 6,
                 decoration: BoxDecoration(
-                  color: marked ? AppColors.primary : Colors.transparent,
+                  color: marked
+                      ? AppPalette.of(context).primary
+                      : Colors.transparent,
                   shape: BoxShape.circle,
                 ),
               ),

@@ -7,6 +7,7 @@ void main() {
     expect(resolveAppFont('  '), defaultAppFontFamily);
     expect(resolveAppFont('Comic Sans MS'), defaultAppFontFamily);
     expect(resolveAppFont('KaiTi'), 'KaiTi');
+    expect(resolveAppFont('Microsoft YaHei UI'), 'Microsoft YaHei');
     expect(resolveAppFont(' DengXian '), 'DengXian');
   });
 }

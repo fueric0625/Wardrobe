@@ -217,7 +217,7 @@ Future<Category?> promptMoveToCategory(
                     final current = category.id == currentId;
                     return Material(
                       color: current
-                          ? AppColors.primarySoft
+                          ? AppPalette.of(context).primarySoft
                           : AppColors.background,
                       borderRadius: BorderRadius.circular(14),
                       child: InkWell(

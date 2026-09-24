@@ -90,7 +90,11 @@ class _DayPlanPanelState extends ConsumerState<DayPlanPanel> {
           const SizedBox(height: 14),
           Row(
             children: [
-              Icon(weather.icon, color: AppColors.primary, size: 22),
+              Icon(
+                weather.icon,
+                color: AppPalette.of(context).primary,
+                size: 22,
+              ),
               const SizedBox(width: 8),
               Text(
                 weather.label,
@@ -137,7 +141,7 @@ class _DayPlanPanelState extends ConsumerState<DayPlanPanel> {
                 for (final event in events)
                   InputChip(
                     label: Text(event.title),
-                    backgroundColor: AppColors.primarySoft,
+                    backgroundColor: AppPalette.of(context).primarySoft,
                     side: const BorderSide(color: AppColors.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),

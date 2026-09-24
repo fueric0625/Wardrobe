@@ -65,7 +65,12 @@ class _FillBoxOverlayState extends State<FillBoxOverlay> {
             }),
             child: CustomPaint(
               size: Size(constraints.maxWidth, constraints.maxHeight),
-              painter: _FillBoxPainter(layout: layout, from: _from, to: _to),
+              painter: _FillBoxPainter(
+                layout: layout,
+                from: _from,
+                to: _to,
+                color: AppPalette.of(context).primary,
+              ),
             ),
           ),
         );
@@ -116,11 +121,17 @@ class _FillBoxOverlayState extends State<FillBoxOverlay> {
 }
 
 class _FillBoxPainter extends CustomPainter {
-  _FillBoxPainter({required this.layout, required this.from, required this.to});
+  _FillBoxPainter({
+    required this.layout,
+    required this.from,
+    required this.to,
+    required this.color,
+  });
 
   final ContainLayout layout;
   final Offset? from;
   final Offset? to;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -145,13 +156,13 @@ class _FillBoxPainter extends CustomPainter {
     canvas.drawRect(
       rect,
       Paint()
-        ..color = AppColors.primary.withValues(alpha: 0.16)
+        ..color = color.withValues(alpha: 0.16)
         ..style = PaintingStyle.fill,
     );
     canvas.drawRect(
       rect,
       Paint()
-        ..color = AppColors.primary
+        ..color = color
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2,
     );
@@ -161,6 +172,7 @@ class _FillBoxPainter extends CustomPainter {
   bool shouldRepaint(covariant _FillBoxPainter oldDelegate) {
     return oldDelegate.from != from ||
         oldDelegate.to != to ||
+        oldDelegate.color != color ||
         oldDelegate.layout.drawWidth != layout.drawWidth;
   }
 }

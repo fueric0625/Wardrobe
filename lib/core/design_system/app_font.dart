@@ -14,7 +14,7 @@ class AppFontChoice {
 /// Faces that ship with Windows. No downloaded font files.
 const appFontChoices = <AppFontChoice>[
   AppFontChoice(label: '等线', family: 'DengXian'),
-  AppFontChoice(label: '微软雅黑', family: 'Microsoft YaHei UI'),
+  AppFontChoice(label: '微软雅黑', family: 'Microsoft YaHei'),
   AppFontChoice(label: '黑体', family: 'SimHei'),
   AppFontChoice(label: '楷体', family: 'KaiTi'),
   AppFontChoice(label: '宋体', family: 'SimSun'),
@@ -22,8 +22,13 @@ const appFontChoices = <AppFontChoice>[
 
 const defaultAppFontFamily = 'DengXian';
 
+/// 等线没有「橱」。缺字时只用完整的微软雅黑补。
+/// UI 版和正文字号比例不同，混用会让「橱」小一号。
+const appFontFallback = <String>['Microsoft YaHei'];
+
 String resolveAppFont(String? raw) {
   final name = raw?.trim() ?? '';
+  if (name == 'Microsoft YaHei UI') return 'Microsoft YaHei';
   for (final choice in appFontChoices) {
     if (choice.family == name) return name;
   }
