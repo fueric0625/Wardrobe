@@ -1,6 +1,6 @@
 # 当前状态
 
-产品 **v1.0.15**，应用构建版本 **1.0.15+1**（`pubspec.yaml`），数据库 **schema 11**。版本沿革见 [plan/version_outline.md](../plan/version_outline.md)。不能破坏的行为见 [invariants.md](invariants.md)。
+产品 **v1.0.15**，应用构建版本 **1.0.15+1**（`pubspec.yaml`），数据库 **schema 11**。这是只在 Windows 上用、不联网的完整版本。版本沿革见 [plan/version_outline.md](../plan/version_outline.md)。不能破坏的行为见 [invariants.md](invariants.md)。
 
 数据在 `%APPDATA%\wardrobe\`。改过数据库结构后必须完全重启，热重载不够。schema 1–9 是已发出的手写升级，不重写。schema 10 起走快照步骤。快照从版本 9 起，见 `drift_schemas/app_database/`。schema 11 给衣物加上 `custom_json`，存放自定义字段在每一件上的值。布局写在 `detail_layout.json`，列表排序写在 `list_sort.json`，都不进设置页。Windows 上数据库走系统里的 `winsqlite3.dll`。
 
@@ -49,6 +49,8 @@ lib/features/calendar    月历、日程、虚拟天气
 编辑页在「吊牌原文」开着时先只读展示，标题旁有「修改」。点进去是对照页：左边一半是当前吊牌图，右边是各行文字。不止一张时在顶上切换。鼠标停在一行上，行尾才出现上箭头、下箭头和叉，分别是并到上一行、并到下一行、删除。Enter 在光标处把这一行拆成两行。空行不保留。改行只换原文，不重填品牌、面料、号型或测量。顶栏「重新识别」先说明已改过的原文会被盖掉，确认后整份替换这一张。写入数据库仍是编辑页的「确定」。字段关掉时不列出这些行，已存的行不动。详情里的吊牌原文仍是只读。
 
 ## 还没做
+
+下面这些留到以后，不挡把这一版当成 PC 端的完成版。
 
 - 事后改已添加自定义字段的名称、类型和选项
 - 识别文字的自动矫正
