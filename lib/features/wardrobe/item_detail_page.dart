@@ -9,6 +9,9 @@ import 'package:wardrobe/core/catalog/category_tree.dart';
 import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/vision/ocr/tag_ocr.dart';
+import 'package:wardrobe/core/serialization/custom_field_codec.dart';
+import 'package:wardrobe/features/wardrobe/detail_layout.dart';
+import 'package:wardrobe/features/wardrobe/detail_layout_store.dart';
 import 'package:wardrobe/features/wardrobe/item_attribute_editor.dart';
 import 'package:wardrobe/features/wardrobe/item_attributes.dart';
 import 'package:wardrobe/features/wardrobe/photo_role.dart';
@@ -64,11 +67,10 @@ class ItemDetailPage extends ConsumerWidget {
         final title = item.productName.trim().isEmpty
             ? '单品详情'
             : item.productName.trim();
-        final measures = decodeMeasurements(item.measurements);
+        final path = categoryPath(categories, item.categoryId);
         final sizeFields = category == null
             ? <String>[]
             : inheritedSizeFields(categories, category);
-        final path = categoryPath(categories, item.categoryId);
         final coverTargets = coverCategoriesForItem(
           categories,
           item.categoryId,
@@ -81,6 +83,8 @@ class ItemDetailPage extends ConsumerWidget {
             );
         final tagOcr = _tagOcrText(images);
         final tagPaths = _tagImagePaths(images);
+        final layout = ref.watch(detailLayoutProvider);
+        final measures = decodeMeasurements(item.measurements);
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -112,6 +116,11 @@ class ItemDetailPage extends ConsumerWidget {
                       kind: CategoryKind.clothing,
                       covers: covers,
                       targets: coverTargets,
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          context.push('/wardrobe/item/${item.id}/layout'),
+                      child: const Text('布局'),
                     ),
                     TextButton(
                       onPressed: () => _move(
@@ -148,119 +157,15 @@ class ItemDetailPage extends ConsumerWidget {
                         const SizedBox(width: 28),
                         Expanded(
                           child: DetailFormCard(
-                            children: [
-                              ReadOnlyField(
-                                label: '品名',
-                                value: item.productName,
-                              ),
-                              ReadOnlyField(label: '分类', value: path),
-                              _split(
-                                ReadOnlyField(
-                                  label: '尺码',
-                                  value: item.sizeCode,
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      '款式',
-                                      style: TextStyle(
-                                        color: AppColors.textMuted,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    SelectedLabels(
-                                      labels: orderedStyle(
-                                        decodeStyle(item.style),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              ReadOnlyField(label: '颜色', value: item.color),
-                              _split(
-                                ReadOnlyField(label: '面料', value: item.fabric),
-                                ReadOnlyField(
-                                  label: '季节',
-                                  value: _joinTokens(item.season),
-                                ),
-                              ),
-                              ReadOnlyField(label: '品牌', value: item.brand),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    '洗涤维护',
-                                    style: TextStyle(
-                                      color: AppColors.textMuted,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  SelectedLabels(
-                                    labels: [
-                                      for (final group in careGroups)
-                                        for (final option in group.options)
-                                          if (decodeCare(item.careJson)
-                                              .contains(option.id))
-                                            option.label,
-                                    ],
-                                    icons: [
-                                      for (final group in careGroups)
-                                        for (final option in group.options)
-                                          if (decodeCare(item.careJson)
-                                              .contains(option.id))
-                                            careGroupIcon(group.label),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              _split(
-                                ReadOnlyField(
-                                  label: '价格',
-                                  value: _priceText(item.price),
-                                ),
-                                ReadOnlyField(
-                                  label: '购入时间',
-                                  value: item.purchasedAt == null
-                                      ? null
-                                      : DateFormat('yyyy-MM-dd')
-                                            .format(item.purchasedAt!),
-                                ),
-                              ),
-                              if (sizeFields.isNotEmpty) ...[
-                                const Text(
-                                  '尺码测量',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
-                                ),
-                                Wrap(
-                                  spacing: 24,
-                                  runSpacing: 12,
-                                  children: [
-                                    for (final field in sizeFields)
-                                      SizedBox(
-                                        width: 140,
-                                        child: ReadOnlyField(
-                                          label: field,
-                                          value: measures[field],
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                              ReadOnlyField(
-                                label: '存放位置',
-                                value: item.location,
-                              ),
-                              ReadOnlyField(label: '标签', value: item.tags),
-                              ReadOnlyField(label: '备注', value: item.note),
-                              if (tagOcr.isNotEmpty || tagPaths.isNotEmpty)
-                                HangtagOcrBlock(
-                                  text: tagOcr,
-                                  imagePaths: tagPaths,
-                                ),
-                            ],
+                            children: _detailFields(
+                              layout: layout,
+                              item: item,
+                              path: path,
+                              sizeFields: sizeFields,
+                              measures: measures,
+                              tagOcr: tagOcr,
+                              tagPaths: tagPaths,
+                            ),
                           ),
                         ),
                       ],
@@ -301,16 +206,193 @@ class ItemDetailPage extends ConsumerWidget {
       context.go('/wardrobe');
     }
   }
+}
 
-  static Widget _split(Widget left, Widget right) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: left),
-        const SizedBox(width: 12),
-        Expanded(child: right),
-      ],
-    );
+List<Widget> _detailFields({
+  required DetailLayout layout,
+  required ClothingItem item,
+  required String path,
+  required List<String> sizeFields,
+  required Map<String, String> measures,
+  required String tagOcr,
+  required List<String> tagPaths,
+}) {
+  final custom = decodeCustomFieldValues(item.customJson);
+  final widgets = <Widget>[];
+  for (final row in visibleDetailRows(layout)) {
+    if (row.right == null) {
+      final child = _detailSlot(
+        row.left,
+        item: item,
+        path: path,
+        sizeFields: sizeFields,
+        measures: measures,
+        tagOcr: tagOcr,
+        tagPaths: tagPaths,
+        custom: custom,
+      );
+      if (child != null) widgets.add(child);
+    } else {
+      widgets.add(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _detailSlot(
+                row.left,
+                item: item,
+                path: path,
+                sizeFields: sizeFields,
+                measures: measures,
+                tagOcr: tagOcr,
+                tagPaths: tagPaths,
+                custom: custom,
+              )!,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _detailSlot(
+                row.right!,
+                item: item,
+                path: path,
+                sizeFields: sizeFields,
+                measures: measures,
+                tagOcr: tagOcr,
+                tagPaths: tagPaths,
+                custom: custom,
+              )!,
+            ),
+          ],
+        ),
+      );
+    }
+  }
+  return widgets;
+}
+
+Widget? _detailSlot(
+  DetailSlot slot, {
+  required ClothingItem item,
+  required String path,
+  required List<String> sizeFields,
+  required Map<String, String> measures,
+  required String tagOcr,
+  required List<String> tagPaths,
+  required CustomFieldValues custom,
+}) {
+  if (slot.kind != DetailSlotKind.builtin) {
+    if (slot.kind == DetailSlotKind.multi) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            slot.displayLabel,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 4),
+          SelectedLabels(
+            labels: orderedChoices(slot.options, {
+              ...custom.choices[slot.id] ?? const <String>[],
+            }),
+          ),
+        ],
+      );
+    }
+    return ReadOnlyField(label: slot.displayLabel, value: custom.text[slot.id]);
+  }
+
+  switch (slot.id) {
+    case BuiltinDetailField.productName:
+      return ReadOnlyField(label: '品名', value: item.productName);
+    case BuiltinDetailField.category:
+      return ReadOnlyField(label: '分类', value: path);
+    case BuiltinDetailField.sizeCode:
+      return ReadOnlyField(label: '尺码', value: item.sizeCode);
+    case BuiltinDetailField.style:
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '款式',
+            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 4),
+          SelectedLabels(labels: orderedStyle(decodeStyle(item.style))),
+        ],
+      );
+    case BuiltinDetailField.color:
+      return ReadOnlyField(label: '颜色', value: item.color);
+    case BuiltinDetailField.fabric:
+      return ReadOnlyField(label: '面料', value: item.fabric);
+    case BuiltinDetailField.season:
+      return ReadOnlyField(label: '季节', value: _joinTokens(item.season));
+    case BuiltinDetailField.brand:
+      return ReadOnlyField(label: '品牌', value: item.brand);
+    case BuiltinDetailField.care:
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '洗涤维护',
+            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 4),
+          SelectedLabels(
+            labels: [
+              for (final group in careGroups)
+                for (final option in group.options)
+                  if (decodeCare(item.careJson).contains(option.id))
+                    option.label,
+            ],
+            icons: [
+              for (final group in careGroups)
+                for (final option in group.options)
+                  if (decodeCare(item.careJson).contains(option.id))
+                    careGroupIcon(group.label),
+            ],
+          ),
+        ],
+      );
+    case BuiltinDetailField.price:
+      return ReadOnlyField(label: '价格', value: _priceText(item.price));
+    case BuiltinDetailField.purchasedAt:
+      return ReadOnlyField(
+        label: '购入时间',
+        value: item.purchasedAt == null
+            ? null
+            : DateFormat('yyyy-MM-dd').format(item.purchasedAt!),
+      );
+    case BuiltinDetailField.measurements:
+      if (sizeFields.isEmpty) return null;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('尺码测量', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 24,
+            runSpacing: 12,
+            children: [
+              for (final field in sizeFields)
+                SizedBox(
+                  width: 140,
+                  child: ReadOnlyField(label: field, value: measures[field]),
+                ),
+            ],
+          ),
+        ],
+      );
+    case BuiltinDetailField.location:
+      return ReadOnlyField(label: '存放位置', value: item.location);
+    case BuiltinDetailField.tags:
+      return ReadOnlyField(label: '标签', value: item.tags);
+    case BuiltinDetailField.note:
+      return ReadOnlyField(label: '备注', value: item.note);
+    case BuiltinDetailField.hangtag:
+      if (tagOcr.isEmpty && tagPaths.isEmpty) return null;
+      return HangtagOcrBlock(text: tagOcr, imagePaths: tagPaths);
+    default:
+      return null;
   }
 }
 

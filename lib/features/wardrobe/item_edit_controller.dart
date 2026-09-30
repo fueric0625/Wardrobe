@@ -22,6 +22,7 @@ class ItemEditDraft {
     required this.location,
     required this.tags,
     required this.note,
+    required this.customJson,
     required this.now,
     this.purchasedAt,
     this.createdAt,
@@ -44,6 +45,7 @@ class ItemEditDraft {
   final String location;
   final String tags;
   final String note;
+  final String customJson;
   final DateTime now;
   final DateTime? purchasedAt;
   final DateTime? createdAt;
@@ -71,6 +73,7 @@ class ItemEditDraft {
       location: Value(location.trim()),
       tags: Value(tags.trim()),
       note: Value(note.trim()),
+      customJson: Value(customJson.trim()),
       createdAt: Value(createdAt ?? now),
       updatedAt: Value(now),
     );

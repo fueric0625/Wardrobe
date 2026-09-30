@@ -5,6 +5,7 @@ import 'package:wardrobe/app/providers.dart';
 import 'package:wardrobe/core/design_system/app_appearance.dart';
 import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/storage/image_store.dart';
+import 'package:wardrobe/features/wardrobe/detail_layout_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +14,7 @@ Future<void> main() async {
   final images = ImageStore();
   await images.init();
   final appearance = await AppAppearanceStore.read();
+  final detailLayout = await DetailLayoutStore.read();
 
   runApp(
     ProviderScope(
@@ -20,6 +22,7 @@ Future<void> main() async {
         databaseProvider.overrideWith((ref) => database),
         imageStoreProvider.overrideWith((ref) => images),
         appAppearanceSeedProvider.overrideWith((ref) => appearance),
+        detailLayoutSeedProvider.overrideWith((ref) => detailLayout),
       ],
       child: const WardrobeApp(),
     ),

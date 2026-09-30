@@ -18,6 +18,9 @@ import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/vision/coordinates/image_edit_session.dart';
 import 'package:wardrobe/features/wardrobe/domain/item_photo_policy.dart';
+import 'package:wardrobe/core/serialization/custom_field_codec.dart';
+import 'package:wardrobe/features/wardrobe/detail_layout.dart';
+import 'package:wardrobe/features/wardrobe/detail_layout_store.dart';
 import 'package:wardrobe/features/wardrobe/item_attribute_editor.dart';
 import 'package:wardrobe/features/wardrobe/item_attributes.dart';
 import 'package:wardrobe/features/wardrobe/item_edit_controller.dart';
@@ -57,6 +60,10 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   final _tags = TextEditingController();
   final _note = TextEditingController();
   final _measureControllers = <String, TextEditingController>{};
+  final _customText = <String, TextEditingController>{};
+  final _customSingle = <String, String>{};
+  final _customMulti = <String, Set<String>>{};
+  var _loadedCustomJson = '';
 
   String _categoryId = 'uncategorized';
   DateTime? _purchasedAt;
@@ -110,6 +117,9 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     _tags.dispose();
     _note.dispose();
     for (final c in _measureControllers.values) {
+      c.dispose();
+    }
+    for (final c in _customText.values) {
       c.dispose();
     }
     if (!_saved) {
@@ -171,6 +181,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
           entry.value;
     }
     final images = await ref.read(itemRepositoryProvider).getImages(item.id);
+    _readCustom(item.customJson, ref.read(detailLayoutProvider));
     _photos
       ..clear()
       ..addAll([
@@ -743,6 +754,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
         location: _location.text,
         tags: _tags.text,
         note: _note.text,
+        customJson: _writeCustom(ref.read(detailLayoutProvider)),
         createdAt: _createdAt,
         now: now,
       );
@@ -933,6 +945,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     final sizeFields = node == null
         ? <String>[]
         : inheritedSizeFields(categories, node);
+    final layout = ref.watch(detailLayoutProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -989,189 +1002,336 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                 ),
                 const SizedBox(height: 16),
                 _FormCard(
-                  children: [
-                    CategoryCascadePicker(
-                      categories: categories,
-                      value: selectedId,
-                      onChanged: (v) => setState(() => _categoryId = v),
-                    ),
-                    _LabeledField(
-                      label: '品名',
-                      hint: '吊牌上的产品名称',
-                      controller: _productName,
-                    ),
-                    _LabeledField(
-                      label: '尺码',
-                      hint: '如 175/92A',
-                      controller: _sizeCode,
-                    ),
-                    StyleEditor(
-                      selected: _styles,
-                      onChanged: (next) => setState(() {
-                        _styles
-                          ..clear()
-                          ..addAll(next);
-                      }),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _LabeledField(
-                          label: '颜色',
-                          hint: '手填或用识别结果',
-                          controller: _color,
-                        ),
-                        if (_detectedColorHint != null) ...[
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                '识别：$_detectedColorHint',
-                                style: const TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: _applyDetectedColor,
-                                child: const Text('填入'),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                    _split(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _LabeledField(
-                            label: '面料',
-                            hint: '手填面料',
-                            controller: _fabric,
-                          ),
-                          _ocrFillHint(
-                            value: _mergedTagOcr.fabric,
-                            onApply: () => setState(
-                              () => _fabric.text = _mergedTagOcr.fabric ?? '',
-                            ),
-                          ),
-                        ],
-                      ),
-                      _SeasonPicker(
-                        selected: _seasons,
-                        onChanged: (next) => setState(() {
-                          _seasons
-                            ..clear()
-                            ..addAll(next);
-                        }),
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _LabeledField(
-                          label: '品牌',
-                          hint: '手填品牌',
-                          controller: _brand,
-                        ),
-                        _ocrFillHint(
-                          value: _mergedTagOcr.brand,
-                          onApply: () => setState(
-                            () => _brand.text = _mergedTagOcr.brand ?? '',
-                          ),
-                        ),
-                      ],
-                    ),
-                    CareEditor(
-                      selected: _care,
-                      onChanged: (next) => setState(() {
-                        _care
-                          ..clear()
-                          ..addAll(next);
-                      }),
-                    ),
-                    _split(
-                      _LabeledField(
-                        label: '价格',
-                        hint: '元',
-                        controller: _price,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                        ],
-                      ),
-                      _DateRow(
-                        label: '购入时间',
-                        value: _purchasedAt,
-                        onTap: _pickDate,
-                        onClear: () => setState(() => _purchasedAt = null),
-                      ),
-                    ),
-                    if (sizeFields.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, bottom: 4),
-                        child: Text(
-                          '尺码测量',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          for (final field in sizeFields)
-                            SizedBox(
-                              width: 160,
-                              child: _LabeledField(
-                                label: field,
-                                hint: field,
-                                controller: _measureControllers[field]!,
-                              ),
-                            ),
-                        ],
-                      ),
-                      _ocrFillHint(
-                        value: _sizeOcrHint(sizeFields),
-                        onApply: () => _applySizeOcr(sizeFields),
-                      ),
-                    ],
-                    _LabeledField(
-                      label: '存放位置',
-                      hint: '输入存放位置',
-                      controller: _location,
-                    ),
-                    _LabeledField(
-                      label: '标签',
-                      hint: '用逗号分隔',
-                      controller: _tags,
-                    ),
-                    _LabeledField(
-                      label: '备注',
-                      hint: '输入备注信息',
-                      controller: _note,
-                      maxLines: 4,
-                    ),
-                    if (_mergedTagOcr.text.isNotEmpty ||
-                        _tagPreviewPaths.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: HangtagOcrBlock(
-                          text: _mergedTagOcr.text,
-                          imagePaths: _tagPreviewPaths,
-                        ),
-                      ),
-                  ],
+                  children: _formFields(
+                    layout: layout,
+                    categories: categories,
+                    selectedId: selectedId,
+                    sizeFields: sizeFields,
+                  ),
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  List<Widget> _formFields({
+    required DetailLayout layout,
+    required List<Category> categories,
+    required String selectedId,
+    required List<String> sizeFields,
+  }) {
+    final widgets = <Widget>[];
+    for (final row in visibleDetailRows(layout)) {
+      if (row.right == null) {
+        final child = _editSlot(
+          row.left,
+          categories: categories,
+          selectedId: selectedId,
+          sizeFields: sizeFields,
+        );
+        if (child != null) widgets.add(child);
+      } else {
+        widgets.add(
+          _split(
+            _editSlot(
+              row.left,
+              categories: categories,
+              selectedId: selectedId,
+              sizeFields: sizeFields,
+            )!,
+            _editSlot(
+              row.right!,
+              categories: categories,
+              selectedId: selectedId,
+              sizeFields: sizeFields,
+            )!,
+          ),
+        );
+      }
+    }
+    return widgets;
+  }
+
+  Widget? _editSlot(
+    DetailSlot slot, {
+    required List<Category> categories,
+    required String selectedId,
+    required List<String> sizeFields,
+  }) {
+    if (slot.kind == DetailSlotKind.text) {
+      return _LabeledField(
+        label: slot.displayLabel,
+        hint: '输入${slot.displayLabel}',
+        controller: _customController(slot.id),
+      );
+    }
+    if (slot.kind == DetailSlotKind.single ||
+        slot.kind == DetailSlotKind.multi) {
+      final multiple = slot.kind == DetailSlotKind.multi;
+      final selected = multiple
+          ? (_customMulti[slot.id] ?? <String>{})
+          : {
+              if ((_customSingle[slot.id] ?? '').isNotEmpty)
+                _customSingle[slot.id]!,
+            };
+      return OptionPicker(
+        label: slot.displayLabel,
+        options: slot.options,
+        multiple: multiple,
+        selected: selected,
+        onChanged: (next) => setState(() {
+          if (multiple) {
+            _customMulti[slot.id] = next;
+          } else {
+            _customSingle[slot.id] = next.isEmpty ? '' : next.first;
+          }
+        }),
+      );
+    }
+
+    switch (slot.id) {
+      case BuiltinDetailField.productName:
+        return _LabeledField(
+          label: '品名',
+          hint: '吊牌上的产品名称',
+          controller: _productName,
+        );
+      case BuiltinDetailField.category:
+        return CategoryCascadePicker(
+          categories: categories,
+          value: selectedId,
+          onChanged: (value) => setState(() => _categoryId = value),
+        );
+      case BuiltinDetailField.sizeCode:
+        return _LabeledField(
+          label: '尺码',
+          hint: '如 175/92A',
+          controller: _sizeCode,
+        );
+      case BuiltinDetailField.style:
+        return StyleEditor(
+          selected: _styles,
+          onChanged: (next) => setState(() {
+            _styles
+              ..clear()
+              ..addAll(next);
+          }),
+        );
+      case BuiltinDetailField.color:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _LabeledField(label: '颜色', hint: '手填或用识别结果', controller: _color),
+            if (_detectedColorHint != null) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    '识别：$_detectedColorHint',
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _applyDetectedColor,
+                    child: const Text('填入'),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        );
+      case BuiltinDetailField.fabric:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _LabeledField(label: '面料', hint: '手填面料', controller: _fabric),
+            _ocrFillHint(
+              value: _mergedTagOcr.fabric,
+              onApply: () =>
+                  setState(() => _fabric.text = _mergedTagOcr.fabric ?? ''),
+            ),
+          ],
+        );
+      case BuiltinDetailField.season:
+        return _SeasonPicker(
+          selected: _seasons,
+          onChanged: (next) => setState(() {
+            _seasons
+              ..clear()
+              ..addAll(next);
+          }),
+        );
+      case BuiltinDetailField.brand:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _LabeledField(label: '品牌', hint: '手填品牌', controller: _brand),
+            _ocrFillHint(
+              value: _mergedTagOcr.brand,
+              onApply: () =>
+                  setState(() => _brand.text = _mergedTagOcr.brand ?? ''),
+            ),
+          ],
+        );
+      case BuiltinDetailField.care:
+        return CareEditor(
+          selected: _care,
+          onChanged: (next) => setState(() {
+            _care
+              ..clear()
+              ..addAll(next);
+          }),
+        );
+      case BuiltinDetailField.price:
+        return _LabeledField(
+          label: '价格',
+          hint: '元',
+          controller: _price,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+          ],
+        );
+      case BuiltinDetailField.purchasedAt:
+        return _DateRow(
+          label: '购入时间',
+          value: _purchasedAt,
+          onTap: _pickDate,
+          onClear: () => setState(() => _purchasedAt = null),
+        );
+      case BuiltinDetailField.measurements:
+        if (sizeFields.isEmpty) return null;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 8, bottom: 4),
+              child: Text(
+                '尺码测量',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final field in sizeFields)
+                  SizedBox(
+                    width: 160,
+                    child: _LabeledField(
+                      label: field,
+                      hint: field,
+                      controller: _measureControllers[field]!,
+                    ),
+                  ),
+              ],
+            ),
+            _ocrFillHint(
+              value: _sizeOcrHint(sizeFields),
+              onApply: () => _applySizeOcr(sizeFields),
+            ),
+          ],
+        );
+      case BuiltinDetailField.location:
+        return _LabeledField(
+          label: '存放位置',
+          hint: '输入存放位置',
+          controller: _location,
+        );
+      case BuiltinDetailField.tags:
+        return _LabeledField(label: '标签', hint: '用逗号分隔', controller: _tags);
+      case BuiltinDetailField.note:
+        return _LabeledField(
+          label: '备注',
+          hint: '输入备注信息',
+          controller: _note,
+          maxLines: 4,
+        );
+      case BuiltinDetailField.hangtag:
+        if (_mergedTagOcr.text.isEmpty && _tagPreviewPaths.isEmpty) {
+          return null;
+        }
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: HangtagOcrBlock(
+            text: _mergedTagOcr.text,
+            imagePaths: _tagPreviewPaths,
+          ),
+        );
+      default:
+        return null;
+    }
+  }
+
+  TextEditingController _customController(String id) {
+    return _customText.putIfAbsent(id, TextEditingController.new);
+  }
+
+  void _readCustom(String raw, DetailLayout layout) {
+    _loadedCustomJson = raw;
+    final values = decodeCustomFieldValues(raw);
+    for (final slot in layout.slots) {
+      switch (slot.kind) {
+        case DetailSlotKind.text:
+          _customController(slot.id).text = values.text[slot.id] ?? '';
+        case DetailSlotKind.single:
+          _customSingle[slot.id] = values.text[slot.id] ?? '';
+        case DetailSlotKind.multi:
+          _customMulti[slot.id] = {...values.choices[slot.id] ?? const []};
+        case DetailSlotKind.builtin:
+          break;
+      }
+    }
+  }
+
+  String _writeCustom(DetailLayout layout) {
+    final previous = decodeCustomFieldValues(_loadedCustomJson);
+    final text = {...previous.text};
+    final choices = {
+      for (final entry in previous.choices.entries) entry.key: [...entry.value],
+    };
+    for (final slot in layout.slots) {
+      switch (slot.kind) {
+        case DetailSlotKind.text:
+          final value = _customController(slot.id).text.trim();
+          if (value.isEmpty) {
+            text.remove(slot.id);
+          } else {
+            text[slot.id] = value;
+          }
+          choices.remove(slot.id);
+        case DetailSlotKind.single:
+          final value = (_customSingle[slot.id] ?? '').trim();
+          if (value.isEmpty) {
+            text.remove(slot.id);
+          } else {
+            text[slot.id] = value;
+          }
+          choices.remove(slot.id);
+        case DetailSlotKind.multi:
+          final selected = orderedChoices(
+            slot.options,
+            _customMulti[slot.id] ?? const {},
+          );
+          text.remove(slot.id);
+          if (selected.isEmpty) {
+            choices.remove(slot.id);
+          } else {
+            choices[slot.id] = selected;
+          }
+        case DetailSlotKind.builtin:
+          break;
+      }
+    }
+    return encodeCustomFieldValues(
+      CustomFieldValues(text: text, choices: choices),
     );
   }
 

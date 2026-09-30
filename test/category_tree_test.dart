@@ -150,6 +150,7 @@ void main() {
         location: '',
         tags: '',
         note: '',
+        customJson: '',
         createdAt: now,
         updatedAt: now,
       );

@@ -9,6 +9,7 @@ import 'package:wardrobe/features/outfits/outfit_edit_page.dart';
 import 'package:wardrobe/features/outfits/outfits_page.dart';
 import 'package:wardrobe/features/wardrobe/category_items_page.dart';
 import 'package:wardrobe/core/catalog/category_manage_page.dart';
+import 'package:wardrobe/features/wardrobe/detail_layout_page.dart';
 import 'package:wardrobe/features/wardrobe/item_detail_page.dart';
 import 'package:wardrobe/features/wardrobe/item_edit_page.dart';
 import 'package:wardrobe/features/wardrobe/wardrobe_page.dart';
@@ -44,6 +45,11 @@ final appRouter = GoRouter(
           path: '/wardrobe/item/:id/edit',
           builder: (context, state) =>
               ItemEditPage(itemId: state.pathParameters['id']),
+        ),
+        GoRoute(
+          path: '/wardrobe/item/:id/layout',
+          builder: (context, state) =>
+              DetailLayoutPage(itemId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/wardrobe/item/:id',

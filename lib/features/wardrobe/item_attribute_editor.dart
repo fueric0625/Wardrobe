@@ -250,6 +250,65 @@ class _ChoicePill extends StatelessWidget {
   }
 }
 
+class OptionPicker extends StatelessWidget {
+  const OptionPicker({
+    required this.label,
+    required this.options,
+    required this.selected,
+    required this.onChanged,
+    this.multiple = true,
+    super.key,
+  });
+
+  final String label;
+  final List<String> options;
+  final Set<String> selected;
+  final ValueChanged<Set<String>> onChanged;
+  final bool multiple;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = [
+      ...options,
+      for (final extra in selected)
+        if (!options.contains(extra)) extra,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        ),
+        const SizedBox(height: 6),
+        if (labels.isEmpty)
+          const Text('还没有选项', style: TextStyle(color: AppColors.textMuted))
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final option in labels)
+                _ChoicePill(
+                  label: option,
+                  selected: selected.contains(option),
+                  onTap: () {
+                    if (!multiple) {
+                      onChanged(selected.contains(option) ? {} : {option});
+                      return;
+                    }
+                    final next = {...selected};
+                    if (!next.add(option)) next.remove(option);
+                    onChanged(next);
+                  },
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
 String itemCardTitle({required String productName, required String type}) {
   final name = productName.trim();
   if (name.isNotEmpty) return name;

@@ -31,6 +31,9 @@ class ClothingItems extends Table {
   TextColumn get location => text().withDefault(const Constant(''))();
   TextColumn get tags => text().withDefault(const Constant(''))();
   TextColumn get note => text().withDefault(const Constant(''))();
+
+  /// Values for wardrobe-wide custom detail fields. Empty when none are set.
+  TextColumn get customJson => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -151,7 +154,7 @@ class AppDatabase extends _$AppDatabase {
   static const schemaSnapshotBaseline = 9;
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -235,6 +238,14 @@ class AppDatabase extends _$AppDatabase {
           m,
           schema.clothingItems,
           schema.clothingItems.careJson,
+        );
+      },
+      from10To11: (m, schema) async {
+        if (!await _tableExists(schema.clothingItems.actualTableName)) return;
+        await _addColumnIfMissing(
+          m,
+          schema.clothingItems,
+          schema.clothingItems.customJson,
         );
       },
     )(m, from, to);

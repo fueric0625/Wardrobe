@@ -48,7 +48,7 @@ void main() {
     addTearDown(db.close);
 
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 10);
+    expect(version.read<int>('user_version'), 11);
 
     final columns = await db
         .customSelect('PRAGMA table_info(clothing_item_images)')
@@ -59,16 +59,16 @@ void main() {
       (await db.customSelect('PRAGMA table_info(clothing_items)').get()).map(
         (row) => row.read<String>('name'),
       ),
-      containsAll(['product_name', 'size_code', 'care_json']),
+      containsAll(['product_name', 'size_code', 'care_json', 'custom_json']),
     );
   });
 
-  test('a new database is created at schema 9 with category seeds', () async {
+  test('a new database is created at the current schema with category seeds', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
 
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 10);
+    expect(version.read<int>('user_version'), 11);
     final categories = await db.select(db.categories).get();
     expect(categories, isNotEmpty);
   });

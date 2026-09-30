@@ -58,6 +58,14 @@ dev_dependencies:
   drift_dev: ^2.35.0
   build_runner: ^2.16.1
 
+# Windows 智能应用控制会拦截 sqlite3 包里未签名的 sqlite3.dll。
+# 改用系统自带、微软签名的 winsqlite3.dll。
+hooks:
+  user_defines:
+    sqlite3:
+      source: system
+      name: winsqlite3
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

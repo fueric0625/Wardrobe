@@ -62,7 +62,7 @@ lib/app/
 | `/wardrobe` | 衣橱根分类 |
 | `/wardrobe/categories` | 衣物分类管理 |
 | `/wardrobe/c/:categoryId` | 该分类下的衣物 |
-| `/wardrobe/item/new`、`/wardrobe/item/:id`、`/wardrobe/item/:id/edit` | 新增、详情、编辑 |
+| `/wardrobe/item/new`、`/wardrobe/item/:id`、`/wardrobe/item/:id/edit`、`/wardrobe/item/:id/layout` | 新增、详情、编辑、详情布局 |
 | `/outfits` | 穿搭根分类 |
 | `/outfits/categories` | 穿搭分类管理 |
 | `/outfits/c/:categoryId` | 该分类下的穿搭 |
@@ -76,13 +76,13 @@ lib/app/
 
 ```text
 lib/core/database/
-├── app_database.dart     8 张表、schema 10、种子分类
+├── app_database.dart     8 张表、schema 11、种子分类
 └── app_database.g.dart   生成代码
 ```
 
 职责：SQLite 里的结构化数据，以及 schema 1–9 的手写升级。
 
-关键类型：`AppDatabase`。`schemaSnapshotBaseline` 是 9，`schemaVersion` 是 10。低于 9 的库走 `_upgradeThroughSchema9`，这段不改写成生成步骤。schema 10 用 `app_database.steps.dart` 给衣物表加上品名、号型和洗涤选择。
+关键类型：`AppDatabase`。`schemaSnapshotBaseline` 是 9，`schemaVersion` 是 11。低于 9 的库走 `_upgradeThroughSchema9`，这段不改写成生成步骤。schema 10 用 `app_database.steps.dart` 给衣物表加上品名、号型和洗涤选择。schema 11 加上 `custom_json`。
 
 读写：`_openConnection` 把库放在 `%APPDATA%\wardrobe\wardrobe.sqlite`。建库时种子衣物分类和穿搭分类。Repository 是唯一写表的入口。
 
@@ -111,6 +111,7 @@ lib/core/serialization/
 ├── category_size_fields_codec.dart   分类尺码字段名
 ├── color_analysis_codec.dart         抠图颜色
 ├── tag_ocr_codec.dart                吊牌 OCR
+├── custom_field_codec.dart           衣物自定义字段的值
 └── collage_layout_codec.dart         穿搭拼图摆放
 ```
 
@@ -118,7 +119,7 @@ lib/core/serialization/
 
 关键类型：编码函数成对出现，`encode*` / `decode*`。拼图用 `CollagePlacement`。尺寸字段名 `物件` 读入时改成 `尺寸`。
 
-读写：调用方把结果写进对应列：`measurements`、`sizeFields`、`colorJson`、`ocrJson`、`collageLayout`。空的 `collageLayout` 表示用户删掉了拼图，和「从未保存」不同。
+读写：调用方把结果写进对应列：`measurements`、`sizeFields`、`colorJson`、`ocrJson`、`customJson`、`collageLayout`。空的 `collageLayout` 表示用户删掉了拼图，和「从未保存」不同。`customJson` 只存自定义字段的值，字段顺序和开关不在这列。
 
 ## 分类
 
@@ -200,10 +201,13 @@ lib/features/wardrobe/
 ├── category_items_page.dart     分类下的衣物
 ├── category_cascade.dart        分类级联选择
 ├── item_detail_page.dart        详情、封面、移动分类
+├── detail_layout_page.dart      详情布局：排序、显示、添加字段
+├── detail_layout.dart           字段顺序、显示、并排规则
+├── detail_layout_store.dart     布局文件与 Riverpod
 ├── item_edit_page.dart          新增与编辑，图片阶段和表单阶段
 ├── item_edit_controller.dart    ItemEditDraft
 ├── item_attributes.dart         款式选项、洗涤选项、编码
-├── item_attribute_editor.dart   款式与洗涤的点选卡片
+├── item_attribute_editor.dart   款式、洗涤和自定义选项的点选
 ├── item_photos.dart             图片工作室、吊牌 OCR 块
 ├── photo_role.dart              garment / tag
 ├── click_prompt_overlay.dart    点选
@@ -214,11 +218,11 @@ lib/features/wardrobe/
 └── providers.dart
 ```
 
-职责：分类浏览、衣物详情，以及新增时的图片工作室。详情字段顺序和款式、洗涤的点选见 `item_attributes.dart`。工作室先点选抠外形、笔擦、取样填补，再从 mask 取色。吊牌照单独加，OCR 建议品牌、面料、尺码。
+职责：分类浏览、衣物详情，以及新增时的图片工作室。没改布局时，详情字段顺序见 `detail_layout.dart` 里的默认顺序；款式、洗涤的点选见 `item_attributes.dart`。工作室先点选抠外形、笔擦、取样填补，再从 mask 取色。吊牌照单独加，OCR 建议品牌、面料、尺码。
 
 关键类型：`ItemRepository`、`ItemImageDraft`、`ItemPhotoRole`、`ItemEditDraft`、`ItemPhotoStudio`。
 
-读写：`clothing_items`、`clothing_item_images`，图片文件经 `ImageStore`。`garment` 可作主图和穿搭素材；`tag` 不能当封面，也不能进拼图。列表封面优先用抠图，没有抠图再用原图。
+读写：`clothing_items`、`clothing_item_images`，图片文件经 `ImageStore`。自定义字段的值在 `custom_json`。字段顺序、显示和自定义字段定义在 `%APPDATA%\wardrobe\detail_layout.json`，全衣橱一份。`garment` 可作主图和穿搭素材；`tag` 不能当封面，也不能进拼图。列表封面优先用抠图，没有抠图再用原图。
 
 ## 穿搭
 

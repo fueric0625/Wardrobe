@@ -212,6 +212,18 @@ class $ClothingItemsTable extends ClothingItems
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _customJsonMeta = const VerificationMeta(
+    'customJson',
+  );
+  @override
+  late final GeneratedColumn<String> customJson = GeneratedColumn<String>(
+    'custom_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -255,6 +267,7 @@ class $ClothingItemsTable extends ClothingItems
     location,
     tags,
     note,
+    customJson,
     createdAt,
     updatedAt,
   ];
@@ -397,6 +410,12 @@ class $ClothingItemsTable extends ClothingItems
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('custom_json')) {
+      context.handle(
+        _customJsonMeta,
+        customJson.isAcceptableOrUnknown(data['custom_json']!, _customJsonMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -498,6 +517,10 @@ class $ClothingItemsTable extends ClothingItems
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       )!,
+      customJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}custom_json'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -535,6 +558,9 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
   final String location;
   final String tags;
   final String note;
+
+  /// Values for wardrobe-wide custom detail fields. Empty when none are set.
+  final String customJson;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ClothingItem({
@@ -557,6 +583,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
     required this.location,
     required this.tags,
     required this.note,
+    required this.customJson,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -588,6 +615,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
     map['location'] = Variable<String>(location);
     map['tags'] = Variable<String>(tags);
     map['note'] = Variable<String>(note);
+    map['custom_json'] = Variable<String>(customJson);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -620,6 +648,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
       location: Value(location),
       tags: Value(tags),
       note: Value(note),
+      customJson: Value(customJson),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -650,6 +679,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
       location: serializer.fromJson<String>(json['location']),
       tags: serializer.fromJson<String>(json['tags']),
       note: serializer.fromJson<String>(json['note']),
+      customJson: serializer.fromJson<String>(json['customJson']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -677,6 +707,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
       'location': serializer.toJson<String>(location),
       'tags': serializer.toJson<String>(tags),
       'note': serializer.toJson<String>(note),
+      'customJson': serializer.toJson<String>(customJson),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -702,6 +733,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
     String? location,
     String? tags,
     String? note,
+    String? customJson,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ClothingItem(
@@ -724,6 +756,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
     location: location ?? this.location,
     tags: tags ?? this.tags,
     note: note ?? this.note,
+    customJson: customJson ?? this.customJson,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -758,6 +791,9 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
       location: data.location.present ? data.location.value : this.location,
       tags: data.tags.present ? data.tags.value : this.tags,
       note: data.note.present ? data.note.value : this.note,
+      customJson: data.customJson.present
+          ? data.customJson.value
+          : this.customJson,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -785,6 +821,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
           ..write('location: $location, ')
           ..write('tags: $tags, ')
           ..write('note: $note, ')
+          ..write('customJson: $customJson, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -812,6 +849,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
     location,
     tags,
     note,
+    customJson,
     createdAt,
     updatedAt,
   ]);
@@ -838,6 +876,7 @@ class ClothingItem extends DataClass implements Insertable<ClothingItem> {
           other.location == this.location &&
           other.tags == this.tags &&
           other.note == this.note &&
+          other.customJson == this.customJson &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -862,6 +901,7 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
   final Value<String> location;
   final Value<String> tags;
   final Value<String> note;
+  final Value<String> customJson;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -885,6 +925,7 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
     this.location = const Value.absent(),
     this.tags = const Value.absent(),
     this.note = const Value.absent(),
+    this.customJson = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -909,6 +950,7 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
     this.location = const Value.absent(),
     this.tags = const Value.absent(),
     this.note = const Value.absent(),
+    this.customJson = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -936,6 +978,7 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
     Expression<String>? location,
     Expression<String>? tags,
     Expression<String>? note,
+    Expression<String>? customJson,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -960,6 +1003,7 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
       if (location != null) 'location': location,
       if (tags != null) 'tags': tags,
       if (note != null) 'note': note,
+      if (customJson != null) 'custom_json': customJson,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -986,6 +1030,7 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
     Value<String>? location,
     Value<String>? tags,
     Value<String>? note,
+    Value<String>? customJson,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -1010,6 +1055,7 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
       location: location ?? this.location,
       tags: tags ?? this.tags,
       note: note ?? this.note,
+      customJson: customJson ?? this.customJson,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1076,6 +1122,9 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (customJson.present) {
+      map['custom_json'] = Variable<String>(customJson.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1110,6 +1159,7 @@ class ClothingItemsCompanion extends UpdateCompanion<ClothingItem> {
           ..write('location: $location, ')
           ..write('tags: $tags, ')
           ..write('note: $note, ')
+          ..write('customJson: $customJson, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -4009,6 +4059,7 @@ typedef $$ClothingItemsTableCreateCompanionBuilder =
       Value<String> location,
       Value<String> tags,
       Value<String> note,
+      Value<String> customJson,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -4034,6 +4085,7 @@ typedef $$ClothingItemsTableUpdateCompanionBuilder =
       Value<String> location,
       Value<String> tags,
       Value<String> note,
+      Value<String> customJson,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -4140,6 +4192,11 @@ class $$ClothingItemsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customJson => $composableBuilder(
+    column: $table.customJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4258,6 +4315,11 @@ class $$ClothingItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get customJson => $composableBuilder(
+    column: $table.customJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4345,6 +4407,11 @@ class $$ClothingItemsTableAnnotationComposer
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
 
+  GeneratedColumn<String> get customJson => $composableBuilder(
+    column: $table.customJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -4402,6 +4469,7 @@ class $$ClothingItemsTableTableManager
                 Value<String> location = const Value.absent(),
                 Value<String> tags = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<String> customJson = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4425,6 +4493,7 @@ class $$ClothingItemsTableTableManager
                 location: location,
                 tags: tags,
                 note: note,
+                customJson: customJson,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -4450,6 +4519,7 @@ class $$ClothingItemsTableTableManager
                 Value<String> location = const Value.absent(),
                 Value<String> tags = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<String> customJson = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -4473,6 +4543,7 @@ class $$ClothingItemsTableTableManager
                 location: location,
                 tags: tags,
                 note: note,
+                customJson: customJson,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
