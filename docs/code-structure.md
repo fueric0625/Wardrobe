@@ -161,7 +161,7 @@ lib/core/vision/
 │   ├── contain_map.dart               BoxFit.contain 点击映射
 │   ├── background_blur.dart           保留前景、模糊背景
 │   └── shadow_heal.dart               衣架阴影挖补，当前没有调用方
-├── ocr/tag_ocr.dart                   吊牌检测与识别
+├── ocr/tag_ocr.dart                   吊牌识别，以及改行、合并、拆行、删除
 ├── model/
 │   ├── onnx_session.dart              具名会话与加载状态
 │   └── model_status.dart
@@ -174,7 +174,7 @@ lib/core/vision/
 
 关键类型：`ImageCoordinateMapper`、`ImageEditSession`、`GarmentPipeline`、`TagOcr`、`OnnxSession`、`OnnxRuntime`。Provider：`u2netSegmenterProvider`、`samClickSegmenterProvider`、`tagOcrProvider`、`garmentPipelineProvider`。
 
-读写：模型从 `assets/models/` 落到 `%APPDATA%\wardrobe\models\`。流水线产出原图、抠图 PNG、mask 和 `ColorAnalysis`，由衣物编辑页交给 `ImageStore`。OCR 只建议填写空字段。`shadow_heal.dart` 留在目录里，精修流程不调用它。
+读写：模型从 `assets/models/` 落到 `%APPDATA%\wardrobe\models\`。流水线产出原图、抠图 PNG、mask 和 `ColorAnalysis`，由衣物编辑页交给 `ImageStore`。OCR 只建议填写空字段。对照页里改一行、合并或拆行只换 `lines`，不重新解析品牌、面料、号型。重新识别才整份替换这一张，并仍只建议填写空字段。`shadow_heal.dart` 留在目录里，精修流程不调用它。
 
 ## 主题、排序、失败
 
@@ -183,7 +183,8 @@ lib/core/design_system/
 ├── theme.dart           AppColors、AppPalette、buildAppTheme
 ├── app_font.dart        字体选项与 font.txt
 └── app_appearance.dart  字体、文字大小、主体色
-lib/core/sort.dart    列表排序键，仅本次运行
+lib/core/sort.dart         列表排序键
+lib/core/list_sort_store.dart  衣橱与穿搭的排序文件
 lib/core/failure.dart 图片、模型、推理、存储、校验失败
 ```
 
@@ -191,7 +192,7 @@ lib/core/failure.dart 图片、模型、推理、存储、校验失败
 
 关键类型：`AppAppearance`、`AppPalette`、`AppFontStore`、`ListSort`、`AppFailure`。
 
-读写：外观记在本机 `appearance.json`。没有这份文件时，字体从 `font.txt` 读入。主题的 `fontFamilyFallback` 只有 `Microsoft YaHei`：等线没有「橱」，缺字从这里补。设置项「微软雅黑」也是这个字体名；存过的 `Microsoft YaHei UI` 在 `resolveAppFont` 里改成它。`ClothingSortNotifier` 和 `OutfitSortNotifier` 只活在内存里，重启后回到「添加时间、新的在前」。
+读写：外观记在本机 `appearance.json`。没有这份文件时，字体从 `font.txt` 读入。主题的 `fontFamilyFallback` 只有 `Microsoft YaHei`：等线没有「橱」，缺字从这里补。设置项「微软雅黑」也是这个字体名；存过的 `Microsoft YaHei UI` 在 `resolveAppFont` 里改成它。衣橱分类列表和穿搭分类列表的排序记在 `list_sort.json`。缺文件、坏掉的内容，或不认识的字段和方向，该列表回到「添加时间、新的在前」。
 
 ## 衣橱
 
@@ -200,10 +201,13 @@ lib/features/wardrobe/
 ├── wardrobe_page.dart           根分类网格、搜索
 ├── category_items_page.dart     分类下的衣物
 ├── category_cascade.dart        分类级联选择
-├── item_detail_page.dart        详情、封面、移动分类
+├── item_detail_page.dart        详情、封面、移动、删除
 ├── detail_layout_page.dart      详情布局：排序、显示、添加字段
 ├── detail_layout.dart           字段顺序、显示、并排规则
 ├── detail_layout_store.dart     布局文件与 Riverpod
+├── item_search.dart             按开着的布局字段查找
+├── item_delete_dialog.dart      删除衣物的确认框
+├── hangtag_line_editor.dart     吊牌对照页：左图右文，悬停改行
 ├── item_edit_page.dart          新增与编辑，图片阶段和表单阶段
 ├── item_edit_controller.dart    ItemEditDraft
 ├── item_attributes.dart         款式选项、洗涤选项、编码
@@ -218,7 +222,7 @@ lib/features/wardrobe/
 └── providers.dart
 ```
 
-职责：分类浏览、衣物详情，以及新增时的图片工作室。没改布局时，详情字段顺序见 `detail_layout.dart` 里的默认顺序；款式、洗涤的点选见 `item_attributes.dart`。工作室先点选抠外形、笔擦、取样填补，再从 mask 取色。吊牌照单独加，OCR 建议品牌、面料、尺码。
+职责：分类浏览、衣物详情，以及新增时的图片工作室。没改布局时，详情字段顺序见 `detail_layout.dart` 里的默认顺序；款式、洗涤的点选见 `item_attributes.dart`。工作室先点选抠外形、笔擦、取样填补，再从 mask 取色。吊牌照单独加，OCR 建议品牌、面料、尺码。编辑页的吊牌原文先只读，点「修改」进 `HangtagTextPage`：左边一半是当前吊牌图，右边逐行改。停在一行上才出现并到上一行、并到下一行、删除。Enter 在光标处拆成两行。顶栏重新识别会先确认。不止一张时在顶上切换。写入数据库仍是编辑页的「确定」。
 
 关键类型：`ItemRepository`、`ItemImageDraft`、`ItemPhotoRole`、`ItemEditDraft`、`ItemPhotoStudio`。
 
@@ -328,6 +332,9 @@ windows/runner/garment_onnx.cpp    具名会话的加载与运行
 | `test/image_lifecycle_test.dart` | 暂存回滚、删除衣物时只删本应用的图 |
 | `test/category_tree_test.dart` | 深度、重名、删除后回到上一级、封面范围 |
 | `test/sort_test.dart` | 列表排序与封面回退到最新一件 |
+| `test/list_sort_test.dart` | 排序文件缺省和坏值回到默认 |
+| `test/item_search_test.dart` | 查找只覆盖开着的字段 |
+| `test/tag_lines_test.dart` | 吊牌改行、合并、拆行、删除不改解析字段 |
 | `test/app_font_test.dart` | 未知字体回到等线，`Microsoft YaHei UI` 改成微软雅黑 |
 | `test/core/vision/coordinate_test.dart` | 点击进出画面像素 |
 | `test/core/vision/cutout_test.dart` | 抠图、填补、取色、contain 映射 |
@@ -348,7 +355,7 @@ windows/runner/garment_onnx.cpp    具名会话的加载与运行
 
 穿搭编辑已经拆成 `presentation/`、`domain/`、`data/`。衣物编辑的页面在 `lib/features/wardrobe/item_edit_page.dart`，约 1400 行，工作室界面在 `lib/features/wardrobe/item_photos.dart`。点选、笔擦、填补的浮层是同目录下三个 overlay 文件。
 
-列表排序只在本次运行的 `ClothingSortNotifier` 和 `OutfitSortNotifier` 里。
+列表排序写在 `%APPDATA%\wardrobe\list_sort.json`。`ClothingSortNotifier` 和 `OutfitSortNotifier` 启动时读入，改排序时只更新自己那一段。
 
 图片文件的生命周期在 `ImageStore`，结构化数据在 Drift。`LocalItemRepository` 和 `LocalOutfitRepository` 同时拿到这两个对象，保存和删除时一起处理。
 

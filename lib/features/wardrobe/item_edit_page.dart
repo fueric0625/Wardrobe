@@ -32,6 +32,8 @@ import 'package:wardrobe/core/vision/cutout/sam_click.dart';
 import 'package:wardrobe/features/wardrobe/photo_role.dart';
 import 'package:wardrobe/core/vision/ocr/tag_ocr.dart';
 import 'package:wardrobe/features/wardrobe/category_cascade.dart';
+import 'package:wardrobe/features/wardrobe/hangtag_line_editor.dart';
+import 'package:wardrobe/features/wardrobe/item_delete_dialog.dart';
 import 'package:wardrobe/features/wardrobe/item_photos.dart';
 import 'package:image/image.dart' as img;
 
@@ -630,9 +632,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
         photo.ocr = result;
         photo.busy = false;
         photo.busyHint = null;
-        if (result.isEmpty) {
-          photo.error = '没有识别到文字，可再点选吊牌后重试';
-        }
+        photo.error = result.isEmpty ? '没有识别到文字，可再点选吊牌后重试' : null;
       });
       _maybeFillTagFields();
     } catch (_) {
@@ -772,24 +772,8 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   }
 
   Future<void> _delete() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除这件衣物？'),
-        content: const Text('删除后无法恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
+    final ok = await confirmDeleteClothingItem(context);
+    if (!ok || !mounted) return;
     await ref.read(itemRepositoryProvider).delete(widget.itemId!);
     if (mounted) context.go('/wardrobe');
   }
@@ -1255,14 +1239,36 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
           maxLines: 4,
         );
       case BuiltinDetailField.hangtag:
-        if (_mergedTagOcr.text.isEmpty && _tagPreviewPaths.isEmpty) {
-          return null;
-        }
+        final tags = [
+          for (final photo in _photos)
+            if (photo.isTag &&
+                (photo.previewPath.isNotEmpty ||
+                    photo.ocr.lines.any((line) => line.trim().isNotEmpty)))
+              photo,
+        ];
+        if (tags.isEmpty) return null;
         return Padding(
           padding: const EdgeInsets.only(top: 8),
           child: HangtagOcrBlock(
             text: _mergedTagOcr.text,
-            imagePaths: _tagPreviewPaths,
+            imagePaths: [
+              for (final photo in tags)
+                if (photo.previewPath.isNotEmpty) photo.previewPath,
+            ],
+            onEdit: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) =>
+                      HangtagTextPage(photos: tags, onRecognize: _runTagOcr),
+                ),
+              );
+              if (!mounted) return;
+              setState(() {
+                for (final photo in tags) {
+                  photo.ocr = replaceTagLines(photo.ocr, photo.ocr.lines);
+                }
+              });
+            },
           ),
         );
       default:
@@ -1334,11 +1340,6 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       CustomFieldValues(text: text, choices: choices),
     );
   }
-
-  List<String> get _tagPreviewPaths => [
-    for (final photo in _photos)
-      if (photo.isTag) photo.processedPath ?? photo.previewPath,
-  ];
 
   String? get _detectedColorHint {
     if (_photos.isEmpty) return null;

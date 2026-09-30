@@ -16,6 +16,7 @@ import 'package:wardrobe/features/wardrobe/item_attribute_editor.dart';
 import 'package:wardrobe/features/wardrobe/item_attributes.dart';
 import 'package:wardrobe/features/wardrobe/photo_role.dart';
 import 'package:wardrobe/core/catalog/category_item_dialogs.dart';
+import 'package:wardrobe/features/wardrobe/item_delete_dialog.dart';
 import 'package:wardrobe/features/wardrobe/item_photos.dart';
 import 'package:wardrobe/widgets/common.dart';
 
@@ -131,6 +132,13 @@ class ItemDetailPage extends ConsumerWidget {
                       ),
                       child: const Text('移动'),
                     ),
+                    TextButton(
+                      onPressed: () => _delete(context, ref, item.id),
+                      child: const Text(
+                        '删除',
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     FilledButton(
                       onPressed: () =>
@@ -199,7 +207,26 @@ class ItemDetailPage extends ConsumerWidget {
     );
   }
 
-  void _back(BuildContext context) {
+  static Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    String itemId,
+  ) async {
+    final ok = await confirmDeleteClothingItem(context);
+    if (!ok || !context.mounted) return;
+    try {
+      await ref.read(itemRepositoryProvider).delete(itemId);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('删除失败')));
+      return;
+    }
+    if (!context.mounted) return;
+    _back(context);
+  }
+
+  static void _back(BuildContext context) {
     if (context.canPop()) {
       context.pop();
     } else {

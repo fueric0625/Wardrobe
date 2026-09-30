@@ -67,6 +67,73 @@ class TagOcrResult {
   String encode() => encodeTagOcr(this);
 }
 
+/// Replace [lines] and drop blanks. Brand, fabric, size, and measurements
+/// stay as they were; this does not parse the new text back into those fields.
+///
+/// [keepEmpty] leaves blank pieces in place so a line split can show the new row.
+TagOcrResult replaceTagLines(
+  TagOcrResult ocr,
+  List<String> lines, {
+  bool keepEmpty = false,
+}) {
+  return TagOcrResult(
+    lines: keepEmpty ? lines : keptTagLines(lines),
+    brand: ocr.brand,
+    fabric: ocr.fabric,
+    sizeLabel: ocr.sizeLabel,
+    measurements: ocr.measurements,
+  );
+}
+
+List<String> keptTagLines(List<String> lines) {
+  return [
+    for (final line in lines)
+      if (line.trim().isNotEmpty) line,
+  ];
+}
+
+List<String> editTagLine(List<String> lines, int index, String text) {
+  if (index < 0 || index >= lines.length) return [...lines];
+  return [
+    for (var i = 0; i < lines.length; i++)
+      if (i == index) ...[if (text.trim().isNotEmpty) text] else lines[i],
+  ];
+}
+
+/// Join [index] and the next line with nothing inserted between them.
+List<String> mergeAdjacentTagLines(List<String> lines, int index) {
+  if (index < 0 || index + 1 >= lines.length) return [...lines];
+  return [
+    for (var i = 0; i < lines.length; i++)
+      if (i == index)
+        '${lines[i]}${lines[i + 1]}'
+      else if (i != index + 1)
+        lines[i],
+  ];
+}
+
+List<String> removeTagLine(List<String> lines, int index) {
+  if (index < 0 || index >= lines.length) return [...lines];
+  return [
+    for (var i = 0; i < lines.length; i++)
+      if (i != index) lines[i],
+  ];
+}
+
+/// Split the line at [index] into [left] and [right], keeping both pieces.
+List<String> splitTagLine(
+  List<String> lines,
+  int index,
+  String left,
+  String right,
+) {
+  if (index < 0 || index >= lines.length) return [...lines];
+  return [
+    for (var i = 0; i < lines.length; i++)
+      if (i == index) ...[left, right] else lines[i],
+  ];
+}
+
 final _labeled = RegExp(r'(品牌|牌名|BRAND)\s*[:：]\s*(.+)');
 final _fabricLabeled = RegExp(
   r'(成分|面料|材质|纖維|纤维|FABRIC|MATERIAL)\s*[:：]\s*(.+)',

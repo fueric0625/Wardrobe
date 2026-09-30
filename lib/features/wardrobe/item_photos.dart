@@ -924,10 +924,12 @@ class HangtagOcrBlock extends StatelessWidget {
     super.key,
     required this.text,
     this.imagePaths = const [],
+    this.onEdit,
   });
 
   final String text;
   final List<String> imagePaths;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -936,9 +938,17 @@ class HangtagOcrBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '吊牌识别原文',
-          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+        Row(
+          children: [
+            const Text(
+              '吊牌识别原文',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+            ),
+            if (onEdit != null) ...[
+              const Spacer(),
+              TextButton(onPressed: onEdit, child: const Text('修改')),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
         Row(

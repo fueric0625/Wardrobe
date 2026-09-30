@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wardrobe/app/providers.dart';
 import 'package:wardrobe/core/database/app_database.dart';
+import 'package:wardrobe/core/list_sort_store.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/features/wardrobe/data/item_repository.dart';
 
@@ -28,9 +29,13 @@ final clothingImageRowsProvider = StreamProvider<List<ClothingItemImage>>((
 
 class ClothingSortNotifier extends Notifier<ListSort> {
   @override
-  ListSort build() => ListSort.clothingDefault;
+  ListSort build() => ref.watch(rememberedListSortSeedProvider).clothing;
 
-  void set(ListSort next) => state = next;
+  Future<void> set(ListSort next) async {
+    state = next;
+    final current = await ListSortStore.read();
+    await ListSortStore.write(current.copyWith(clothing: next));
+  }
 }
 
 final clothingSortProvider = NotifierProvider<ClothingSortNotifier, ListSort>(

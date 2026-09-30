@@ -8,6 +8,8 @@ import 'package:wardrobe/core/catalog/category_tree.dart';
 import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/design_system/theme.dart';
+import 'package:wardrobe/features/wardrobe/detail_layout_store.dart';
+import 'package:wardrobe/features/wardrobe/item_search.dart';
 import 'package:wardrobe/core/catalog/cover_repository.dart';
 import 'package:wardrobe/widgets/common.dart';
 
@@ -28,25 +30,12 @@ class _WardrobePageState extends ConsumerState<WardrobePage> {
     super.dispose();
   }
 
-  bool _matches(ClothingItem item, List<Category> categories, String q) {
-    final hay = [
-      item.productName,
-      item.type,
-      item.style,
-      item.brand,
-      item.note,
-      item.color,
-      item.tags,
-      categoryPath(categories, item.categoryId),
-    ].join(' ').toLowerCase();
-    return hay.contains(q);
-  }
-
   @override
   Widget build(BuildContext context) {
     final asyncItems = ref.watch(clothingItemsProvider);
     final categories = ref.watch(clothingCategoryRowsProvider);
     final covers = ref.watch(categoryCoverRowsProvider);
+    final layout = ref.watch(detailLayoutProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -61,7 +50,14 @@ class _WardrobePageState extends ConsumerState<WardrobePage> {
           final searching = q.isNotEmpty;
           final matched = searching
               ? sortClothingItems(
-                  items.where((i) => _matches(i, categories, q)),
+                  items.where(
+                    (item) => clothingItemMatches(
+                      item: item,
+                      layout: layout,
+                      categories: categories,
+                      query: q,
+                    ),
+                  ),
                   ListSort.clothingDefault,
                 )
               : items;

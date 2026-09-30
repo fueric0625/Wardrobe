@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wardrobe/app/app.dart';
 import 'package:wardrobe/app/providers.dart';
 import 'package:wardrobe/core/design_system/app_appearance.dart';
+import 'package:wardrobe/core/list_sort_store.dart';
 import 'package:wardrobe/core/database/app_database.dart';
 import 'package:wardrobe/core/storage/image_store.dart';
 import 'package:wardrobe/features/wardrobe/detail_layout_store.dart';
@@ -15,6 +16,7 @@ Future<void> main() async {
   await images.init();
   final appearance = await AppAppearanceStore.read();
   final detailLayout = await DetailLayoutStore.read();
+  final listSort = await ListSortStore.read();
 
   runApp(
     ProviderScope(
@@ -23,6 +25,7 @@ Future<void> main() async {
         imageStoreProvider.overrideWith((ref) => images),
         appAppearanceSeedProvider.overrideWith((ref) => appearance),
         detailLayoutSeedProvider.overrideWith((ref) => detailLayout),
+        rememberedListSortSeedProvider.overrideWith((ref) => listSort),
       ],
       child: const WardrobeApp(),
     ),

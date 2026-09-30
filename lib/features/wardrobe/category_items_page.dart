@@ -10,7 +10,9 @@ import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/core/design_system/theme.dart';
 import 'package:wardrobe/core/catalog/cover_repository.dart';
 import 'package:wardrobe/core/catalog/category_item_dialogs.dart';
+import 'package:wardrobe/features/wardrobe/detail_layout_store.dart';
 import 'package:wardrobe/features/wardrobe/item_attribute_editor.dart';
+import 'package:wardrobe/features/wardrobe/item_search.dart';
 import 'package:wardrobe/features/wardrobe/wardrobe_page.dart';
 import 'package:wardrobe/widgets/common.dart';
 
@@ -101,6 +103,7 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
     final category = categoryById(categories, widget.categoryId);
     final asyncItems = ref.watch(clothingItemsProvider);
     final covers = ref.watch(categoryCoverRowsProvider);
+    final layout = ref.watch(detailLayoutProvider);
     final customCoverId = coverItemIdOf(
       covers,
       CategoryKind.clothing,
@@ -138,18 +141,14 @@ class _CategoryItemsPageState extends ConsumerState<CategoryItemsPage> {
               .toList();
           final directItems = itemsDirectlyIn(all, widget.categoryId);
           final items = sortClothingItems(
-            directItems.where((item) {
-              if (q.isEmpty) return true;
-              final hay = [
-                item.productName,
-                item.type,
-                item.style,
-                item.brand,
-                item.note,
-                item.tags,
-              ].join(' ').toLowerCase();
-              return hay.contains(q);
-            }),
+            directItems.where(
+              (item) => clothingItemMatches(
+                item: item,
+                layout: layout,
+                categories: categories,
+                query: q,
+              ),
+            ),
             sort,
           );
 

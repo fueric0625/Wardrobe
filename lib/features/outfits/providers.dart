@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wardrobe/app/providers.dart';
 import 'package:wardrobe/core/database/app_database.dart';
+import 'package:wardrobe/core/list_sort_store.dart';
 import 'package:wardrobe/core/sort.dart';
 import 'package:wardrobe/features/outfits/data/outfit_repository.dart';
 import 'package:wardrobe/features/wardrobe/providers.dart';
@@ -77,9 +78,13 @@ OutfitCoverModel _coverFor(
 
 class OutfitSortNotifier extends Notifier<ListSort> {
   @override
-  ListSort build() => ListSort.outfitDefault;
+  ListSort build() => ref.watch(rememberedListSortSeedProvider).outfit;
 
-  void set(ListSort next) => state = next;
+  Future<void> set(ListSort next) async {
+    state = next;
+    final current = await ListSortStore.read();
+    await ListSortStore.write(current.copyWith(outfit: next));
+  }
 }
 
 /// Cutout PNG from click segmentation when the clothing item has one.
