@@ -101,6 +101,33 @@ class ImageStore {
       await file.delete();
     }
   }
+
+  /// Deletes files under `images\` that no row points at.
+  ///
+  /// `.tmp`, `import-staging`, and `import-rollback` are left alone.
+  Future<int> deleteUnreferenced(Set<String> referenced) async {
+    final keep = referenced.map(p.normalize).toSet();
+    if (!await directory.exists()) return 0;
+    var removed = 0;
+    await for (final entity in directory.list(
+      recursive: true,
+      followLinks: false,
+    )) {
+      if (entity is! File) continue;
+      final relative = p.split(p.relative(entity.path, from: directory.path));
+      if (relative.contains('.tmp') ||
+          relative.contains('import-staging') ||
+          relative.contains('import-rollback')) {
+        continue;
+      }
+      if (keep.contains(p.normalize(entity.path))) continue;
+      try {
+        await entity.delete();
+        removed++;
+      } catch (_) {}
+    }
+    return removed;
+  }
 }
 
 /// A file staged under `images/.tmp` until the database write succeeds.

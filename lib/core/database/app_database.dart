@@ -329,6 +329,29 @@ class AppDatabase extends _$AppDatabase {
       );
     }
   }
+
+  /// Paths stored for clothes and outfits. Used to drop leftover image files.
+  Future<Set<String>> referencedImagePaths() async {
+    final paths = <String>{};
+    void add(String? path) {
+      if (path == null || path.isEmpty) return;
+      paths.add(path);
+    }
+
+    for (final row in await select(clothingItems).get()) {
+      add(row.imagePath);
+    }
+    for (final row in await select(clothingItemImages).get()) {
+      add(row.originalPath);
+      add(row.processedPath);
+      add(row.maskPath);
+    }
+    for (final row in await select(outfits).get()) {
+      add(row.imagePath);
+      add(row.sourceImagePath);
+    }
+    return paths;
+  }
 }
 
 LazyDatabase _openConnection() {

@@ -169,6 +169,20 @@ class DetailLayoutPage extends ConsumerWidget {
                                                 .setVisible(slot.id, value);
                                           },
                                         ),
+                                        if (custom)
+                                          IconButton(
+                                            tooltip: '删除',
+                                            onPressed: () => _deleteCustomField(
+                                              context,
+                                              ref,
+                                              slot,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.close,
+                                              size: 18,
+                                              color: Colors.redAccent,
+                                            ),
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -195,6 +209,37 @@ class DetailLayoutPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _deleteCustomField(
+    BuildContext context,
+    WidgetRef ref,
+    DetailSlot slot,
+  ) async {
+    if (slot.kind == DetailSlotKind.builtin) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除这个字段？'),
+        content: Text('「${slot.displayLabel}」会从所有衣物上拿掉，填过的内容也会去掉，无法恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    final removed = await ref
+        .read(detailLayoutProvider.notifier)
+        .removeCustom(slot.id);
+    if (!removed || !context.mounted) return;
+    await ref.read(itemRepositoryProvider).clearCustomField(slot.id);
   }
 
   Future<void> _addField(BuildContext context, WidgetRef ref) async {

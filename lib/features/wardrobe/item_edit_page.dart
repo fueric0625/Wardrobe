@@ -267,10 +267,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       final result = await ref
           .read(garmentPipelineProvider)
           .processBytes(bytes);
-      _session.clear();
-      _fillSample = null;
-      _refineBase = null;
-      _refinePalette = const [];
+      _clearRefineSession();
       await _applyResult(photo, result, replaceOriginal: replaceOriginal);
     } catch (_) {
       if (!mounted) return;
@@ -288,6 +285,10 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     required bool replaceOriginal,
     bool keepBusy = false,
   }) async {
+    final previousOriginal = photo.originalPath;
+    final previousProcessed = photo.processedPath;
+    final previousMask = photo.maskPath;
+    final previousPreview = photo.refinePreviewPath;
     if (replaceOriginal) {
       final original = await _imageStore.writeBytes(
         result.originalBytes,
@@ -303,10 +304,12 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     if (result.cutoutPng != null) {
       processed = await _imageStore.writeBytes(result.cutoutPng!, '.png');
       _sessionFiles.add(processed);
+      photo.processedPath = processed;
     }
     if (result.maskPng != null) {
       mask = await _imageStore.writeBytes(result.maskPng!, '.png');
       _sessionFiles.add(mask);
+      photo.maskPath = mask;
     }
     if (result.fullCutoutPng != null) {
       final preview = await _imageStore.writeBytes(
@@ -315,6 +318,12 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       );
       _sessionFiles.add(preview);
       photo.refinePreviewPath = preview;
+    }
+    if (replaceOriginal) await _releaseSessionFile(previousOriginal);
+    if (result.cutoutPng != null) await _releaseSessionFile(previousProcessed);
+    if (result.maskPng != null) await _releaseSessionFile(previousMask);
+    if (result.fullCutoutPng != null) {
+      await _releaseSessionFile(previousPreview);
     }
     if (!mounted) return;
     setState(() {
@@ -329,6 +338,45 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       photo.error = result.error;
     });
     _maybeFillColor(photo);
+  }
+
+  bool _sessionFileInUse(String path) {
+    for (final photo in _photos) {
+      if (photo.originalPath == path ||
+          photo.processedPath == path ||
+          photo.maskPath == path ||
+          photo.refinePreviewPath == path) {
+        return true;
+      }
+    }
+    final base = _refineBase;
+    if (base == null) return false;
+    return base.maskPath == path ||
+        base.processedPath == path ||
+        base.refinePreviewPath == path;
+  }
+
+  Future<void> _releaseSessionFile(String? path) async {
+    if (path == null || path.isEmpty || !_sessionFiles.contains(path)) return;
+    if (_sessionFileInUse(path)) return;
+    _sessionFiles.remove(path);
+    await _imageStore.deleteIfOwned(path);
+  }
+
+  Future<void> _dropUnusedSessionFiles() async {
+    final keep = <String>{};
+    for (final photo in _photos) {
+      keep.add(photo.originalPath);
+      final processed = photo.processedPath;
+      final mask = photo.maskPath;
+      if (processed != null && processed.isNotEmpty) keep.add(processed);
+      if (mask != null && mask.isNotEmpty) keep.add(mask);
+    }
+    for (final path in List<String>.of(_sessionFiles)) {
+      if (keep.contains(path)) continue;
+      _sessionFiles.remove(path);
+      await _imageStore.deleteIfOwned(path);
+    }
   }
 
   void _maybeFillColor(EditableItemPhoto photo) {
@@ -355,6 +403,12 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     if (_photos.isEmpty) return;
     final index = _selectedPhoto.clamp(0, _photos.length - 1);
     final photo = _photos.removeAt(index);
+    final dropped = [
+      photo.originalPath,
+      photo.processedPath,
+      photo.maskPath,
+      photo.refinePreviewPath,
+    ];
     if (photo.isPrimary && _photos.isNotEmpty) {
       final next = _photos.cast<EditableItemPhoto?>().firstWhere(
         (p) => p != null && !p.isTag,
@@ -365,6 +419,9 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     _selectedPhoto = _photos.isEmpty ? 0 : index.clamp(0, _photos.length - 1);
     _clearRefineSession();
     setState(() {});
+    for (final path in dropped) {
+      _releaseSessionFile(path);
+    }
   }
 
   void _setPrimary() {
@@ -379,6 +436,10 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   }
 
   void _clearRefineSession() {
+    final previews = <String?>[
+      _refineBase?.refinePreviewPath,
+      for (final photo in _photos) photo.refinePreviewPath,
+    ];
     _refining = false;
     _refineTool = RefineTool.click;
     _eraseProtect = true;
@@ -387,6 +448,12 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     _session.clear();
     _refinePalette = const [];
     _refineBase = null;
+    for (final photo in _photos) {
+      photo.refinePreviewPath = null;
+    }
+    for (final path in previews) {
+      _releaseSessionFile(path);
+    }
   }
 
   Future<void> _startRefine() async {
@@ -418,9 +485,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
             maskBytes,
             palette: photo.colors.palette,
           );
+      final previousPreview = photo.refinePreviewPath;
       final path = await _imageStore.writeBytes(preview, '.png');
       _sessionFiles.add(path);
       photo.refinePreviewPath = path;
+      await _releaseSessionFile(previousPreview);
       final decoded = img.decodeImage(preview);
       if (decoded != null) {
         photo.originalWidth = decoded.width;
@@ -765,6 +834,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
             images: [for (final photo in _photos) photo.toDraft()],
           );
       _saved = true;
+      await _dropUnusedSessionFiles();
       if (mounted) context.go('/wardrobe/item/$id');
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -1336,6 +1406,12 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
           break;
       }
     }
+    final customIds = {
+      for (final slot in layout.slots)
+        if (slot.kind != DetailSlotKind.builtin) slot.id,
+    };
+    text.removeWhere((id, _) => !customIds.contains(id));
+    choices.removeWhere((id, _) => !customIds.contains(id));
     return encodeCustomFieldValues(
       CustomFieldValues(text: text, choices: choices),
     );

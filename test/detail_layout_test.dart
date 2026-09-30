@@ -149,6 +149,12 @@ void main() {
     expect(layout.slots.last.label, '购入店铺');
     expect(layout.slots.last.options, isEmpty);
     expect(appendCustomSlot(layout, slot).slots.length, layout.slots.length);
+    final removed = removeCustomSlot(layout, slot.id);
+    expect(removed.slots.map((item) => item.id), isNot(contains(slot.id)));
+    expect(
+      removeCustomSlot(layout, BuiltinDetailField.brand).slots.length,
+      layout.slots.length,
+    );
   });
 
   test('custom values round-trip and skip blanks', () {
@@ -166,5 +172,14 @@ void main() {
       'scene': ['通勤', '运动'],
     });
     expect(decodeCustomFieldValues('not json'), CustomFieldValues.empty);
+    expect(
+      decodeCustomFieldValues(removeCustomFieldValue(encoded, 'scene')).choices,
+      isEmpty,
+    );
+    expect(
+      decodeCustomFieldValues(removeCustomFieldValue(encoded, 'shop')).text,
+      isEmpty,
+    );
+    expect(removeCustomFieldValue(encoded, 'missing'), encoded);
   });
 }

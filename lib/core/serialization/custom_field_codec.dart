@@ -56,3 +56,18 @@ CustomFieldValues decodeCustomFieldValues(String raw) {
     return CustomFieldValues.empty;
   }
 }
+
+/// Drops one field's text or choices. Other fields stay.
+String removeCustomFieldValue(String raw, String fieldId) {
+  final id = fieldId.trim();
+  if (id.isEmpty) return raw;
+  final values = decodeCustomFieldValues(raw);
+  if (!values.text.containsKey(id) && !values.choices.containsKey(id)) {
+    return raw;
+  }
+  final text = Map<String, String>.from(values.text)..remove(id);
+  final choices = Map<String, List<String>>.from(values.choices)..remove(id);
+  return encodeCustomFieldValues(
+    CustomFieldValues(text: text, choices: choices),
+  );
+}

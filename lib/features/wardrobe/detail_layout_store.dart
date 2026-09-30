@@ -60,6 +60,13 @@ class DetailLayoutNotifier extends Notifier<DetailLayout> {
     return true;
   }
 
+  Future<bool> removeCustom(String id) async {
+    final next = removeCustomSlot(state, id);
+    if (next.slots.length == state.slots.length) return false;
+    await _save(next);
+    return true;
+  }
+
   Future<void> _save(DetailLayout next) async {
     state = next;
     await DetailLayoutStore.write(next);

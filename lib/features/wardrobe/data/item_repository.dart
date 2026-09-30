@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:wardrobe/core/database/app_database.dart';
+import 'package:wardrobe/core/serialization/custom_field_codec.dart';
 import 'package:wardrobe/core/storage/image_store.dart';
 import 'package:wardrobe/features/wardrobe/domain/item_photo_policy.dart';
 import 'package:wardrobe/features/wardrobe/photo_role.dart';
@@ -38,6 +39,7 @@ abstract class ItemRepository {
   });
   Future<void> moveToCategory(Iterable<String> ids, String categoryId);
   Future<void> delete(String id);
+  Future<void> clearCustomField(String fieldId);
 }
 
 class LocalItemRepository implements ItemRepository {
@@ -255,6 +257,28 @@ class LocalItemRepository implements ItemRepository {
     if (idList.isEmpty) return;
     await (_db.update(_db.clothingItems)..where((t) => t.id.isIn(idList)))
         .write(ClothingItemsCompanion(categoryId: Value(categoryId)));
+  }
+
+  @override
+  Future<void> clearCustomField(String fieldId) async {
+    final id = fieldId.trim();
+    if (id.isEmpty) return;
+    final items = await _db.select(_db.clothingItems).get();
+    final now = DateTime.now().toUtc();
+    await _db.transaction(() async {
+      for (final item in items) {
+        final next = removeCustomFieldValue(item.customJson, id);
+        if (next == item.customJson) continue;
+        await (_db.update(
+          _db.clothingItems,
+        )..where((t) => t.id.equals(item.id))).write(
+          ClothingItemsCompanion(
+            customJson: Value(next),
+            updatedAt: Value(now),
+          ),
+        );
+      }
+    });
   }
 
   @override

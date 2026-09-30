@@ -211,6 +211,16 @@ DetailLayout appendCustomSlot(DetailLayout layout, DetailSlot slot) {
   return DetailLayout([...layout.slots, slot]);
 }
 
+/// Drops a custom field. Built-in fields stay.
+DetailLayout removeCustomSlot(DetailLayout layout, String id) {
+  final target = layout.slots.where((slot) => slot.id == id).firstOrNull;
+  if (target == null || target.kind == DetailSlotKind.builtin) return layout;
+  return DetailLayout([
+    for (final slot in layout.slots)
+      if (slot.id != id) slot,
+  ]);
+}
+
 List<String> _cleanOptions(List<String> options) {
   final seen = <String>{};
   final cleaned = <String>[];

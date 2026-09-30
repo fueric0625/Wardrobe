@@ -47,7 +47,7 @@ lib/app/
 ├── app.dart          WardrobeApp
 ├── providers.dart    databaseProvider、imageStoreProvider
 ├── router.dart       衣橱、穿搭、日历、设置路由
-├── settings_page.dart 外观设置
+├── settings_page.dart 外观设置、本机备份
 └── shell.dart        侧栏 AppShell、设置按钮
 ```
 
@@ -68,7 +68,7 @@ lib/app/
 | `/outfits/c/:categoryId` | 该分类下的穿搭 |
 | `/outfits/item/new`、`/outfits/item/:id`、`/outfits/item/:id/edit` | 新增、详情、编辑 |
 | `/calendar` | 月历 |
-| `/settings` | 字体、文字大小、主体颜色 |
+| `/settings` | 字体、文字大小、主体颜色、导出和导入备份 |
 
 分类管理两条路由都打开 `CategoryManagePage`，用 `CategoryKind.clothing` 或 `CategoryKind.outfit` 区分。
 
@@ -92,16 +92,22 @@ lib/core/database/
 
 ```text
 lib/core/storage/
-├── app_paths.dart      APPDATA\wardrobe
-├── image_store.dart    正式图与 .tmp
-└── image_picker.dart   Windows 选图
+├── app_paths.dart         APPDATA\wardrobe
+├── image_store.dart       正式图与 .tmp
+├── image_picker.dart      Windows 选图
+├── folder_picker.dart     Windows 选文件夹、打开文件夹
+└── wardrobe_backup.dart   导出、导入本机备份
 ```
 
 职责：图片文件的暂存、提交和删除。结构化字段不在这里。
 
 关键类型：`AppPaths`、`ImageStore`、`ImageImport`。
 
-读写：`beginImport` / `beginBytes` 写入 `images\.tmp`。`commit` 挪到 `images\`，`rollback` 删掉这次暂存。`deleteIfOwned` 只删本目录里的文件。衣物和穿搭的 Repository 在同一事务里改表并提交或删除这些文件。
+读写：`beginImport` / `beginBytes` 写入 `images\.tmp`。`commit` 挪到 `images\`，`rollback` 删掉这次暂存。`deleteIfOwned` 只删本目录里的文件。衣物编辑里每改一次抠图会换新的抠图和 mask，上一笔不再用到的文件马上删掉。精修预览不进数据库，退出精修就删。保存后每张图留原图、当前抠图和 mask。启动时 `deleteUnreferenced` 删掉 `images\` 里没有任何衣物或穿搭引用的文件，`.tmp` 不动。衣物和穿搭的 Repository 在同一事务里改表并提交或删除这些文件。
+
+`exportWardrobeBackup` 先让调用方把打开的库做一次 checkpoint，再把 `wardrobe.sqlite`（以及还在的 `-wal`、`-shm`）、`images\`（跳过 `.tmp`）、`appearance.json`、`detail_layout.json`、`list_sort.json`、`font.txt` 拷进用户选的目录下的 `wardrobe-backup-日期时间`。同一分钟再导一次会加上 `-2`。模型不拷。文件夹里写 `说明.txt`。
+
+导入分两步。`stageWardrobeImport` 把备份拷到数据目录里的 `import-staging`，这时库还可以开着。拷完后直接重新打开，不在这一进程里关数据库：列表还在读库时关库会停住。下次启动、打开数据库之前，`applyPendingWardrobeImport` 把现有文件改名挪到 `import-rollback-时间`，再把暂存改名挪进来。备份里没有的 `-wal`、`-shm` 或 JSON 不会留下。模型不动。中途失败只把改过名的文件改回去，不删目录。旧图片由 `deleteAbandonedRollbacks` 在后台删掉。
 
 ## JSON
 
@@ -226,7 +232,7 @@ lib/features/wardrobe/
 
 关键类型：`ItemRepository`、`ItemImageDraft`、`ItemPhotoRole`、`ItemEditDraft`、`ItemPhotoStudio`。
 
-读写：`clothing_items`、`clothing_item_images`，图片文件经 `ImageStore`。自定义字段的值在 `custom_json`。字段顺序、显示和自定义字段定义在 `%APPDATA%\wardrobe\detail_layout.json`，全衣橱一份。`garment` 可作主图和穿搭素材；`tag` 不能当封面，也不能进拼图。列表封面优先用抠图，没有抠图再用原图。
+读写：`clothing_items`、`clothing_item_images`，图片文件经 `ImageStore`。自定义字段的值在 `custom_json`。字段顺序、显示和自定义字段定义在 `%APPDATA%\wardrobe\detail_layout.json`，全衣橱一份。自带字段只能隐藏。删掉自定义字段时，布局里去掉这一项，并清掉每件衣物上对应的值。`garment` 可作主图和穿搭素材；`tag` 不能当封面，也不能进拼图。列表封面优先用抠图，没有抠图再用原图。
 
 ## 穿搭
 
@@ -335,6 +341,7 @@ windows/runner/garment_onnx.cpp    具名会话的加载与运行
 | `test/list_sort_test.dart` | 排序文件缺省和坏值回到默认 |
 | `test/item_search_test.dart` | 查找只覆盖开着的字段 |
 | `test/tag_lines_test.dart` | 吊牌改行、合并、拆行、删除不改解析字段 |
+| `test/wardrobe_backup_test.dart` | 备份拷数据和图；导入替换并在失败时放回 |
 | `test/app_font_test.dart` | 未知字体回到等线，`Microsoft YaHei UI` 改成微软雅黑 |
 | `test/core/vision/coordinate_test.dart` | 点击进出画面像素 |
 | `test/core/vision/cutout_test.dart` | 抠图、填补、取色、contain 映射 |

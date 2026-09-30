@@ -171,4 +171,18 @@ void main() {
     await repo.delete('second');
     expect(File(shared).existsSync(), isFalse);
   });
+
+  test('unreferenced images are removed and temp files stay', () async {
+    final kept = await images.writeBytes(Uint8List.fromList([1]), 'png');
+    final leftover = await images.writeBytes(Uint8List.fromList([2]), 'png');
+    final temp = await images.beginBytes(Uint8List.fromList([3]), 'png');
+
+    final removed = await images.deleteUnreferenced({kept});
+
+    expect(removed, 1);
+    expect(File(kept).existsSync(), isTrue);
+    expect(File(leftover).existsSync(), isFalse);
+    expect(File(temp.tempPath).existsSync(), isTrue);
+    await temp.rollback();
+  });
 }
